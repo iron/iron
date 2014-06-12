@@ -15,4 +15,5 @@
 
 extern crate http;
 
+pub mod middleware;
 pub mod iron;
