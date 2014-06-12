@@ -15,5 +15,6 @@
 
 extern crate http;
 
-pub mod middleware;
+pub mod furnace;
+pub mod ingot;
 pub mod iron;

@@ -3,31 +3,32 @@ use std::io::net::ip::{SocketAddr, IpAddr};
 use http::server::{Server, Config};
 use http::server;
 
-use super::middleware::{Middleware, MiddlewareStack};
+use super::ingot::Ingot;
+use super::furnace::Furnace;
 
 trait Request: Send + Clone {}
 trait Response: Send + Clone {}
 
 #[deriving(Send)]
-pub struct Iron<Rq, Rs, Ms> {
-    mid_stack: Ms,
+pub struct Iron<Rq, Rs, F> {
+    furnace: F,
     ip: IpAddr,
     port: u16
 }
 
-impl<Rq: Clone, Rs: Clone, Ms: Clone> Clone for Iron<Rq, Rs, Ms> {
-    fn clone(&self) -> Iron<Rq, Rs, Ms> {
+impl<Rq: Clone, Rs: Clone, F: Clone> Clone for Iron<Rq, Rs, F> {
+    fn clone(&self) -> Iron<Rq, Rs, F> {
         Iron {
-            mid_stack: self.mid_stack.clone(),
+            furnace: self.furnace.clone(),
             ip: self.ip.clone(),
             port: self.port
         }
     }
 }
 
-impl<Rq: Request, Rs: Response, Ms: MiddlewareStack<Rq, Rs>>
-        Iron<Rq, Rs, Ms> {
-    fn smelt<M: Middleware<Rq, Rs>>(&mut self, _ingot: M) {
+impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
+        Iron<Rq, Rs, F> {
+    fn smelt<I: Ingot<Rq, Rs>>(&mut self, _ingot: I) {
         // some stuff
     }
 
@@ -40,8 +41,8 @@ impl<Rq: Request, Rs: Response, Ms: MiddlewareStack<Rq, Rs>>
 
 impl<Rq: Request,
      Rs: Response,
-     Ms: MiddlewareStack<Rq, Rs>>
-        Server for Iron<Rq, Rs, Ms> {
+     F: Furnace<Rq, Rs>>
+        Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
     }
