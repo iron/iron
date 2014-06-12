@@ -15,6 +15,8 @@
 
 extern crate http;
 
+pub mod request;
+pub mod response;
 pub mod furnace;
 pub mod ingot;
 pub mod iron;

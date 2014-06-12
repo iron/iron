@@ -1,5 +1,5 @@
-trait Response {}
-trait Request {}
+use super::response::Response;
+use super::request::Request;
 
 pub enum Status {
     Continue, Unwind

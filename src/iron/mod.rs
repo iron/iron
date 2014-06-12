@@ -5,9 +5,8 @@ use http::server;
 
 use super::ingot::Ingot;
 use super::furnace::Furnace;
-
-trait Request: Send + Clone {}
-trait Response: Send + Clone {}
+use super::response::Response;
+use super::request::Request;
 
 #[deriving(Send)]
 pub struct Iron<Rq, Rs, F> {
