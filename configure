@@ -1,0 +1,18 @@
+#!/bin/sh
+
+updateDependency () {
+# Fetch local copy (can be reset with make clean)
+  git clone https://github.com/$1/$2.git deps/$2
+  cd deps/$2 && ./configure && make && cd ../..
+# Prepare folder structure dependency targets
+  mkdir -p target/$3/lib
+# Copy dependency targets
+# (symlinking does not work on OS X)
+  cp deps/$2/build/* target/$3/lib/
+}
+
+TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
+
+# updateDependency  $ORG $REPO $TARGET
+updateDependency 'sfackler' 'rust-openssl' $TARGET
+updateDependency 'chris-morgan' 'rust-http' $TARGET
