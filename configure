@@ -17,7 +17,7 @@ updateDependency () {
 # Build dependency
 # (assumes existence of make)
   cd deps/$2
-  if [[ -e configure && -x configure ]]; then
+  if [ -x configure ]; then
     ./configure
   fi
   make clean
@@ -30,5 +30,5 @@ updateDependency () {
   cp deps/$2$3/* target/$TARGET/lib/
 }
 
-updateDependency 'git@github.com:sfackler/rust-openssl.git' 'rust-openssl' '/build'
-updateDependency 'git@github.com:chris-morgan/rust-http.git' 'rust-http' '/build'
+updateDependency 'https://github.com/sfackler/rust-openssl.git' 'rust-openssl' '/build'
+updateDependency 'https://github.com/chris-morgan/rust-http.git' 'rust-http' '/build'
