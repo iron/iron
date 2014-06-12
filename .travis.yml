@@ -1,10 +1,15 @@
 before_install:
   - yes | sudo add-apt-repository ppa:hansjorg/rust
   - sudo apt-get update
+  - git clone https://github.com/chris-morgan/rust-http.git deps/rust-http
 install:
   - sudo apt-get install rust-nightly
+  - cd deps/rust-http && ./configure && make && cd ../..
+  - mkdir target && mkdir target/x86_64-unknown-linux-gnu && mkdir target/x86_64-unknown-linux-gnu/lib
+  - mv deps/rust-http/build/* target/x86_64-unknown-linux-gnu/lib/
 script:
   - make lib
   - make test
   - make examples
-
+os:
+  - linux
