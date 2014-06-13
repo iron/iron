@@ -14,9 +14,11 @@
 //! The main crate for the Iron library.
 
 extern crate http;
+extern crate anymap;
 
 pub mod request;
 pub mod response;
-pub mod furnace;
 pub mod ingot;
+pub mod alloy;
+pub mod furnace;
 pub mod iron;
