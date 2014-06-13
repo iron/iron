@@ -1,7 +1,6 @@
 use super::super::request::Request;
 use super::super::response::Response;
 use super::super::ingot::{Ingot, Continue, Unwind};
-use super::super::anymap::AnyMap;
 use super::super::alloy::Alloy;
 
 use super::Furnace;
@@ -25,7 +24,7 @@ impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
 impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
     fn forge(&mut self, request: &mut Rq, response: &mut Rs, opt_alloy: Option<&mut Alloy>) {
         // Create a placeholder alloy.
-        let mut alloy = &mut AnyMap::new();
+        let mut alloy = &mut Alloy::new();
 
         // See if we were passed one.
         match opt_alloy {
