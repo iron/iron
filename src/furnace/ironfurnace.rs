@@ -14,10 +14,6 @@ impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
     fn clone(&self) -> IronFurnace<Rq, Rs> { IronFurnace { stack: self.stack.clone() } }
 }
 
-impl<Rq: Request, Rs: Response> Clone for Box<Ingot<Rq, Rs>> {
-    fn clone(&self) -> Box<Ingot<Rq, Rs>> { self.clone_box() }
-}
-
 impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
     fn forge(&mut self, request: &mut Rq, response: &mut Rs, malloy: Option<&mut Alloy>) {
         let mut alloy = &mut AnyMap::new();

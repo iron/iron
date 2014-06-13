@@ -16,3 +16,6 @@ pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
     fn clone_box(&self) -> Box<Ingot<Rq, Rs>> { box self.clone() as Box<Ingot<Rq, Rs>> }
 }
 
+impl<Rq: Request, Rs: Response> Clone for Box<Ingot<Rq, Rs>> {
+    fn clone(&self) -> Box<Ingot<Rq, Rs>> { self.clone_box() }
+}
