@@ -27,11 +27,11 @@ impl<Rq: Clone, Rs: Clone, F: Clone> Clone for Iron<Rq, Rs, F> {
 
 impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
-    fn smelt<I: Ingot<Rq, Rs>>(&mut self, _ingot: I) {
+    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, _ingot: I) {
         // some stuff
     }
 
-    fn listen(mut self, ip: IpAddr, port: u16) {
+    pub fn listen(mut self, ip: IpAddr, port: u16) {
         self.ip = ip;
         self.port = port;
         self.serve_forever();
