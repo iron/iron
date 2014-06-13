@@ -8,5 +8,6 @@ script:
   - make lib
   - make test
   - make examples
+  - make doc
 os:
   - linux
