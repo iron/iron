@@ -15,10 +15,10 @@ impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
 }
 
 impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
-    fn forge(&mut self, request: &mut Rq, response: &mut Rs, malloy: Option<&mut Alloy>) {
+    fn forge(&mut self, request: &mut Rq, response: &mut Rs, opt_alloy: Option<&mut Alloy>) {
         let mut alloy = &mut AnyMap::new();
 
-        match malloy {
+        match opt_alloy {
             Some(a) => alloy = a,
             None => ()
         };
