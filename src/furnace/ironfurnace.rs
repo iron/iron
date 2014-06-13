@@ -36,6 +36,7 @@ impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
             }
         }
 
+        exit_stack.reverse();
         'exit: for ingot in exit_stack.mut_iter() {
             let _ = ingot.exit(request, response, alloy);
         }
