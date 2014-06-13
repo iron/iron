@@ -7,7 +7,6 @@
 #![deny(unnecessary_qualification)]
 #![deny(non_camel_case_types)]
 #![deny(unused_variable)]
-#![deny(deprecated_owned_vector)]
 #![deny(unnecessary_typecast)]
 
 #![feature(macro_rules, phase)]
