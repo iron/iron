@@ -27,11 +27,17 @@ impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
             None => ()
         };
 
+        let mut exit_stack = vec![];
+
         'enter: for ingot in self.stack.mut_iter() {
             match ingot.enter(request, response, alloy) {
                 Unwind   => break 'enter,
-                Continue => ()
+                Continue => exit_stack.push(ingot)
             }
+        }
+
+        'exit: for ingot in exit_stack.mut_iter() {
+            let _ = ingot.exit(request, response, alloy);
         }
     }
     fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
