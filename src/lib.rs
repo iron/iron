@@ -10,7 +10,7 @@
 #![deny(unnecessary_typecast)]
 
 #![feature(macro_rules, phase)]
-//! The main crate for the Iron library.
+//! This crate provides the `Iron` web server framework.
 
 extern crate http;
 extern crate anymap;
