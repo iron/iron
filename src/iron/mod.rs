@@ -8,14 +8,13 @@ use super::furnace::Furnace;
 use super::response::Response;
 use super::request::Request;
 
-#[deriving(Send)]
 pub struct Iron<Rq, Rs, F> {
     pub furnace: F,
     ip: IpAddr,
     port: u16
 }
 
-impl<Rq: Clone, Rs: Clone, F: Clone> Clone for Iron<Rq, Rs, F> {
+impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     fn clone(&self) -> Iron<Rq, Rs, F> {
         Iron {
             furnace: self.furnace.clone(),

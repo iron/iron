@@ -1,8 +1,9 @@
 use http::headers::request::HeaderCollection;
 use http::server::request::RequestUri;
 use http::method::Method;
+use HttpRequest = http::server::request::Request;
 
-pub trait Request: Clone + Send {
+pub trait Request {
     fn headers_mut<'a>(&'a self)          -> &'a mut HeaderCollection;
     fn body_mut<'a>(&'a self)             -> &'a mut String;
     fn method_mut<'a>(&'a self)           -> &'a mut Method;
@@ -17,4 +18,8 @@ pub trait Request: Clone + Send {
 
     #[inline]
     fn version(&self) -> (uint, uint) { (1, 1) }
+
+    fn new() -> Self;
+    fn from_http(&HttpRequest) -> Self;
 }
+
