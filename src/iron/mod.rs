@@ -10,7 +10,7 @@ use super::request::Request;
 
 #[deriving(Send)]
 pub struct Iron<Rq, Rs, F> {
-    furnace: F,
+    pub furnace: F,
     ip: IpAddr,
     port: u16
 }
