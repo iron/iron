@@ -29,5 +29,7 @@ pub trait Furnace<'a, Rq: Request, Rs: Response<'a>>: Send + Clone {
     /// for smelt, but ideally an `Ingot` added here will be delegated to during
     /// Requests.
     fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, _ingot: I);
+
+    fn new<'a, Rq, Rs, I: Ingot<'a, Rq, Rs>>() -> Self;
 }
 
