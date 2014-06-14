@@ -4,7 +4,7 @@ use http::server::request::{RequestUri, Star, AbsoluteUri, AbsolutePath, Authori
 use http::method::Method;
 use HttpRequest = http::server::request::Request;
 
-struct IronRequest {
+pub struct IronRequest {
     req: HttpRequest
 }
 
