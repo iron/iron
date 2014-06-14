@@ -3,7 +3,8 @@ use http::server::request::Request;
 use http::headers::response::HeaderCollection;
 use http::status::Status;
 
-pub trait Response: Writer {
+
+pub trait Response<'a>: Writer {
     fn request_mut<'a>(&'a self) -> &'a mut Request;
     fn headers_mut<'a>(&'a self) -> &'a mut Box<HeaderCollection>;
     fn status_mut<'a>(&'a self) -> &'a mut Status;
@@ -12,6 +13,6 @@ pub trait Response: Writer {
     fn headers<'a>(&'a self) -> &'a HeaderCollection;
     fn status<'a>(&'a self) -> Status;
 
-    fn from_http(&ResponseWriter) -> Self;
+    fn from_http<'a>(&ResponseWriter<'a>) -> Self;
     fn to_http(&self, &mut ResponseWriter);
 }

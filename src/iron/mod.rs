@@ -24,9 +24,9 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
+impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
         Iron<Rq, Rs, F> {
-    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, _ingot: I) {
+    pub fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, _ingot: I) {
         // some stuff
     }
 
@@ -37,9 +37,10 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
     }
 }
 
-impl<Rq: Request,
-     Rs: Response,
-     F: Furnace<Rq, Rs>>
+impl<'a,
+     Rq: Request,
+     Rs: Response<'a>,
+     F: Furnace<'a, Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
