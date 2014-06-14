@@ -34,6 +34,15 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
         self.serve_forever();
     }
 
+    pub fn new<'a, Rq, Rs>(ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
+        let furnace = Furnace::new();
+        Iron {
+            furnace: furnace,
+            ip: ip,
+            port: port
+        }
+    }
+
     pub fn from_furnace<Rq, Rs, F>(furnace: F, ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
         Iron {
             furnace: furnace,

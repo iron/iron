@@ -10,7 +10,7 @@ use super::Furnace;
 /// then, when it hits an `Ingot` which returns `Unwind`, it will
 /// pass the request back up through all `Ingots` it has hit
 /// so far.
-struct IronFurnace<'a, Rq, Rs> {
+pub struct IronFurnace<'a, Rq, Rs> {
     /// The storage used by `IronFurnace` to hold all Ingots
     /// that have been smelted on to it.
     stack: Vec<Box<Ingot<'a, Rq, Rs>: Send>>
@@ -59,5 +59,11 @@ impl<'a, Rq: Request, Rs: Response<'a>> Furnace<'a, Rq, Rs> for IronFurnace<'a, 
     fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, ingot: I) {
         self.stack.push(box ingot);
     }
-}
 
+    /// Create a new instance of `IronFurnace`.
+    fn new() -> IronFurnace<'a, Rq, Rs> {
+        IronFurnace {
+            stack: vec![]
+        }
+    }
+}
