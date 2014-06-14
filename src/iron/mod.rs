@@ -1,4 +1,5 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
+use std::mem;
 
 use http::server::{Server, Config};
 use http::server;
@@ -66,8 +67,11 @@ impl<'a,
         } }
     }
 
-    fn handle_request(&self, _req: &server::Request, _res: &mut server::ResponseWriter) {
-        // coerce allllllll that
+    fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
+        let request = &mut Request::from_http(req);
+        // TODO/FIXME: Replace unsafe block
+        let response: &mut Rs = unsafe { mem::transmute(res) };
+        let mut furnace = self.furnace.clone();
+        furnace.forge(request, response, None);
     }
 }
-
