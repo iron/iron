@@ -1,5 +1,7 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
 
+// use HttpRequest = http::server::request::Request;
+// use HttpResponse = http::server::response::ResponseWriter;
 use http::server::{Server, Config};
 use http::server;
 
