@@ -1,5 +1,7 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
 
+// use HttpRequest = http::server::request::Request;
+// use HttpResponse = http::server::response::ResponseWriter;
 use http::server::{Server, Config};
 use http::server;
 
@@ -32,6 +34,15 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
 
     pub fn listen(self) {
         self.serve_forever();
+    }
+
+    pub fn new<'a, Rq, Rs>(ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
+        let furnace = Furnace::new();
+        Iron {
+            furnace: furnace,
+            ip: ip,
+            port: port
+        }
     }
 
     pub fn from_furnace<Rq, Rs, F>(furnace: F, ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
