@@ -30,6 +30,10 @@ pub trait Furnace<'a, Rq: Request, Rs: Response<'a>>: Send + Clone {
     /// Requests.
     fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, _ingot: I);
 
+    /// Create a new instance of `Furnace`.
+    /// If you are making your own furnace, you'll need to
+    /// pass a new instance of it to `Iron`, otherwise,
+    /// this function will only be used internally.
     fn new() -> Self;
 }
 
