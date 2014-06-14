@@ -60,8 +60,7 @@ impl<'a, Rq: Request, Rs: Response<'a>> Furnace<'a, Rq, Rs> for IronFurnace<'a, 
         self.stack.push(box ingot);
     }
 
-    fn new<'a, Rq, Rs>() -> IronFurnace<'a, Rq, Rs> {
-        // let stack: Vec<Box<I>> = vec![];
+    fn new() -> IronFurnace<'a, Rq, Rs> {
         IronFurnace {
             stack: vec![]
         }
