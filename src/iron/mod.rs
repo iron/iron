@@ -10,8 +10,8 @@ use super::request::Request;
 
 pub struct Iron<Rq, Rs, F> {
     pub furnace: F,
-    ip: IpAddr,
-    port: u16
+    ip: Option<IpAddr>,
+    port: Option<u16>
 }
 
 impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
@@ -30,24 +30,26 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
         self.furnace.smelt(ingot);
     }
 
-    pub fn listen(self) {
+    pub fn listen(mut self, ip: IpAddr, port: u16) {
+        self.ip = Some(ip);
+        self.port = Some(port);
         self.serve_forever();
     }
 
-    pub fn new<'a, Rq, Rs>(ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
+    pub fn new<'a, Rq, Rs>() -> Iron<Rq, Rs, F> {
         let furnace = Furnace::new();
         Iron {
             furnace: furnace,
-            ip: ip,
-            port: port
+            ip: None,
+            port: None
         }
     }
 
-    pub fn from_furnace<Rq, Rs, F>(furnace: F, ip: IpAddr, port: u16) -> Iron<Rq, Rs, F> {
+    pub fn from_furnace<Rq, Rs, F>(furnace: F) -> Iron<Rq, Rs, F> {
         Iron {
             furnace: furnace,
-            ip: ip,
-            port: port
+            ip: None,
+            port: None
         }
     }
 }
@@ -58,7 +60,10 @@ impl<'a,
      F: Furnace<'a, Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
-        Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
+        Config { bind_address: SocketAddr {
+            ip: self.ip.unwrap(),
+            port: self.port.unwrap()
+        } }
     }
 
     fn handle_request(&self, _req: &server::Request, _res: &mut server::ResponseWriter) {
