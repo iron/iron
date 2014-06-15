@@ -25,9 +25,9 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
+impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
-    pub fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, ingot: I) {
+    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
         self.furnace.smelt(ingot);
     }
 
@@ -37,7 +37,7 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
         self.serve_forever();
     }
 
-    pub fn new<'a, Rq, Rs>() -> Iron<Rq, Rs, F> {
+    pub fn new<Rq, Rs>() -> Iron<Rq, Rs, F> {
         let furnace = Furnace::new();
         Iron {
             furnace: furnace,
@@ -55,10 +55,9 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
     }
 }
 
-impl<'a,
-     Rq: Request,
-     Rs: Response<'a>,
-     F: Furnace<'a, Rq, Rs>>
+impl<Rq: Request,
+     Rs: Response,
+     F: Furnace<Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
