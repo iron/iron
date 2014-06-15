@@ -20,4 +20,5 @@ deps/
 /build/
 /.rust/
 rusti.sh
-
+/examples/*
+!/examples/*.rs
