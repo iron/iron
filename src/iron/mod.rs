@@ -9,6 +9,8 @@ use super::furnace::Furnace;
 use super::response::Response;
 use super::request::Request;
 
+use super::response::ironresponse::IronResponse;
+
 pub struct Iron<Rq, Rs, F> {
     pub furnace: F,
     ip: Option<IpAddr>,
@@ -69,7 +71,7 @@ impl<Rq: Request,
     fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
         let request = &mut Request::from_http(req);
         // TODO/FIXME: Replace unsafe block
-        let response: &mut Rs = unsafe { mem::transmute(res) };
+        let response: &mut Rs = unsafe { mem::transmute(&mut IronResponse::from_http(res)) };
         let mut furnace = self.furnace.clone();
         furnace.forge(request, response, None);
     }
