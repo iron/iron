@@ -19,20 +19,21 @@ pub type ServerT =
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
-/// This is entrance point to `Iron`, from which you create a server. The server
-/// can be made with a specific `Furnace` (using `from_furnace`) or with a new on
-/// (`new`). `Iron` is used to manage the server processes:
+/// The server can be made with a specific `Furnace` (using `from_furnace`)
+/// or with a new `Furnace` (using `new`). `Iron` is used to manage the server
+/// processes:
 /// `Iron.smelt` is used to add new `Ingot`s, and
 /// `Iron.listen` is used to kick off a server process.
 ///
 /// `Iron` contains the `Furnace` which holds the `Ingot`s necessary to run a server.
-/// `Iron` is the main interface to adding `Ingot`s, and has `Furnace as public for
-/// (for the sake of extensibility).
+/// `Iron` is the main interface to adding `Ingot`s, and has `Furnace` as a
+/// public field (for the sake of extensibility).
 pub struct Iron<Rq, Rs, F> {
-    /// Exposed internal storage of a `Furnace`.
+    /// The exposed internal field for storing `Furnace`.
     ///
-    /// Set furnace to implement your server's middleware stack with custom behavior.
-    /// Most uses will not need to touch `furnace`. This should only be used if you
+    /// This is exposed for the sake of extensibility. It can be used to set
+    /// furnace to implement your server's middleware stack with custom behavior.
+    /// Most users will not need to touch `furnace`. This should only be used if you
     /// need custom handling of `Ingot`s. Normally, the default `IronFurnace` is
     /// sufficient.
     pub furnace: F,
@@ -79,9 +80,9 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
     ///
     /// This will create a new `Iron`, the base unit of the server.
     /// This creates an `Iron` with a default `furnace`, the `IronFurnace`.
-    /// This `furnace` will serve requests until it hits an `Unwind`, and then
-    /// exit through the `Ingot`s it has gone through. Custom furnaces can be
-    /// used with `from_furnace`, instead of `new`.
+    ///
+    /// Custom furnaces can be used with `from_furnace`, instead of `new`.
+    #[inline]
     pub fn new<Rq, Rs>() -> Iron<Rq, Rs, F> {
         let furnace = Furnace::new();
         Iron {
@@ -91,16 +92,20 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
         }
     }
 
-    /// Instantiate a new isntance of `Iron` from an existing `Furnace`.
+    /// Instantiate a new instance of `Iron` from an existing `Furnace`.
     ///
     /// This will create a new `Iron` from a give `Furnace`.
-    /// The `Furnace` can be configured to handle `Ingot`s differently than
+    ///
+    /// This `Furnace` *may already have `Ingot`s in it*. An empty default
+    /// `Furnace` can be created more easily using `new`.
+    ///
+    /// The `Furnace` can also be configured to handle `Ingot`s differently than
     /// `IronFurnace`. For example, this can be used to implement a `Furnace`
     /// that logs debug messages as it serves requests.
     ///
-    /// Most uses will not need to touch `from_furnace`. This should only be used if you
-    /// need custom handling of `Ingot`s. Normally, the default `IronFurnace` is
-    /// sufficient.
+    /// Most users will not need to touch `from_furnace`. This should only be
+    /// used if you need custom handling of `Ingot`s. Normally, the default
+    /// `IronFurnace` is sufficient.
     pub fn from_furnace<Rq, Rs, F>(furnace: F) -> Iron<Rq, Rs, F> {
         Iron {
             furnace: furnace,
@@ -110,7 +115,11 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
     }
 }
 
-/// This `impl` allows `Iron` to be used as a `Server` by [rust-http]('https://github.com/chris-morgan/rust-http'). It is not used by a consumer.
+/// This is unused but required for internal functionality.
+///
+/// This `impl` allows `Iron` to be used as a `Server` by
+/// [rust-http]('https://github.com/chris-morgan/rust-http').
+/// This is not used by users of this library.
 impl<Rq: Request,
      Rs: Response,
      F: Furnace<Rq, Rs>>
