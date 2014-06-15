@@ -15,7 +15,7 @@ use iron::response::ironresponse::IronResponse;
 #[deriving(Clone)]
 struct HelloWorld;
 
-impl<'a, Rq: Request, Rs: Response<'a>> Ingot<'a, Rq, Rs> for HelloWorld {
+impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for HelloWorld {
     fn enter(&mut self, _request: &mut Rq, response: &mut Rs, _alloy: &mut Alloy) -> Status {
         response.write(bytes!("Hello World!"));
         Continue
@@ -23,7 +23,7 @@ impl<'a, Rq: Request, Rs: Response<'a>> Ingot<'a, Rq, Rs> for HelloWorld {
 }
 
 fn main() {
-    let mut server: Iron<IronRequest, IronResponse<'static>, IronFurnace<IronRequest, IronResponse<'static>>> =
+    let mut server: Iron<IronRequest, IronResponse<'static, 'static>, IronFurnace<IronRequest, IronResponse<'static, 'static>>> =
         Iron::new();
     server.smelt(HelloWorld);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);

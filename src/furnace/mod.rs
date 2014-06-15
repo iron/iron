@@ -17,7 +17,7 @@ pub mod ironfurnace;
 /// they allow you to completely control the resolution of `Ingots`.
 ///
 /// The default `Furnace` used in `Iron` is the `IronFurnace`.
-pub trait Furnace<'a, Rq: Request, Rs: Response<'a>>: Send + Clone {
+pub trait Furnace<Rq: Request, Rs: Response>: Send + Clone {
     /// A `Furnace's` forge method will get called once per Request, and may be
     /// called either with or without an existing `Alloy`. `Forge` is responsible
     /// for delegating the request to the correct `Ingots` and in the correct
@@ -28,7 +28,7 @@ pub trait Furnace<'a, Rq: Request, Rs: Response<'a>>: Send + Clone {
     /// storage of `Ingots`. Different `Furnaces` may implement different behavior
     /// for smelt, but ideally an `Ingot` added here will be delegated to during
     /// Requests.
-    fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, _ingot: I);
+    fn smelt<I: Ingot<Rq, Rs>>(&mut self, _ingot: I);
 
     /// Create a new instance of `Furnace`.
     /// If you are making your own furnace, you'll need to

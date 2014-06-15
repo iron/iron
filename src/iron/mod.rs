@@ -9,6 +9,8 @@ use super::furnace::Furnace;
 use super::response::Response;
 use super::request::Request;
 
+use super::response::ironresponse::IronResponse;
+
 pub struct Iron<Rq, Rs, F> {
     pub furnace: F,
     ip: Option<IpAddr>,
@@ -25,9 +27,9 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
+impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
-    pub fn smelt<I: Ingot<'a, Rq, Rs>>(&mut self, ingot: I) {
+    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
         self.furnace.smelt(ingot);
     }
 
@@ -37,7 +39,7 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
         self.serve_forever();
     }
 
-    pub fn new<'a, Rq, Rs>() -> Iron<Rq, Rs, F> {
+    pub fn new<Rq, Rs>() -> Iron<Rq, Rs, F> {
         let furnace = Furnace::new();
         Iron {
             furnace: furnace,
@@ -55,10 +57,9 @@ impl<'a, Rq: Request, Rs: Response<'a>, F: Furnace<'a, Rq, Rs>>
     }
 }
 
-impl<'a,
-     Rq: Request,
-     Rs: Response<'a>,
-     F: Furnace<'a, Rq, Rs>>
+impl<Rq: Request,
+     Rs: Response,
+     F: Furnace<Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
@@ -70,7 +71,7 @@ impl<'a,
     fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
         let request = &mut Request::from_http(req);
         // TODO/FIXME: Replace unsafe block
-        let response: &mut Rs = unsafe { mem::transmute(res) };
+        let response: &mut Rs = unsafe { mem::transmute(&mut IronResponse::from_http(res)) };
         let mut furnace = self.furnace.clone();
         furnace.forge(request, response, None);
     }
