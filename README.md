@@ -53,18 +53,12 @@ extern crate bodyparser = “iron-body-parser”;
 extern crate json = “iron-json”;
 
 use json::JSON;
-use iron::alloy::Alloy;
-use iron::request::Request;
-use iron::response::Response;
+use iron::{Request, Response, Alloy, ServerT};
 
 use router::Router;
 use mount::Mount;
 use bodyparser::{BodyParser, Parsed};
 use hypothetical::database;
-
-type Server = Iron<IronRequest,
-                   IronResponse<’static, ‘static>,
-                   IronFurnace<IronRequest, IronResponse<’static, ‘static>>>
 
 fn setup_api_v1<Rq: Request, Rs: Response>(&mut Router<Rq, Rs>) {
     Router.get(match!(‘/users/’), |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
@@ -80,7 +74,7 @@ fn main() {
     let api_v1_router = setup_api_v1(Router::new());
     let api_v2_router = setup_api_v2(Router::new());
 
-    let mut server: Server = Iron::new();
+    let mut server: ServerT = Iron::new();
 
     // Setup JSON middleware
     server.smelt(JSON::new());
@@ -102,10 +96,7 @@ Here’s a sample Ingot/middleware implementation of a RequestTimer Ingot:
 extern crate iron;
 extern crate time;
 
-use iron::request::Request;
-use iron::response::Response;
-use iron::ingot;
-use iron::alloy;
+use iron::{Request, Response, Ingot, Alloy};
 
 use time::precise_time_ns;
 
