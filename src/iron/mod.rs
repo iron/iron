@@ -10,6 +10,12 @@ use super::response::Response;
 use super::request::Request;
 
 use super::response::ironresponse::IronResponse;
+use super::request::ironrequest::IronRequest;
+use super::furnace::ironfurnace::IronFurnace;
+
+pub type ServerT =
+    Iron<IronRequest, IronResponse<'static, 'static>,
+         IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
 
 pub struct Iron<Rq, Rs, F> {
     pub furnace: F,
