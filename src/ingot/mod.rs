@@ -29,7 +29,7 @@ pub enum Status {
 /// to a `Furnace` so that it will be called for each incoming request.
 ///
 /// There are two sorts of data associated with `Ingots`, data internal
-/// to the `Ingot` and APIs that the `Ingot` would like to expose to `Ingots`
+/// to the `Ingot` and data that the `Ingot` would like to expose to `Ingots`
 /// further down the stack or terminal controllers.
 ///
 /// Internal data should be stored on the `struct` that implements `Ingot`
@@ -47,12 +47,29 @@ pub enum Status {
 /// the same `Alloy` is passed to all further `Ingots` in the `Furnace`, this
 /// scheme allows you to expose data or functionality to future `Ingots`.
 pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
+    /// `enter` is called for each `Ingot` in a `Furnace` as a client request
+    /// comes down the stack. `Ingots` should expose data through `Alloy` and
+    /// store any data that will persist through the request here.
+    ///
+    /// returning `Unwind` from this handler will cause the `Furnace` to stop
+    /// going down the `Furnace's` stack and start bubbling back up and calling
+    /// `exit`.
     fn enter(&mut self, _request: &mut Rq, _response: &mut Rs, _alloy: &mut Alloy) -> Status {
         Continue
     }
+
+    /// `exit` is called for each `Ingot` in `Furnace` that has had it's `enter`
+    /// method called for this request. `Ingot's``exit` method will be called
+    /// as the stack is unwound in FILO order. `Ingots` have their `exit`
+    /// methods called in opposite order from which `enter` was called, which
+    /// is FIFO.
+    ///
+    /// While this method must return a `Status`, most `Furnaces` will ignore
+    /// this method's return value.
     fn exit(&mut self, _request: &mut Rq, _response: &mut Rs, _alloy: &mut Alloy) -> Status {
         Continue
     }
+
     fn clone_box(&self) -> Box<Ingot<Rq, Rs>> { box self.clone() as Box<Ingot<Rq, Rs>> }
 }
 
