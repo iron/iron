@@ -4,7 +4,7 @@ use http::status::Status;
 
 pub mod ironresponse;
 
-pub trait Response<'a>: Writer {
+pub trait Response: Writer {
     fn headers_mut<'a>(&'a mut self) -> &'a mut Box<HeaderCollection>;
     fn status_mut<'a>(&'a mut self) -> &'a mut Status;
 
