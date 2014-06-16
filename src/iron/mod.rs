@@ -5,7 +5,7 @@ use http::server;
 
 use super::ingot::Ingot;
 use super::furnace::Furnace;
-use super::response::Response;
+use super::response::{Response, HttpResponse};
 use super::request::Request;
 
 use super::response::ironresponse::IronResponse;
@@ -14,7 +14,7 @@ use super::furnace::ironfurnace::IronFurnace;
 
 pub type ServerT =
     Iron<IronRequest, IronResponse<'static, 'static>,
-         IronFurnace<'static, 'static, IronRequest, IronResponse<'static, 'static>>>;
+         IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -50,7 +50,7 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>, F: Furnace<'a, 'b, Rq, Rs>>
+impl<'a, 'b, Rq: Request, Rs: Response + HttpResponse<'a, 'b>, F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
     /// `smelt` a new `Ingot`.
     ///
@@ -59,7 +59,7 @@ impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>, F: Furnace<'a, 'b, Rq, Rs>>
     ///
     /// `Iron.smelt` delegates to `iron.furnace.smelt`, so that any `Ingot`
     /// added is added to the `Iron` instance's `furnace`.
-    pub fn smelt<'a, 'b, I: Ingot<'a, 'b, Rq, Rs>>(&mut self, ingot: I) {
+    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
         self.furnace.smelt(ingot);
     }
 
@@ -121,8 +121,8 @@ impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>, F: Furnace<'a, 'b, Rq, Rs>>
 /// This is not used by users of this library.
 impl<'a, 'b,
      Rq: Request,
-     Rs: Response<'a, 'b>,
-     F: Furnace<'a, 'b, Rq, Rs>>
+     Rs: Response + HttpResponse<'a, 'b>,
+     F: Furnace<Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
@@ -139,10 +139,10 @@ impl<'a, 'b,
 
 fn handler<'a, 'b,
             Rq: Request,
-            Rs: Response<'a, 'b>,
-            F: Furnace<'a, 'b, Rq, Rs>>
+            Rs: Response + HttpResponse<'a, 'b>,
+            F: Furnace<Rq, Rs>>
         (furnace: &mut F, req: &server::Request, res: &mut server::ResponseWriter) {
     let mut request: Rq = Request::from_http(req);
-    let mut response: Rs = Response::from_http(res);
+    let mut response: Rs = HttpResponse::from_http(res);
     furnace.forge(&mut request, &mut response, None);
 }
