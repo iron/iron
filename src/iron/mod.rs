@@ -133,5 +133,16 @@ impl<'a, 'b,
     }
 
     fn handle_request(&self, _req: &server::Request, _res: &mut server::ResponseWriter) {
+        handler::<'a, 'b, Rq, Rs, F>(&self.furnace, _req, _res);
     }
+}
+
+fn handler<'a, 'b,
+            Rq: Request,
+            Rs: Response<'a, 'b>,
+            F: Furnace<'a, 'b, Rq, Rs>>
+        (_furnace: &F, _req: &server::Request, _res: &mut server::ResponseWriter) {
+    let mut _request: Rq = Request::from_http(_req);
+    let mut _response: Rs = Response::from_http(_res);
+    _furnace.forge(&_request, &_response, None);
 }
