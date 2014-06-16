@@ -1,0 +1,34 @@
+#!/bin/sh
+
+TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
+
+# Update dependencies from git
+# $1: git
+#     The git uri from which to download the dependency
+# $2: name (usually the git repo name)
+#     The name under which the dependency will be stored
+# $3: build location
+#     The location to which the git builds (omit trailing '/')
+# $4: build command
+#     The argument to pass to make (not required)
+updateDependency () {
+# Determine target architecture
+# Fetch local copy (can be reset with make clean)
+  git clone $1 deps/$2
+# Build dependency
+# (assumes existence of make)
+  cd deps/$2
+  if [ -x configure ]; then
+    ./configure
+  fi
+  make clean
+  make $4
+  cd ../..
+# Prepare folder structure dependency targets
+  mkdir -p target/$TARGET/lib
+# Copy dependency targets
+# (symlinking does not work on OS X)
+  cp deps/$2$3/* target/$TARGET/lib/
+}
+
+updateDependency 'https://github.com/iron/iron.git' 'iron' "/target/$TARGET/lib"
