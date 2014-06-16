@@ -10,18 +10,18 @@ use super::Furnace;
 /// then, when it hits an `Ingot` which returns `Unwind`, it will
 /// pass the request back up through all `Ingots` it has hit
 /// so far.
-pub struct IronFurnace<'a, 'b, Rq, Rs> {
+pub struct IronFurnace<Rq, Rs> {
     /// The storage used by `IronFurnace` to hold all Ingots
     /// that have been smelted on to it.
-    stack: Vec<Box<Ingot<'a, 'b, Rq, Rs>: Send>>
+    stack: Vec<Box<Ingot<Rq, Rs>: Send>>
 }
 
-impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>> Clone for IronFurnace<'a, 'b, Rq, Rs> {
-    fn clone(&self) -> IronFurnace<'a, 'b, Rq, Rs> { IronFurnace { stack: self.stack.clone() } }
+impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
+    fn clone(&self) -> IronFurnace<Rq, Rs> { IronFurnace { stack: self.stack.clone() } }
 }
 
 /// `IronFurnace` is a `Furnace`
-impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>> Furnace<'a, 'b, Rq, Rs> for IronFurnace<'a, 'b, Rq, Rs> {
+impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
     fn forge(&mut self, request: &mut Rq, response: &mut Rs, opt_alloy: Option<&mut Alloy>) {
         // Create a placeholder alloy.
         let mut alloy = &mut Alloy::new();
@@ -56,7 +56,7 @@ impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>> Furnace<'a, 'b, Rq, Rs> for Iron
         }
     }
     /// Add an `Ingot` to the `Furnace`.
-    fn smelt<'a, 'b, I: Ingot<'a, 'b, Rq, Rs>>(&mut self, ingot: I) {
+    fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
         self.stack.push(box ingot);
     }
 
