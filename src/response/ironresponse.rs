@@ -1,4 +1,4 @@
-use HttpResponse = http::server::response::ResponseWriter;
+use http::server::response::ResponseWriter;
 use http::server::request::Request;
 use http::headers::response::HeaderCollection;
 use http::status::Status;
@@ -6,10 +6,10 @@ use http::status::Status;
 use std::io::IoResult;
 use std::mem;
 
-use super::Response;
+use super::{Response, HttpResponse};
 
 pub struct IronResponse<'a, 'b> {
-    writer: &'a mut HttpResponse<'b>
+    writer: &'a mut ResponseWriter<'b>
 }
 
 impl <'a, 'b> Writer for IronResponse<'a, 'b> {
@@ -18,7 +18,7 @@ impl <'a, 'b> Writer for IronResponse<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Response<'a, 'b> for IronResponse<'a, 'b> {
+impl<'a, 'b> Response for IronResponse<'a, 'b> {
     #[inline]
     fn headers_mut<'a>(&'a mut self) -> &'a mut Box<HeaderCollection> { &mut self.writer.headers }
 
@@ -33,9 +33,11 @@ impl<'a, 'b> Response<'a, 'b> for IronResponse<'a, 'b> {
 
     #[inline]
     fn status<'a>(&'a self) -> &'a Status { &self.writer.status }
+}
 
+impl <'a, 'b> HttpResponse<'a, 'b> for IronResponse<'a, 'b> {
     #[inline]
-    fn from_http(writer: &mut HttpResponse) -> IronResponse<'a, 'b> {
+    fn from_http(writer: &mut ResponseWriter) -> IronResponse<'a, 'b> {
         unsafe {
             mem::transmute(
                 IronResponse {
