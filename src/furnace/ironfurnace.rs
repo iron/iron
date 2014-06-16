@@ -13,7 +13,7 @@ use super::Furnace;
 pub struct IronFurnace<Rq, Rs> {
     /// The storage used by `IronFurnace` to hold all Ingots
     /// that have been smelted on to it.
-    stack: Vec<Box<Ingot<Rq, Rs>: Send>>
+    stack: Vec<Box<Ingot<Rq, Rs> + Send>>
 }
 
 impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
