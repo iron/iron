@@ -15,7 +15,7 @@ use super::furnace::ironfurnace::IronFurnace;
 
 pub type ServerT =
     Iron<IronRequest, IronResponse<'static, 'static>,
-         IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
+         IronFurnace<'static, 'static, IronRequest, IronResponse<'static, 'static>>>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -51,7 +51,7 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
+impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>, F: Furnace<'a, 'b, Rq, Rs>>
         Iron<Rq, Rs, F> {
     /// `smelt` a new `Ingot`.
     ///
@@ -60,7 +60,7 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
     ///
     /// `Iron.smelt` delegates to `iron.furnace.smelt`, so that any `Ingot`
     /// added is added to the `Iron` instance's `furnace`.
-    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
+    pub fn smelt<'a, 'b, I: Ingot<'a, 'b, Rq, Rs>>(&mut self, ingot: I) {
         self.furnace.smelt(ingot);
     }
 
@@ -120,9 +120,10 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
-impl<Rq: Request,
-     Rs: Response,
-     F: Furnace<Rq, Rs>>
+impl<'a, 'b,
+     Rq: Request,
+     Rs: Response<'a, 'b>,
+     F: Furnace<'a, 'b, Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
@@ -131,11 +132,6 @@ impl<Rq: Request,
         } }
     }
 
-    fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
-        let request = &mut Request::from_http(req);
-        // TODO/FIXME: Replace unsafe block
-        let response: &mut Rs = unsafe { mem::transmute(&mut IronResponse::from_http(res)) };
-        let mut furnace = self.furnace.clone();
-        furnace.forge(request, response, None);
+    fn handle_request(&self, _req: &server::Request, _res: &mut server::ResponseWriter) {
     }
 }

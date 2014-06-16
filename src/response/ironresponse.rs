@@ -11,21 +11,13 @@ pub struct IronResponse<'a, 'b> {
     writer: &'a mut HttpResponse<'b>
 }
 
-impl<'a, 'b> IronResponse<'a, 'b> {
-    pub fn from_http<'a, 'b>(res: &'a mut HttpResponse<'b>) -> IronResponse<'a, 'b> {
-        IronResponse {
-            writer: res
-        }
-    }
-}
-
 impl <'a, 'b> Writer for IronResponse<'a, 'b> {
     fn write(&mut self, content: &[u8]) -> IoResult<()> {
         self.writer.write(content)
     }
 }
 
-impl<'a, 'b> Response for IronResponse<'a, 'b> {
+impl<'a, 'b> Response<'a, 'b> for IronResponse<'a, 'b> {
     #[inline]
     fn headers_mut<'a>(&'a mut self) -> &'a mut Box<HeaderCollection> { &mut self.writer.headers }
 
@@ -40,5 +32,12 @@ impl<'a, 'b> Response for IronResponse<'a, 'b> {
 
     #[inline]
     fn status<'a>(&'a self) -> &'a Status { &self.writer.status }
+
+    #[inline]
+    fn from_http(writer: &'a mut HttpResponse<'b>) -> IronResponse<'a, 'b> {
+        IronResponse {
+            writer: writer
+        }
+    }
 }
 

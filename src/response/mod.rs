@@ -1,14 +1,17 @@
 use http::server::request::Request;
 use http::headers::response::HeaderCollection;
 use http::status::Status;
+use HttpResponse = http::server::response::ResponseWriter;
 
 pub mod ironresponse;
 
-pub trait Response: Writer {
+pub trait Response<'a, 'b>: Writer {
     fn headers_mut<'a>(&'a mut self) -> &'a mut Box<HeaderCollection>;
     fn status_mut<'a>(&'a mut self) -> &'a mut Status;
 
     fn request<'a>(&'a self) -> &'a Request;
     fn headers<'a>(&'a self) -> &'a HeaderCollection;
     fn status<'a>(&'a self) -> &'a Status;
+
+    fn from_http(&'a mut HttpResponse<'b>) -> Self;
 }

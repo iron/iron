@@ -46,7 +46,7 @@ pub enum Status {
 /// This can either be an instance of that `Ingot` or some other type. Since
 /// the same `Alloy` is passed to all further `Ingots` in the `Furnace`, this
 /// scheme allows you to expose data or functionality to future `Ingots`.
-pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
+pub trait Ingot<'a, 'b, Rq: Request, Rs: Response<'a, 'b>>: Send + Clone {
     /// `enter` is called for each `Ingot` in a `Furnace` as a client request
     /// comes down the stack. `Ingots` should expose data through `Alloy` and
     /// store any data that will persist through the request here.
@@ -73,6 +73,6 @@ pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
     fn clone_box(&self) -> Box<Ingot<Rq, Rs>> { box self.clone() as Box<Ingot<Rq, Rs>> }
 }
 
-impl<Rq: Request, Rs: Response> Clone for Box<Ingot<Rq, Rs>> {
+impl<'a, 'b, Rq: Request, Rs: Response<'a, 'b>> Clone for Box<'a, 'b, Ingot<'a, 'b, Rq, Rs>> {
     fn clone(&self) -> Box<Ingot<Rq, Rs>> { self.clone_box() }
 }
