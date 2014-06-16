@@ -4,6 +4,7 @@ use http::headers::response::HeaderCollection;
 use http::status::Status;
 
 use std::io::IoResult;
+use std::mem;
 
 use super::Response;
 
@@ -34,9 +35,13 @@ impl<'a, 'b> Response<'a, 'b> for IronResponse<'a, 'b> {
     fn status<'a>(&'a self) -> &'a Status { &self.writer.status }
 
     #[inline]
-    fn from_http(writer: &'a mut HttpResponse<'b>) -> IronResponse<'a, 'b> {
-        IronResponse {
-            writer: writer
+    fn from_http(writer: &mut HttpResponse) -> IronResponse<'a, 'b> {
+        unsafe {
+            mem::transmute(
+                IronResponse {
+                    writer: writer
+                }
+            )
         }
     }
 }

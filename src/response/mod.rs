@@ -13,5 +13,5 @@ pub trait Response<'a, 'b>: Writer {
     fn headers<'a>(&'a self) -> &'a HeaderCollection;
     fn status<'a>(&'a self) -> &'a Status;
 
-    fn from_http(&'a mut HttpResponse<'b>) -> Self;
+    fn from_http(&mut HttpResponse) -> Self;
 }
