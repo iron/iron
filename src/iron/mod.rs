@@ -1,12 +1,11 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
-use std::mem;
 
 use http::server::{Server, Config};
 use http::server;
 
 use super::ingot::Ingot;
 use super::furnace::Furnace;
-use super::response::Response;
+use super::response::{Response, HttpResponse};
 use super::request::Request;
 
 use super::response::ironresponse::IronResponse;
@@ -51,7 +50,7 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
+impl<'a, 'b, Rq: Request, Rs: Response + HttpResponse<'a, 'b>, F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
     /// `smelt` a new `Ingot`.
     ///
@@ -120,8 +119,9 @@ impl<Rq: Request, Rs: Response, F: Furnace<Rq, Rs>>
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
-impl<Rq: Request,
-     Rs: Response,
+impl<'a, 'b,
+     Rq: Request,
+     Rs: Response + HttpResponse<'a, 'b>,
      F: Furnace<Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
     fn get_config(&self) -> Config {
@@ -132,10 +132,17 @@ impl<Rq: Request,
     }
 
     fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
-        let request = &mut Request::from_http(req);
-        // TODO/FIXME: Replace unsafe block
-        let response: &mut Rs = unsafe { mem::transmute(&mut IronResponse::from_http(res)) };
         let mut furnace = self.furnace.clone();
-        furnace.forge(request, response, None);
+        handler::<'a, 'b, Rq, Rs, F>(&mut furnace, req, res);
     }
+}
+
+fn handler<'a, 'b,
+            Rq: Request,
+            Rs: Response + HttpResponse<'a, 'b>,
+            F: Furnace<Rq, Rs>>
+        (furnace: &mut F, req: &server::Request, res: &mut server::ResponseWriter) {
+    let mut request: Rq = Request::from_http(req);
+    let mut response: Rs = HttpResponse::from_http(res);
+    furnace.forge(&mut request, &mut response, None);
 }
