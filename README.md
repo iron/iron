@@ -24,7 +24,7 @@ make doc      # Build documentation using rustdoc
 
 One of us (@reem, @zzmp, @theptrk, @mcreinhard) is usually on `#iron` on the
 mozilla irc. Come say hi and ask any questions you might have. We are also
-usually on `#rust`.
+usually on `#rust` and `#rust-webdev`.
 
 ## Overview
 
