@@ -9,9 +9,10 @@
 #     The location to which the git builds (omit trailing '/')
 # $4: build command
 #     The argument to pass to make (not required)
+TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
+
 updateDependency () {
 # Determine target architecture
-  TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
 # Fetch local copy (can be reset with make clean)
   git clone $1 deps/$2
 # Build dependency
@@ -30,3 +31,5 @@ updateDependency () {
   cp deps/$2$3/* target/$TARGET/lib/
 }
 
+updateDependency 'https://github.com/chris-morgan/rust-http' 'rust-http' '/build'
+updateDependency 'https://github.com/iron/iron' 'iron' "/target/$TARGET/lib"
