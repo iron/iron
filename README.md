@@ -47,10 +47,10 @@ versions:
 
 ```rust
 extern crate iron;
-extern crate router = “iron-router”;
-extern crate mount = “iron-mount”;
-extern crate bodyparser = “iron-body-parser”;
-extern crate json = “iron-json”;
+extern crate router = "iron-router";
+extern crate mount = "iron-mount";
+extern crate bodyparser = "iron-body-parser";
+extern crate json = "iron-json";
 
 use json::JSON;
 use iron::{Request, Response, Alloy, ServerT};
@@ -61,11 +61,11 @@ use bodyparser::{BodyParser, Parsed};
 use hypothetical::database;
 
 fn setup_api_v1<Rq: Request, Rs: Response>(&mut Router<Rq, Rs>) {
-    Router.get(match!(‘/users/’), |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
+    Router.get(match!('/users/'), |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
         // Will be `depends_on!(JSON -> send)` in the future
         let send = alloy.find::<JSON>().unwrap().send;
 
-        send(res, 200, database::read(‘Users’));
+        send(res, 200, database::read("Users"));
     });
 }
 fn setup_api_v2(&mut Router) { ... }
@@ -82,8 +82,8 @@ fn main() {
     // Mount sub-instances of Iron.
     // mount! is a macro from Mount that creates a sub-instance of Iron
     // with the second argument smelted on to it.
-    server.smelt(mount!(match!(‘/api/v1’), api_v1_router));
-    server.smelt(mount!(match!(‘/api/v2’), api_v2_router));
+    server.smelt(mount!(match!("/api/v1"), api_v1_router));
+    server.smelt(mount!(match!("/api/v2"), api_v2_router));
 }
 
 ```
@@ -96,7 +96,7 @@ Here’s a sample Ingot/middleware implementation of a RequestTimer Ingot:
 extern crate iron;
 extern crate time;
 
-use iron::{Request, Response, Ingot, Alloy};
+use iron::{Request, Response, Ingot, Alloy, ServerT};
 
 use time::precise_time_ns;
 
@@ -113,16 +113,13 @@ impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for ResponseTime {
 
     fn exit(&mut self, _req: &mut Rq, _res: &mut Rs, _al: &mut Alloy) -> ingot::Status {
         let delta = precise_time_ns() - self.enty;
-        println!(“Request took: {} ms”, (delta as f64) / 100000.0);
+        println!("Request took: {} ms", (delta as f64) / 100000.0);
         Continue
     }
 }
 
 fn main() {
-    // This type is long, but there will be a type shortcut fot this default
-    // in the future.
-    let mut server: Iron<IronRequest, IronResponse<’static>,
-                    IronFurnace<IronRequest, IronResponse<’static>>> = Iron::new();
+    let mut server: ServerT = Iron::new();
 
     // This adds the ResponseTime ingot to have all requests and responses be
     // passed through it.
