@@ -2,6 +2,9 @@ use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
 
+//! Exposes the `Ingot` trait which must be implemented by
+//! all middleware.
+
 /// The Status returned by `Ingot's` `enter` and `exit` methods. This indicates
 /// to the `Furnace` whether this is a terminal `Ingot` or whether to continue
 /// passing the `Request` and `Response` down the `Furnace's` stack.
