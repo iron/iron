@@ -19,6 +19,7 @@ deps/
 /target/
 /build/
 /.rust/
+watch.sh
 rusti.sh
 /examples/*
 !/examples/*.rs
