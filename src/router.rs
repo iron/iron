@@ -1,5 +1,6 @@
 use regex::Regex;
-use http::{Method, Options, Get, Post, Put, Delete, Patch};
+use http::method::{Method, Options};
+use http::status::{InternalServerError};
 use iron::{Ingot, Request, Response, Alloy};
 use iron::ingot::{Status, Continue, Unwind};
 
@@ -14,8 +15,10 @@ pub struct Router {
 #[deriving(Clone)]
 struct Route {
     method: Method,
+    glob: String,
     matches: Regex,
-    handler: |&mut Rq, &mut Rs, &mut A| -> ()
+    handler: Handler<Rq, Rs>,
+    params: Vec<String>
 }
 
 impl Router {
@@ -26,22 +29,26 @@ impl Router {
         }
         self.routes.push(route);
     }
-    method!(get, Get)
-    method!(post, Post)
-    method!(put, Put)
-    method!(patch, Patch)
-    method!(delete, Delete)
 }
 
-macro_rules! method {
-    ($name:ident, $method:ident) => {
-        fn $name(&mut self, matches: Regex, handler: Handler) {
-            self.addRoute(Route {
-                method: $method
-                matches: matches,
-                handler: handler
-            });
+impl<Rq, Rs> Router<Rq, Rs> {
+    pub fn new() -> Router<Rq, Rs> { Router { options: Vec::new(), routes: Vec::new() } }
+    pub fn route(&mut self, method: Method, glob: String,
+                 params: Vec<String>, handler: Handler<Rq, Rs>) {
+        self.add_route(Route {
+            method: method,
+            matches: deglob(glob.clone()),
+            params: params,
+            handler: handler,
+            glob: glob
+        });
+    }
+
+    fn add_route(&mut self, route: Route<Rq, Rs>) {
+        if !self.options.contains(&route.method) {
+            self.options.push(route.method.clone())
         }
+        self.routes.push(route);
     }
 }
 
