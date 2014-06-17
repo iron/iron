@@ -22,6 +22,7 @@ pub fn deglob(glob: String) -> Regex {
 #[cfg(test)]
 mod test {
     use super::*;
+    use test::{Bencher, black_box};
 
     #[test]
     fn test_segment_match() {
@@ -63,6 +64,52 @@ mod test {
         let glob_regex = deglob("/users/:groupid/:userid".to_string());
         assert_eq!(glob_regex.captures("/users/7374/234").unwrap().name("userid"), "234");
         assert_eq!(glob_regex.captures("/users/7374/234").unwrap().name("groupid"), "7374");
+    }
+
+    #[bench]
+    fn bench_explicit_match(b: &mut Bencher) {
+        let glob_regex = deglob("/users/get".to_string());
+        b.iter(|| {
+                glob_regex.is_match("/users/get");
+        })
+    }
+
+    #[bench]
+    fn bench_explicit_match_native(b: &mut Bencher) {
+        let glob_regex = regex!(r"/users/get");
+        b.iter(|| {
+                glob_regex.is_match("/users/get");
+        })
+    }
+
+    #[bench]
+    fn bench_easy_match(b: &mut Bencher) {
+        let glob_regex = deglob("/users/*".to_string());
+        b.iter(|| {
+            black_box({
+                glob_regex.is_match("/users/jonathan");
+            })
+        })
+    }
+
+    #[bench]
+    fn bench_hard_match(b: &mut Bencher) {
+        let glob_regex = deglob("/users/**/:userid/*/groups".to_string());
+        b.iter(|| {
+            black_box({
+                glob_regex.is_match("/users/jonathan/reem/768/random/groups");
+            })
+        })
+    }
+
+    #[bench]
+    fn bench_hard_match_native(b: &mut Bencher) {
+        let glob_regex = regex!(r"/users/[/a-zA-Z0-9_-]*/(?P<userid>[a-zA-Z0-9_-]*)/[a-zA-Z0-9_-]*/groups");
+        b.iter(|| {
+            black_box({
+                glob_regex.is_match("/users/jonathan/reem/768/random/groups");
+            })
+        })
     }
 }
 
