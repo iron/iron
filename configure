@@ -31,5 +31,4 @@ updateDependency () {
   cp deps/$2$3/* target/$TARGET/lib/
 }
 
-updateDependency 'https://github.com/chris-morgan/rust-http' 'rust-http' '/build'
 updateDependency 'https://github.com/iron/iron' 'iron' "/target/$TARGET/lib"
