@@ -42,6 +42,19 @@ impl<'a, 'b> Response for IronResponse<'a, 'b> {
 }
 
 impl <'a, 'b> HttpResponse<'a, 'b> for IronResponse<'a, 'b> {
+    /// Derive `IronResponse` from the rust-http `ResponseWriter`.
+    //
+    // Wrapping the TcpStream requires giving it lifetimes,
+    // &'a ResponseWriter<'b>, which rust-http does not expose.
+    // In order to allow this, IronResponse needs to be lifetimed.
+    //
+    // The library generally exposed uses static lifetimes,
+    // so the only way to coerce these lifetimes is to transmute them.
+    // IronResponse is destroyed before the ResponseWriter
+    // (as it is wrapping it), so this should not be an issue.
+    //
+    // This (and the use of unsafe) is discussed in further detail at:
+    //   https://github.com/iron/iron/issues/33
     #[inline]
     fn from_http(writer: &mut ResponseWriter) -> IronResponse<'a, 'b> {
         unsafe {
