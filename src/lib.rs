@@ -13,12 +13,19 @@ use time::precise_time_ns;
 
 use std::io::stdio::println;
 
+/// `Ingot` for logging request and response info to the terminal.
+/// `Logger` logs the request method, request URI, response status, and response
+/// time in the format:
+/// ```
+/// {method} {uri} -> {status} ({response_time} ms)
+/// ```
 #[deriving(Clone)]
 pub struct Logger {
     entry_time: u64
 }
 
 impl Logger {
+    /// Create a new `Logger`.
     pub fn new() -> Logger {
         Logger { entry_time: 0u64 }
     }
