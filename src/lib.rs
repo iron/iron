@@ -11,6 +11,8 @@ extern crate regex;
 #[phase(plugin, link)] extern crate log;
 #[phase(plugin)] extern crate regex_macros;
 
+#[cfg(test)] extern crate test;
+
 pub use router::Router;
 pub use router::Handler;
 pub use router::params::Params;
