@@ -1,5 +1,9 @@
 use anymap::AnyMap;
 
+//! Exposes the `Alloy` type, a flexible storage container
+//! that `Ingots` may use to expose new APIs or public data
+//! to other `Ingots`.
+
 pub struct Alloy {
     map: AnyMap
 }
