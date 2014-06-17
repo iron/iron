@@ -4,16 +4,15 @@ use http::status::{InternalServerError};
 use iron::{Ingot, Request, Response, Alloy};
 use iron::ingot::{Status, Continue, Unwind};
 
-pub type Handler = |&mut Rq, &mut Rs, &mut A| -> ()
+pub type Handler<Rq, Rs> = fn(&mut Rq, &mut Rs, &mut Alloy) -> ();
 
 #[deriving(Clone)]
-pub struct Router {
+pub struct Router<Rq, Rs> {
     options: Vec<Method>,
-    routes: Vec<Route>
+    routes: Vec<Route<Rq, Rs>>
 }
 
-#[deriving(Clone)]
-struct Route {
+struct Route<Rq, Rs> {
     method: Method,
     glob: String,
     matches: Regex,
@@ -21,13 +20,15 @@ struct Route {
     params: Vec<String>
 }
 
-impl Router {
-    fn new() -> Router { Router { options: Vec::new(), routes: Vec::new() } }
-    fn addRoute(&mut self, route: Route) {
-        if !self.options.contains(route.method) {
-            self.options.push(route.method)
+impl<Rq, Rs> Clone for Route<Rq, Rs> {
+    fn clone(&self) -> Route<Rq, Rs> {
+        Route {
+            method: self.method.clone(),
+            glob: self.glob.clone(),
+            matches: self.matches.clone(),
+            handler: self.handler,
+            params: self.params.clone()
         }
-        self.routes.push(route);
     }
 }
 
