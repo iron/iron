@@ -53,15 +53,25 @@ impl<Rq, Rs> Router<Rq, Rs> {
     }
 }
 
-impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for Router {
+impl<Rq: Request + Clone, Rs: Response + Clone> Ingot<Rq, Rs> for Router<Rq, Rs> {
     fn enter(&mut self, req: &mut Rq, res: &mut Rs, alloy: &mut Alloy) -> Status {
         if *req.method() == Options {
-            res.write(self.options.iter().map(|p| p.show()).collect().join(" "));
+            match res.write(
+                self.options.iter()
+                    .map(|p| format!("{}", p))
+                    .collect::<Vec<String>>()
+                    .connect(" ").as_bytes()) {
+                Ok(_) => {},
+                Err(err) => {
+                    error!("Failed to write response: {}", err);
+                    *res.status_mut() = InternalServerError;
+                }
+            }
             return Unwind;
         }
         for route in self.routes.iter() {
-            if route.matches.is_match(req.reques_uri()) {
-                route.handler(req, res, alloy);
+            if route.matches.is_match(format!("{}", req.uri()).as_slice()) {
+                (route.handler)(req, res, alloy);
                 return Unwind;
             }
         }
