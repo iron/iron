@@ -1,3 +1,5 @@
+//! Exposes the `Response` trait and `IronResponse` type.
+
 use http::server::request::Request;
 use http::headers::response::HeaderCollection;
 use http::status::Status;
