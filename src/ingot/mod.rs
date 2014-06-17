@@ -1,3 +1,6 @@
+//! Exposes the `Ingot` trait which must be implemented by
+//! all middleware.
+
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
