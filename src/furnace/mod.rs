@@ -1,3 +1,5 @@
+//! Exposes the `Furnace` trait and `IronFurnace` type.
+
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
