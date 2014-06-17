@@ -3,6 +3,7 @@ use http::server::request::RequestUri;
 use http::method::Method;
 use HttpRequest = http::server::request::Request;
 
+//! Exposes the `Request` trait and `IronRequest` type.
 pub mod ironrequest;
 
 pub trait Request {
