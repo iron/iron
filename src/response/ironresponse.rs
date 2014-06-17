@@ -8,11 +8,17 @@ use std::mem;
 
 use super::{Response, HttpResponse};
 
+/// The default `Response` for `Iron`.
+///
+/// `IronResponse` is a wrapper for the rust-http `ResponseWriter`.
+/// It (mostly) abstracts the lifetimes necessary to store a TcpStream
+/// so that `Ingots` only see a `&mut Response` generic (with no lifetimes).
 pub struct IronResponse<'a, 'b> {
     writer: &'a mut ResponseWriter<'b>
 }
 
 impl <'a, 'b> Writer for IronResponse<'a, 'b> {
+    // Write to the wrapped TcpStream.
     fn write(&mut self, content: &[u8]) -> IoResult<()> {
         self.writer.write(content)
     }

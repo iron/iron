@@ -4,6 +4,9 @@ use http::server::request::{RequestUri, Star, AbsoluteUri, AbsolutePath, Authori
 use http::method::Method;
 use http::server::request;
 
+/// The default `Request` for `Iron`.
+///
+/// `IronRequest` is a wrapper for the rust-http `Request`.
 pub struct IronRequest {
     req: request::Request
 }
@@ -44,6 +47,8 @@ impl Request for IronRequest {
 }
 
 impl HttpRequest for IronRequest {
+    // rust-http exposes a `Request` that cannot be cloned, so `IronRequest`
+    // wraps it by cloning or otherwise copying its fields to make it mutable.
     #[inline]
     fn from_http(request: &request::Request) -> IronRequest {
         IronRequest {
