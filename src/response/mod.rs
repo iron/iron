@@ -3,6 +3,8 @@ use http::headers::response::HeaderCollection;
 use http::status::Status;
 use  http::server::response::ResponseWriter;
 
+//! Exposes the `Response` trait and `IronResponse` type.
+
 pub mod ironresponse;
 
 pub trait Response: Writer {
