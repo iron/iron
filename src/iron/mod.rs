@@ -12,6 +12,9 @@ use super::response::ironresponse::IronResponse;
 use super::request::ironrequest::IronRequest;
 use super::furnace::ironfurnace::IronFurnace;
 
+//! Exposes the `Iron` type, the main entrance point of the
+//! `Iron` library.
+
 pub type ServerT =
     Iron<IronRequest, IronResponse<'static, 'static>,
          IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
