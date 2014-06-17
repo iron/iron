@@ -3,6 +3,8 @@ use super::request::Request;
 use super::alloy::Alloy;
 use super::ingot::Ingot;
 
+//! Exposes the `Furnace` trait and `IronFurnace` type.
+
 pub mod ironfurnace;
 
 /// `Furnaces` are the backbone of `Iron`. They coordinate `Ingots`
