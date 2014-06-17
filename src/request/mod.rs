@@ -1,3 +1,5 @@
+//! Exposes the `Request` trait and `IronRequest` type.
+
 use http::headers::request::HeaderCollection;
 use http::server::request::RequestUri;
 use http::method::Method;
