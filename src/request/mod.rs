@@ -1,7 +1,7 @@
 use http::headers::request::HeaderCollection;
 use http::server::request::RequestUri;
 use http::method::Method;
-use HttpRequest = http::server::request::Request;
+use http::server::request;
 
 pub mod ironrequest;
 
@@ -20,7 +20,8 @@ pub trait Request {
 
     #[inline]
     fn version(&self) -> (uint, uint) { (1, 1) }
-
-    fn from_http(&HttpRequest) -> Self;
 }
 
+pub trait HttpRequest {
+    fn from_http(&request::Request) -> Self;
+}

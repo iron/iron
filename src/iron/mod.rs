@@ -6,7 +6,7 @@ use http::server;
 use super::ingot::Ingot;
 use super::furnace::Furnace;
 use super::response::{Response, HttpResponse};
-use super::request::Request;
+use super::request::{Request, HttpRequest};
 
 use super::response::ironresponse::IronResponse;
 use super::request::ironrequest::IronRequest;
@@ -50,7 +50,10 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<'a, 'b, Rq: Request, Rs: Response + HttpResponse<'a, 'b>, F: Furnace<Rq, Rs>>
+impl<'a, 'b,
+     Rq: Request + HttpRequest,
+     Rs: Response + HttpResponse<'a, 'b>,
+     F: Furnace<Rq, Rs>>
         Iron<Rq, Rs, F> {
     /// `smelt` a new `Ingot`.
     ///
@@ -120,7 +123,7 @@ impl<'a, 'b, Rq: Request, Rs: Response + HttpResponse<'a, 'b>, F: Furnace<Rq, Rs
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
 impl<'a, 'b,
-     Rq: Request,
+     Rq: Request + HttpRequest,
      Rs: Response + HttpResponse<'a, 'b>,
      F: Furnace<Rq, Rs>>
         Server for Iron<Rq, Rs, F> {
@@ -138,11 +141,11 @@ impl<'a, 'b,
 }
 
 fn handler<'a, 'b,
-            Rq: Request,
+            Rq: Request + HttpRequest,
             Rs: Response + HttpResponse<'a, 'b>,
             F: Furnace<Rq, Rs>>
         (furnace: &mut F, req: &server::Request, res: &mut server::ResponseWriter) {
-    let mut request: Rq = Request::from_http(req);
+    let mut request: Rq = HttpRequest::from_http(req);
     let mut response: Rs = HttpResponse::from_http(res);
     furnace.forge(&mut request, &mut response, None);
 }
