@@ -21,3 +21,4 @@
 rusti.sh
 /examples/*
 !/examples/*.rs
+/deps
