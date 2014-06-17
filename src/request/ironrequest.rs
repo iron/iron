@@ -1,11 +1,11 @@
-use super::Request;
+use super::{Request, HttpRequest};
 use http::headers::request::HeaderCollection;
 use http::server::request::{RequestUri, Star, AbsoluteUri, AbsolutePath, Authority};
 use http::method::Method;
-use HttpRequest = http::server::request::Request;
+use http::server::request;
 
 pub struct IronRequest {
-    req: HttpRequest
+    req: request::Request
 }
 
 impl Request for IronRequest {
@@ -41,11 +41,13 @@ impl Request for IronRequest {
 
     #[inline]
     fn version(&self) -> (uint, uint) { (1, 1) }
+}
 
+impl HttpRequest for IronRequest {
     #[inline]
-    fn from_http(request: &HttpRequest) -> IronRequest {
+    fn from_http(request: &request::Request) -> IronRequest {
         IronRequest {
-            req: HttpRequest {
+            req: request::Request {
                 remote_addr: request.remote_addr,
                 headers: request.headers.clone(),
                 body: request.body.clone(),
