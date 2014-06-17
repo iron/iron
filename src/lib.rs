@@ -13,6 +13,7 @@ extern crate regex;
 
 pub use router::Router;
 pub use router::Handler;
+pub use router::params::Params;
 
 mod router;
 
