@@ -1,3 +1,6 @@
+//! Exposes the `Iron` type, the main entrance point of the
+//! `Iron` library.
+
 use std::io::net::ip::{SocketAddr, IpAddr};
 
 use http::server::{Server, Config};
