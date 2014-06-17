@@ -1,0 +1,10 @@
+install:
+  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local
+  - ./configure
+script:
+  - make lib
+  - make test
+  - make examples
+  - make doc
+os:
+  - linux
