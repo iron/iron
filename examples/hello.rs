@@ -2,13 +2,13 @@ extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Ingot, Iron, Alloy, Request, Response, ServerT};
-use iron::ingot::{Status, Continue};
+use iron::{Iron, Alloy, Middleware, Request, Response, ServerT};
+use iron::middleware::{Status, Continue};
 
 #[deriving(Clone)]
 struct HelloWorld;
 
-impl Ingot for HelloWorld {
+impl Middleware for HelloWorld {
     fn enter(&mut self,
              _request: &mut Request,
              response: &mut Response,
