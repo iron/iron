@@ -1,4 +1,4 @@
-#![crate_id = "iron-router"]
+#![crate_id = "router"]
 #![license = "MIT"]
 //#![deny(missing_doc)]
 #![deny(unused_result, unused_result, unnecessary_qualification,
