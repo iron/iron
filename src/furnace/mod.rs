@@ -3,7 +3,7 @@
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
-use super::ingot::Ingot;
+use super::middleware::Middleware;
 
 pub mod stackfurnace;
 
@@ -33,7 +33,7 @@ pub trait Furnace: Send + Clone {
     /// storage of `Ingots`. Different `Furnaces` may implement different behavior
     /// for smelt, but ideally an `Ingot` added here will be delegated to during
     /// Requests.
-    fn smelt<I: Ingot>(&mut self, _ingot: I);
+    fn smelt<I: Middleware>(&mut self, _middleware: I);
 
     /// Create a new instance of `Furnace`.
     /// If you are making your own furnace, you'll need to

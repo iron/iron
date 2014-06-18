@@ -49,7 +49,7 @@ pub enum Status {
 /// This can either be an instance of that `Ingot` or some other type. Since
 /// the same `Alloy` is passed to all further `Ingots` in the `Furnace`, this
 /// scheme allows you to expose data or functionality to future `Ingots`.
-pub trait Ingot: Send + Clone {
+pub trait Middleware: Send + Clone {
     /// `enter` is called for each `Ingot` in a `Furnace` as a client request
     /// comes down the stack. `Ingots` should expose data through `Alloy` and
     /// store any data that will persist through the request here.
@@ -79,9 +79,9 @@ pub trait Ingot: Send + Clone {
         Continue
     }
 
-    fn clone_box(&self) -> Box<Ingot> { box self.clone() as Box<Ingot> }
+    fn clone_box(&self) -> Box<Middleware> { box self.clone() as Box<Middleware> }
 }
 
-impl Clone for Box<Ingot> {
-    fn clone(&self) -> Box<Ingot> { self.clone_box() }
+impl Clone for Box<Middleware> {
+    fn clone(&self) -> Box<Middleware> { self.clone_box() }
 }
