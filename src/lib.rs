@@ -9,15 +9,14 @@ extern crate term;
 
 use std::io::IoResult;
 
-use iron::{Ingot, Alloy, Request, Response};
-use iron::ingot::{Status, Continue};
+use iron::{Middleware, Alloy, Request, Response};
+use iron::middleware::{Status, Continue};
 
 use time::precise_time_ns;
 
 use term::{Terminal, stdout, attr, color};
 
-
-/// `Ingot` for logging request and response info to the terminal.
+/// `Middleware` for logging request and response info to the terminal.
 /// `Logger` logs the request method, request URI, response status, and response
 /// time in the format:
 /// ```
@@ -35,13 +34,13 @@ impl Logger {
     }
 }
 
-impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for Logger {
-    fn enter(&mut self, _req: &mut Rq, _res: &mut Rs, _alloy: &mut Alloy) -> Status {
+impl Middleware for Logger {
+    fn enter(&mut self, _req: &mut Request, _res: &mut Response, _alloy: &mut Alloy) -> Status {
         self.entry_time = precise_time_ns();
         Continue
     }
-    fn exit(&mut self, req: &mut Rq, res: &mut Rs, _al: &mut Alloy) -> Status {
-        let status = res.status();
+    fn exit(&mut self, req: &mut Request, res: &mut Response, _al: &mut Alloy) -> Status {
+        let ref mut status = res.status;
         let status_color = match status.code() / 100 {
             1 => color::BLUE, // Information
             2 => color::GREEN, // Success
@@ -54,9 +53,9 @@ impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for Logger {
         // {method} {uri} -> {status} ({response_time} ms)
         let log = |mut t: Box<Terminal<Box<Writer + Send>> + Send>| -> IoResult<()> {
             try!(t.attr(attr::Bold));
-            try!(write!(t, "{}", req.method()));
+            try!(write!(t, "{}", req.method));
             try!(t.reset());
-            try!(write!(t, " {} ", req.uri()));
+            try!(write!(t, " {} ", req.request_uri));
             try!(t.attr(attr::Bold));
             try!(write!(t, "-> "));
             try!(t.reset());
