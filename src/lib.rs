@@ -7,14 +7,16 @@ extern crate iron;
 extern crate time;
 extern crate term;
 
-use std::io::IoResult;
-
 use iron::{Middleware, Alloy, Request, Response};
 use iron::middleware::{Status, Continue};
-
 use time::precise_time_ns;
+use term::{Terminal, stdout};
 
-use term::{Terminal, stdout, attr, color};
+use std::io::IoResult;
+
+use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime};
+
+pub mod format;
 
 /// `Middleware` for logging request and response info to the terminal.
 /// `Logger` logs the request method, request URI, response status, and response
@@ -40,31 +42,34 @@ impl Middleware for Logger {
         Continue
     }
     fn exit(&mut self, req: &mut Request, res: &mut Response, _al: &mut Alloy) -> Status {
-        let ref mut status = res.status;
-        let status_color = match status.code() / 100 {
-            1 => color::BLUE, // Information
-            2 => color::GREEN, // Success
-            3 => color::YELLOW, // Redirection
-            _ => color::RED, // Error
-        };
         let response_time_ms = (precise_time_ns() - self.entry_time) as f64 / 1000000.0;
+        let Format(format) = Format::default(req, res);
 
-        // Log to terminal t in the format:
-        // {method} {uri} -> {status} ({response_time} ms)
+        let render = |text: FormatText| {
+            match text {
+                Str(str) => String::from_str(str),
+                Method => format!("{}", req.method),
+                URI => format!("{}", req.request_uri),
+                Status => format!("{}", res.status),
+                ResponseTime => format!("{} ms", response_time_ms)
+            }
+        };
         let log = |mut t: Box<Terminal<Box<Writer + Send>> + Send>| -> IoResult<()> {
-            try!(t.attr(attr::Bold));
-            try!(write!(t, "{}", req.method));
-            try!(t.reset());
-            try!(write!(t, " {} ", req.request_uri));
-            try!(t.attr(attr::Bold));
-            try!(write!(t, "-> "));
-            try!(t.reset());
-            try!(t.fg(status_color));
-            try!(write!(t, "{}", status));
-            try!(t.reset());
-            try!(writeln!(t, " ({} ms)", response_time_ms));
+            for unit in format.iter() {
+                match unit.color {
+                    Some(color) => { try!(t.fg(color)); }
+                    None => ()
+                }
+                for &attr in unit.attrs.iter() {
+                    try!(t.attr(attr));
+                }
+                try!(write!(t, "{}", render(unit.text)));
+                try!(t.reset());
+            }
+            try!(writeln!(t, ""));
             Ok(())
         };
+
         match stdout() {
             Some(terminal) => {
                 match log(terminal) {
