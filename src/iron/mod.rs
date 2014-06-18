@@ -8,16 +8,12 @@ use http::server;
 
 use super::ingot::Ingot;
 use super::furnace::Furnace;
-use super::response::{Response, HttpResponse};
-use super::request::{Request, HttpRequest};
+use super::furnace::stackfurnace::StackFurnace;
 
-use super::response::ironresponse::IronResponse;
-use super::request::ironrequest::IronRequest;
-use super::furnace::ironfurnace::IronFurnace;
+use super::response::Response;
+use super::request::Request;
 
-pub type ServerT =
-    Iron<IronRequest, IronResponse<'static, 'static>,
-         IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
+pub type ServerT = Iron<StackFurnace>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
