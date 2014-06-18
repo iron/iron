@@ -16,7 +16,7 @@ extern crate http;
 extern crate anymap;
 
 pub use request::Request;
-pub use response::Response;
+pub use response::{Response, ServeFile};
 
 pub use iron::{Iron, ServerT};
 pub use middleware::Middleware;
