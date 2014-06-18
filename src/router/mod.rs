@@ -49,10 +49,10 @@ impl<Rq, Rs> Router<Rq, Rs> {
                  params: Vec<String>, handler: Handler<Rq, Rs>) {
         self.add_route(Route {
             method: method,
-            matches: glob::deglob(glob.clone()),
-            params: params,
+            glob: glob.clone(),
+            matches: glob::deglob(glob),
             handler: handler,
-            glob: glob
+            params: params
         });
     }
 
