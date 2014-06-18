@@ -49,7 +49,7 @@ pub enum Status {
 /// This can either be an instance of that `Ingot` or some other type. Since
 /// the same `Alloy` is passed to all further `Ingots` in the `Furnace`, this
 /// scheme allows you to expose data or functionality to future `Ingots`.
-pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
+pub trait Ingot: Send + Clone {
     /// `enter` is called for each `Ingot` in a `Furnace` as a client request
     /// comes down the stack. `Ingots` should expose data through `Alloy` and
     /// store any data that will persist through the request here.
@@ -57,7 +57,10 @@ pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
     /// returning `Unwind` from this handler will cause the `Furnace` to stop
     /// going down the `Furnace's` stack and start bubbling back up and calling
     /// `exit`.
-    fn enter(&mut self, _request: &mut Rq, _response: &mut Rs, _alloy: &mut Alloy) -> Status {
+    fn enter(&mut self,
+             _request: &mut Request,
+             _response: &mut Response,
+             _alloy: &mut Alloy) -> Status {
         Continue
     }
 
@@ -69,13 +72,16 @@ pub trait Ingot<Rq: Request, Rs: Response>: Send + Clone {
     ///
     /// While this method must return a `Status`, most `Furnaces` will ignore
     /// this method's return value.
-    fn exit(&mut self, _request: &mut Rq, _response: &mut Rs, _alloy: &mut Alloy) -> Status {
+    fn exit(&mut self,
+            _request: &mut Request,
+            _response: &mut Response,
+            _alloy: &mut Alloy) -> Status {
         Continue
     }
 
-    fn clone_box(&self) -> Box<Ingot<Rq, Rs>> { box self.clone() as Box<Ingot<Rq, Rs>> }
+    fn clone_box(&self) -> Box<Ingot> { box self.clone() as Box<Ingot> }
 }
 
-impl<Rq: Request, Rs: Response> Clone for Box<Ingot<Rq, Rs>> {
-    fn clone(&self) -> Box<Ingot<Rq, Rs>> { self.clone_box() }
+impl Clone for Box<Ingot> {
+    fn clone(&self) -> Box<Ingot> { self.clone_box() }
 }
