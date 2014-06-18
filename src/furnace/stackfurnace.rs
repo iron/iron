@@ -6,23 +6,25 @@ use super::super::alloy::Alloy;
 use super::Furnace;
 
 /// The default `Furnace` used by `Iron`.
-/// `IronFurnace` just runs each request through all `Ingots` in its stack,
+/// `StackFurnace` just runs each request through all `Ingots` in its stack,
 /// then, when it hits an `Ingot` which returns `Unwind`, it will
-/// pass the request back up through all `Ingots` it has hit
-/// so far.
-pub struct IronFurnace<Rq, Rs> {
-    /// The storage used by `IronFurnace` to hold all Ingots
+/// pass the request back up through all `Ingots` it has hit so far.
+pub struct StackFurnace {
+    /// The storage used by `StackFurnace` to hold all Ingots
     /// that have been smelted on to it.
-    stack: Vec<Box<Ingot<Rq, Rs> + Send>>
+    stack: Vec<Box<Ingot + Send>>
 }
 
-impl<Rq: Request, Rs: Response> Clone for IronFurnace<Rq, Rs> {
-    fn clone(&self) -> IronFurnace<Rq, Rs> { IronFurnace { stack: self.stack.clone() } }
+impl Clone for StackFurnace {
+    fn clone(&self) -> StackFurnace { StackFurnace { stack: self.stack.clone() } }
 }
 
-/// `IronFurnace` is a `Furnace`
-impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
-    fn forge(&mut self, request: &mut Rq, response: &mut Rs, opt_alloy: Option<&mut Alloy>) {
+/// `StackFurnace` is a `Furnace`
+impl Furnace for StackFurnace {
+    fn forge(&mut self,
+             request: &mut Request,
+             response: &mut Response,
+             opt_alloy: Option<&mut Alloy>) {
         // Create a placeholder alloy.
         let mut alloy = &mut Alloy::new();
 
@@ -56,13 +58,13 @@ impl<Rq: Request, Rs: Response> Furnace<Rq, Rs> for IronFurnace<Rq, Rs> {
         }
     }
     /// Add an `Ingot` to the `Furnace`.
-    fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
+    fn smelt<I: Ingot>(&mut self, ingot: I) {
         self.stack.push(box ingot);
     }
 
-    /// Create a new instance of `IronFurnace`.
-    fn new() -> IronFurnace<Rq, Rs> {
-        IronFurnace {
+    /// Create a new instance of `StackFurnace`.
+    fn new() -> StackFurnace {
+        StackFurnace {
             stack: vec![]
         }
     }

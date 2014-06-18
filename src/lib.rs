@@ -22,7 +22,7 @@ pub use iron::{Iron, ServerT};
 pub use ingot::Ingot;
 
 pub use furnace::Furnace;
-pub use furnace::ironfurnace::IronFurnace;
+pub use furnace::stackfurnace::StackFurnace;
 
 pub use alloy::Alloy;
 
