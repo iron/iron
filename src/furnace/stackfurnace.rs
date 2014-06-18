@@ -6,12 +6,12 @@ use super::super::alloy::Alloy;
 use super::Furnace;
 
 /// The default `Furnace` used by `Iron`.
-/// `StackFurnace` just runs each request through all `Ingots` in its stack,
-/// then, when it hits an `Ingot` which returns `Unwind`, it will
-/// pass the request back up through all `Ingots` it has hit so far.
+/// `StackFurnace` runs each `Request` through all `Middleware` in its stack.
+/// When it hits `Middleware` which returns `Unwind`, it passes
+/// the `Request` back up through all `Middleware` it has hit so far.
 pub struct StackFurnace {
-    /// The storage used by `StackFurnace` to hold all Ingots
-    /// that have been smelted on to it.
+    /// The storage used by `StackFurnace` to hold all `Middleware`
+    /// that have been `smelted` on to it.
     stack: Vec<Box<Middleware + Send>>
 }
 
@@ -36,15 +36,15 @@ impl Furnace for StackFurnace {
             None => ()
         };
 
-        // The exit_stack will hold all Ingots that are passed through
+        // The `exit_stack` will hold all `Middleware` that are passed through
         // in the enter loop. This is so we know to take exactly the same
-        // path through ingots in reverse order that we did on the way in.
+        // path through `Middleware` in reverse order than we did on the way in.
         let mut exit_stack = vec![];
 
         'enter: for middleware in self.stack.mut_iter() {
             match middleware.enter(request, response, alloy) {
                 Unwind   => break 'enter,
-                // Mark the ingot for traversal on exit.
+                // Mark the middleware for traversal on exit.
                 Continue => exit_stack.push(middleware)
             }
         }
@@ -52,12 +52,12 @@ impl Furnace for StackFurnace {
         // Reverse the stack so we go through in the reverse order.
         // i.e. LIFO.
         exit_stack.reverse();
-        // Call each ingots exit handler.
+        // Call each middleware's exit handler.
         'exit: for middleware in exit_stack.mut_iter() {
             let _ = middleware.exit(request, response, alloy);
         }
     }
-    /// Add an `Ingot` to the `Furnace`.
+    /// Add `Middleware` to the `Furnace`.
     fn smelt<M: Middleware>(&mut self, middleware: M) {
         self.stack.push(box middleware);
     }

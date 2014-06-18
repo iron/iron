@@ -1,29 +1,30 @@
 //! Exposes the `Alloy` type, a flexible storage container
-//! that `Ingots` may use to expose new APIs or public data
-//! to other `Ingots`.
+//! that `Middleware` may use to expose new APIs or public data
+//! to other `Middleware`.
 
 use anymap::AnyMap;
 
 /// `Alloy` wraps an AnyMap, a map allowing storage keyed by type
-/// to allow for persistent data across `Ingots`.
+/// to allow for persistent data across `Middleware`.
 ///
-/// `Ingots` can be inserted into an `Alloy` and retrieved later. Data needing
-/// exposure across `Ingots` and persistence (for example, a body parser's parsed data)
-/// should be stored on the `Ingot` and retrieved later from the `Alloy`.
+/// `Middleware` can be inserted into an `Alloy` and retrieved later. Data needing
+/// exposure across `Middleware` and persistence (for example, a body parser's parsed data)
+/// should be stored and retrieved later from the `Alloy`.
 ///
 /// Only one instance of any type can be stored in the `Alloy` at a time.
-/// Best practice is to store targeted data. For example, for a body parser
+/// Best practice is to store targeted data. For example, for a body parser,
+/// rather than store the `Middleware`, store a `Parsed` type:
 ///
 /// ```ignore
-/// impl<Rq, Rs> Ingot for BodyParser {
+/// impl<Rq, Rs> Middleware for BodyParser {
 ///     fn enter(req: &mut Rq, res: &mut Rs, alloy: &mut Alloy) -> Status {
 ///         let parsed: Parsed = ...; // Parse the body
-///         alloy.insert(Parsed);
+///         alloy.insert::<Parsed>(Parsed);
 ///     }
 /// }
 /// ```
 ///
-/// In most cases, the `Ingot` itself does not need to be exposed,
+/// In most cases, the `Middleware` itself does not need to be exposed,
 /// and should not be stored on the `Alloy`.
 pub struct Alloy {
     map: AnyMap

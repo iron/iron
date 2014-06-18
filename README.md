@@ -3,9 +3,9 @@ Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)]
 
 > Express inspired, rapid, scalable, concurrent and safe server development
 
-Iron is a high level web framework built in and for Rust. Iron does not come
-bundled with any middleware, which Iron calls Ingots - instead, Iron is a
-robust and efficient framework for plugging in middleware.
+Iron is a high level web framework built in and for Rust.
+Iron does not come bundled with any middleware - instead,
+Iron is a robust and efficient framework for plugging in middleware.
 
 After spawning, handling a single request through Iron’s middleware stack
 with a single no-op middleware takes only _300 nanoseconds_.
@@ -33,7 +33,7 @@ Iron aims to fill a void in the Rust web stack - a high level framework that is
 
 Whereas other web frameworks have focused mostly on creating an easy-to-use
 routing system, Iron focuses on providing a clean API for creating
-Ingots/middleware and integrating them in Iron servers.
+middleware and integrating them in Iron servers.
 
 In fact, Routing is middleware in Iron, as are Mounting, Body Parsing, and most
 other features. This allows for insanely flexible setups and allows almost all
@@ -58,7 +58,7 @@ use router::{Router, Params};
 use logger:Logger;
 use hypothetical::database;
 
-fn setup_api_v1<Rq: Request, Rs: Response>(router: &mut Router<Rq, Rs>) {
+fn setup_api_v1(router: &mut Router) {
     router.get('/users/:userid', |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
         let params = alloy.find::<Params>().unwrap();
         res.write(database::get("Users", params.get("userid").unwrap()));
@@ -88,14 +88,15 @@ fn main() {
 
 \* Most of these middleware are in development and not finished yet.
 
-Here’s a sample middleware implementation of a RequestTimer Ingot:
+Here’s a sample middleware implementation of a RequestTimer middleware:
 
 ```rust
 extern crate iron;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Request, Response, Ingot, Alloy, ServerT};
+use iron::{Request, Response, Middleware, Alloy, ServerT};
+use iron::middleware::{Status, Continue};
 
 use time::precise_time_ns;
 
@@ -106,13 +107,13 @@ struct ResponseTime {
 
 impl ResponseTime { fn new() -> ResponseTime { ResponseTime(0u64) } }
 
-impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for ResponseTime {
-    fn enter(&mut self, _req: &mut Rq, _res: &mut Rs, _al: &mut Alloy) -> ingot::Status {
+impl Middleware for ResponseTime {
+    fn enter(&mut self, _req: &mut Request, _res: &mut Response, _al: &mut Alloy) -> Status {
         self.entry = precise_time_ns();
         Continue
     }
 
-    fn exit(&mut self, _req: &mut Rq, _res: &mut Rs, _al: &mut Alloy) -> ingot::Status {
+    fn exit(&mut self, _req: &mut Request, _res: &mut Respose, _al: &mut Alloy) -> Status {
         let delta = precise_time_ns() - self.enty;
         println!("Request took: {} ms", (delta as f64) / 100000.0);
         Continue
@@ -122,8 +123,8 @@ impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for ResponseTime {
 fn main() {
     let mut server: ServerT = Iron::new();
 
-    // This adds the ResponseTime ingot to have all requests and responses be
-    // passed through it.
+    // This adds the ResponseTime middleware so that
+    // all requests and responses are passed through it.
     server.smelt(ResponseTime::new());
 
     // Start the server on localhost:3000

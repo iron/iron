@@ -21,19 +21,17 @@ pub type ServerT = Iron<StackFurnace>;
 /// The server can be made with a specific `Furnace` (using `from_furnace`)
 /// or with a new `Furnace` (using `new`). `Iron` is used to manage the server
 /// processes:
-/// `Iron.smelt` is used to add new `Ingot`s, and
+/// `Iron.smelt` is used to add new `Middleware`, and
 /// `Iron.listen` is used to kick off a server process.
 ///
-/// `Iron` contains the `Furnace` which holds the `Ingot`s necessary to run a server.
-/// `Iron` is the main interface to adding `Ingot`s, and has `Furnace` as a
+/// `Iron` contains the `Furnace` which holds the `Middleware` necessary to run a server.
+/// `Iron` is the main interface to adding `Middleware`, and has `Furnace` as a
 /// public field (for the sake of extensibility).
 pub struct Iron<F> {
-    /// The exposed internal field for storing `Furnace`.
-    ///
     /// This is exposed for the sake of extensibility. It can be used to set
     /// furnace to implement your server's middleware stack with custom behavior.
     /// Most users will not need to touch `furnace`. This should only be used if you
-    /// need custom handling of `Ingot`s. Normally, the default `IronFurnace` is
+    /// need custom handling of `Middleware`. Normally, the default `StackFurnace` is
     /// sufficient.
     pub furnace: F,
     ip: Option<IpAddr>,
@@ -51,12 +49,12 @@ impl<F: Clone> Clone for Iron<F> {
 }
 
 impl<F: Furnace> Iron<F> {
-    /// `smelt` a new `Ingot`.
+    /// `smelt` a new `Middleware`.
     ///
-    /// This adds an `Ingot` to the `Iron`'s `furnace`, so that any requests
-    /// are passed through those `Ingot`s.
+    /// Adds `Middleware` to the `Iron's` `furnace`, so that any requests
+    /// are passed through those `Middleware`.
     ///
-    /// `Iron.smelt` delegates to `iron.furnace.smelt`, so that any `Ingot`
+    /// `Iron.smelt` delegates to `Iron.furnace.smelt`, so that any `Middleware`
     /// added is added to the `Iron` instance's `furnace`.
     pub fn smelt<M: Middleware>(&mut self, middleware: M) {
         self.furnace.smelt(middleware);
@@ -67,7 +65,7 @@ impl<F: Furnace> Iron<F> {
     /// Call this once to begin listening for requests on the server.
     /// This is a blocking operation, and is the final op that should be called
     /// on the `Iron` instance. Once `listen` is called, requests will be
-    /// handled as defined through the `Iron`'s `furnace`'s `Ingot`s.
+    /// handled as defined through the `Iron's` `furnace's` `Middleware`.
     pub fn listen(mut self, ip: IpAddr, port: u16) {
         self.ip = Some(ip);
         self.port = Some(port);
@@ -77,7 +75,7 @@ impl<F: Furnace> Iron<F> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server.
-    /// This creates an `Iron` with a default `furnace`, the `IronFurnace`.
+    /// This creates an `Iron` with a default `furnace`, the `StackFurnace`.
     ///
     /// Custom furnaces can be used with `from_furnace`, instead of `new`.
     #[inline]
@@ -93,16 +91,15 @@ impl<F: Furnace> Iron<F> {
     ///
     /// This will create a new `Iron` from a give `Furnace`.
     ///
-    /// This `Furnace` *may already have `Ingot`s in it*. An empty default
+    /// This `Furnace` *may already have `Middleware` in it*. An empty default
     /// `Furnace` can be created more easily using `new`.
     ///
-    /// The `Furnace` can also be configured to handle `Ingot`s differently than
-    /// `IronFurnace`. For example, this can be used to implement a `Furnace`
+    /// The `Furnace` can also be configured to handle `Middleware` differently than
+    /// `StackFurnace`. For example, this can be used to implement a `Furnace`
     /// that logs debug messages as it serves requests.
     ///
     /// Most users will not need to touch `from_furnace`. This should only be
-    /// used if you need custom handling of `Ingot`s. Normally, the default
-    /// `IronFurnace` is sufficient.
+    /// used if you need custom handling of `Middleware`.
     pub fn from_furnace<F>(furnace: F) -> Iron<F> {
         Iron {
             furnace: furnace,
@@ -112,7 +109,7 @@ impl<F: Furnace> Iron<F> {
     }
 }
 
-/// This is unused but required for internal functionality.
+/// Unused, but required for internal functionality.
 ///
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
