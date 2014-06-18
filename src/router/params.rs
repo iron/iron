@@ -26,8 +26,12 @@ mod test {
 
     #[test]
     fn test_new() {
-        let params = Params::new("/users/7324", deglob("/users/:userid".to_string()), vec!["userid".to_string()].move_iter());
+        let params = Params::new(
+            "/users/7324/235",
+            deglob("/users/:userid/:groupid".to_string()),
+            vec!["userid".to_string(), "groupid".to_string()].move_iter());
         assert_eq!(params.get("userid").unwrap(), "7324".to_string());
+        assert_eq!(params.get("groupid").unwrap(), "235".to_string());
     }
 
     #[bench]
