@@ -47,61 +47,62 @@ versions:
 
 ```rust
 extern crate iron;
-extern crate router = "iron-router";
-extern crate mount = "iron-mount";
-extern crate bodyparser = "iron-body-parser";
-extern crate json = "iron-json";
+extern crate router;
+extern crate mount;
+extern crate logger;
 
-use json::JSON;
+use std::io::net::ip::Ipv4Addr;
+
 use iron::{Request, Response, Alloy, ServerT};
-
-use router::Router;
-use mount::Mount;
-use bodyparser::{BodyParser, Parsed};
+use router::{Router, Params};
+use logger:Logger;
 use hypothetical::database;
 
-fn setup_api_v1<Rq: Request, Rs: Response>(&mut Router<Rq, Rs>) {
-    Router.get(match!('/users/'), |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
-        // Will be `depends_on!(JSON -> send)` in the future
-        let send = alloy.find::<JSON>().unwrap().send;
-
-        send(res, 200, database::read("Users"));
+fn setup_api_v1<Rq: Request, Rs: Response>(router: &mut Router<Rq, Rs>) {
+    router.get('/users/:userid', |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
+        let params = alloy.find::<Params>().unwrap();
+        res.write(database::get("Users", params.get("userid").unwrap()));
     });
 }
-fn setup_api_v2(&mut Router) { ... }
+fn setup_api_v2(router: &mut Router) { ... }
 
 fn main() {
-    let api_v1_router = setup_api_v1(Router::new());
-    let api_v2_router = setup_api_v2(Router::new());
+    let api_v1_router = setup_api_v1(&mut Router::new());
+    let api_v2_router = setup_api_v2(&mut Router::new());
 
     let mut server: ServerT = Iron::new();
 
-    // Setup JSON middleware
-    server.smelt(JSON::new());
+    // Setup Logging middleware
+    server.smelt(Logger::new());
 
     // Mount sub-instances of Iron.
     // mount! is a macro from Mount that creates a sub-instance of Iron
     // with the second argument smelted on to it.
-    server.smelt(mount!(match!("/api/v1"), api_v1_router));
-    server.smelt(mount!(match!("/api/v2"), api_v2_router));
+    server.smelt(mount!("/api/v1", api_v1_router));
+    server.smelt(mount!("/api/v2", api_v2_router));
+
+    server.listen(Ipv4addr(127, 0, 0, 1), 3000);
 }
 
 ```
 
 \* Most of these middleware are in development and not finished yet.
 
-Here’s a sample Ingot/middleware implementation of a RequestTimer Ingot:
+Here’s a sample middleware implementation of a RequestTimer Ingot:
 
 ```rust
 extern crate iron;
 extern crate time;
 
+use std::io::net::ip::Ipv4Addr;
 use iron::{Request, Response, Ingot, Alloy, ServerT};
 
 use time::precise_time_ns;
 
 #[deriving(Clone)]
-struct ResponseTime(u64);
+struct ResponseTime {
+    entry: u64
+};
 
 impl ResponseTime { fn new() -> ResponseTime { ResponseTime(0u64) } }
 
