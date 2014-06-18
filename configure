@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Determine target architecture
+TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
+
 # Update dependencies from git
 # $1: git
 #     The git uri from which to download the dependency
@@ -10,8 +13,6 @@
 # $4: build command
 #     The argument to pass to make (not required)
 updateDependency () {
-# Determine target architecture
-  TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
 # Fetch local copy (can be reset with make clean)
   git clone $1 deps/$2
 # Build dependency
@@ -30,3 +31,4 @@ updateDependency () {
   cp deps/$2$3/* target/$TARGET/lib/
 }
 
+updateDependency 'https://github.com/iron/iron' 'iron' "/target/$TARGET/lib"

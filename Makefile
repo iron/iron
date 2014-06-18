@@ -26,7 +26,7 @@ SHELL := /bin/bash
 
 # The default make command.
 # Change this to 'lib' if you are building a library.
-DEFAULT = help
+DEFAULT = lib
 # The entry file of library source.
 # Change this to support multi-crate source structure.
 # For advanced usage, you can rename the file 'rust-empty.mk'
@@ -73,7 +73,7 @@ endif
 all: $(DEFAULT)
 
 help:
-	$(Q)echo "--- rust-empty (0.4 004)" \
+	$(Q)echo "--- rust-empty (0.5 000)" \
 	&& echo "make run               - Runs executable" \
 	&& echo "make exe               - Builds main executable" \
 	&& echo "make lib               - Both static and dynamic library" \
@@ -95,6 +95,7 @@ help:
 	&& echo "make rust-ci-lib       - Setup Travis CI Rust library" \
 	&& echo "make rust-ci-exe       - Setup Travis CI Rust executable" \
 	&& echo "make rusti             - Setup 'rusti.sh' for interactive Rust" \
+	&& echo "make watch             - Setup 'watch.sh' for compilation on save" \
 	&& echo "make loc               - Count lines of code in src folder" \
 	&& echo "make nightly-install   - Installs Rust nightly built" \
 	&& echo "make nightly-uninstall - Uninstalls Rust nightly built" \
@@ -126,7 +127,8 @@ help:
 		target-dir \
 		test \
 		test-internal \
-		test-external
+		test-external \
+		watch
 
 nightly-install:
 	$(Q)cd ~ \
@@ -318,7 +320,7 @@ git-ignore:
 	) \
 	|| \
 	( \
-		echo -e ".DS_Store\n*~\n*#\n*.o\n*.so\n*.swp\n*.dylib\n*.dSYM\n*.dll\n*.rlib\n*.dummy\n*.exe\n*-test\n/bin/main\n/bin/test-internal\n/bin/test-external\n/doc/\n/target/\n/build/\n/.rust/\nrusti.sh\n/examples/*\n!/examples/*.rs" > .gitignore \
+		echo -e ".DS_Store\n*~\n*#\n*.o\n*.so\n*.swp\n*.dylib\n*.dSYM\n*.dll\n*.rlib\n*.dummy\n*.exe\n*-test\n/bin/main\n/bin/test-internal\n/bin/test-external\n/doc/\n/target/\n/build/\n/.rust/\nrusti.sh\nwatch.sh\n/examples/**\n!/examples/*.rs\n!/examples/assets/" > .gitignore \
 		&& echo "--- Created '.gitignore' for git" \
 		&& cat .gitignore \
 	)
@@ -362,8 +364,10 @@ clean:
 clear-project:
 	$(Q)rm -f ".symlink-info"
 	$(Q)rm -f "cargo-lite.conf"
+	$(Q)rm -f "Cargo.toml"
 	$(Q)rm -f ".travis.yml"
 	$(Q)rm -f "rusti.sh"
+	$(Q)rm -f "watch.sh"
 	$(Q)rm -rf "target/"
 	$(Q)rm -rf "src/"
 	$(Q)rm -rf "bin/"
@@ -442,6 +446,76 @@ rusti: $(TARGET_LIB_DIR)
 		&& chmod +x rusti.sh \
 		&& echo "--- Created 'rusti.sh'" \
 		&& echo "--- Type './rusti.sh' to start interactive Rust" \
+	)
+
+# borrowed from http://stackoverflow.com/q/649246/1256624
+define WATCH_SCRIPT
+#!/bin/bash
+
+#written by zzmp
+
+# This script will recompile a rust project using `make`
+# every time something in the specified directory changes.
+
+# Watch files in infinite loop
+watch () {
+  if [ -e "$$2" ]; then
+    echo "Watching files in $$2.."
+    CTIME=$$(date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s")
+    while :; do
+      sleep 1
+      for f in `find $$2 -type f -name "*.rs"`; do
+        eval $$(stat -s $$f)
+        if [ $$st_mtime -gt $$CTIME ]; then
+          CTIME=$$(date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s")
+          echo "~~~ Rebuilding"
+          $$1
+        fi
+      done
+    done
+  else
+    echo "$$2 is not a valid directory"
+  fi
+}
+
+# Capture user input with defaults
+CMD=$${1:-make}
+DIR=$${2:-src}
+
+if [ $${CMD:0:2} = '-h' ]; then
+echo '
+This script will recompile a rust project using `make`
+every time something in the specified directory changes.
+
+Use: ./watch.sh [CMD] [DIR]
+Example: ./watch.sh "make run" src
+
+CMD: Command to execute
+     Complex commands may be passed as strings
+     `make` by default
+DIR: Directory to watch
+     src by default
+
+If DIR is supplied, CMD must be as well.\n'
+else
+  watch "$$CMD" "$$DIR"
+fi
+
+endef
+export WATCH_SCRIPT
+
+watch: $(TARGET_LIB_DIR)
+	$(Q)( \
+		test -e watch.sh \
+		&& echo "--- The file 'watch.sh' already exists" \
+	) \
+	|| \
+	( \
+		echo -e "$$WATCH_SCRIPT" > watch.sh \
+		&& chmod +x watch.sh \
+		&& echo "--- Created 'watch.sh'" \
+		&& echo "--- Type './watch.sh' to start compilation on save" \
+		&& echo "--- Type './watch.sh -h' for more options" \
 	)
 
 loc:
