@@ -9,10 +9,18 @@ mod glob;
 
 pub type Handler<Rq, Rs> = fn(&mut Rq, &mut Rs, &mut Alloy) -> ();
 
-#[deriving(Clone)]
 pub struct Router<Rq, Rs> {
     options: Vec<Method>,
     routes: Vec<Route<Rq, Rs>>
+}
+
+impl<Rq, Rs> Clone for Router<Rq, Rs> {
+    fn clone(&self) -> Router<Rq, Rs> {
+        Router {
+            options: self.options.clone(),
+            routes: self.routes.clone()
+        }
+    }
 }
 
 struct Route<Rq, Rs> {
@@ -56,7 +64,7 @@ impl<Rq, Rs> Router<Rq, Rs> {
     }
 }
 
-impl<Rq: Request + Clone, Rs: Response + Clone> Ingot<Rq, Rs> for Router<Rq, Rs> {
+impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for Router<Rq, Rs> {
     fn enter(&mut self, req: &mut Rq, res: &mut Rs, alloy: &mut Alloy) -> Status {
         if *req.method() == Options {
             match res.write(
