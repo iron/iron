@@ -19,8 +19,9 @@ use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime};
 pub mod format;
 
 /// `Middleware` for logging request and response info to the terminal.
-/// `Logger` logs the request method, request URI, response status, and response
-/// time in the format:
+/// `Logger` currently logs the request method, request URI, response status, and response
+/// time in the default format:
+///
 /// ```
 /// {method} {uri} -> {status} ({response_time} ms)
 /// ```
