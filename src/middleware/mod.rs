@@ -79,6 +79,8 @@ pub trait Middleware: Send + Clone {
         Continue
     }
 
+    // Helper function to clone the Middleware.
+    #[allow(missing_doc)]
     fn clone_box(&self) -> Box<Middleware> { box self.clone() as Box<Middleware> }
 }
 
