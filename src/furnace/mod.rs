@@ -5,6 +5,7 @@ use super::request::Request;
 use super::alloy::Alloy;
 use super::middleware::Middleware;
 
+/// The default `Furnace` used by `Iron`.
 pub mod stackfurnace;
 
 /// `Furnaces` are the backbone of `Iron`. They coordinate `Middleware`
