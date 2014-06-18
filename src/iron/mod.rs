@@ -6,7 +6,7 @@ use std::io::net::ip::{SocketAddr, IpAddr};
 use http::server::{Server, Config};
 use http::server::request::{Star, AbsoluteUri, AbsolutePath, Authority};
 
-use super::ingot::Ingot;
+use super::middleware::Middleware;
 
 use super::furnace::Furnace;
 use super::furnace::stackfurnace::StackFurnace;
@@ -58,8 +58,8 @@ impl<F: Furnace> Iron<F> {
     ///
     /// `Iron.smelt` delegates to `iron.furnace.smelt`, so that any `Ingot`
     /// added is added to the `Iron` instance's `furnace`.
-    pub fn smelt<I: Ingot>(&mut self, ingot: I) {
-        self.furnace.smelt(ingot);
+    pub fn smelt<M: Middleware>(&mut self, middleware: M) {
+        self.furnace.smelt(middleware);
     }
 
     /// Kick off the server process.

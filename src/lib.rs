@@ -19,7 +19,7 @@ pub use request::Request;
 pub use response::Response;
 
 pub use iron::{Iron, ServerT};
-pub use ingot::Ingot;
+pub use middleware::Middleware;
 
 pub use furnace::Furnace;
 pub use furnace::stackfurnace::StackFurnace;
@@ -28,7 +28,7 @@ pub use alloy::Alloy;
 
 pub mod request;
 pub mod response;
-pub mod ingot;
+pub mod middleware;
 pub mod alloy;
 pub mod furnace;
 pub mod iron;

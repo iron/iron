@@ -1,6 +1,6 @@
 use super::super::request::Request;
 use super::super::response::Response;
-use super::super::ingot::{Ingot, Continue, Unwind};
+use super::super::middleware::{Middleware, Continue, Unwind};
 use super::super::alloy::Alloy;
 
 use super::Furnace;
@@ -12,7 +12,7 @@ use super::Furnace;
 pub struct StackFurnace {
     /// The storage used by `StackFurnace` to hold all Ingots
     /// that have been smelted on to it.
-    stack: Vec<Box<Ingot + Send>>
+    stack: Vec<Box<Middleware + Send>>
 }
 
 impl Clone for StackFurnace {
@@ -41,11 +41,11 @@ impl Furnace for StackFurnace {
         // path through ingots in reverse order that we did on the way in.
         let mut exit_stack = vec![];
 
-        'enter: for ingot in self.stack.mut_iter() {
-            match ingot.enter(request, response, alloy) {
+        'enter: for middleware in self.stack.mut_iter() {
+            match middleware.enter(request, response, alloy) {
                 Unwind   => break 'enter,
                 // Mark the ingot for traversal on exit.
-                Continue => exit_stack.push(ingot)
+                Continue => exit_stack.push(middleware)
             }
         }
 
@@ -53,13 +53,13 @@ impl Furnace for StackFurnace {
         // i.e. LIFO.
         exit_stack.reverse();
         // Call each ingots exit handler.
-        'exit: for ingot in exit_stack.mut_iter() {
-            let _ = ingot.exit(request, response, alloy);
+        'exit: for middleware in exit_stack.mut_iter() {
+            let _ = middleware.exit(request, response, alloy);
         }
     }
     /// Add an `Ingot` to the `Furnace`.
-    fn smelt<I: Ingot>(&mut self, ingot: I) {
-        self.stack.push(box ingot);
+    fn smelt<M: Middleware>(&mut self, middleware: M) {
+        self.stack.push(box middleware);
     }
 
     /// Create a new instance of `StackFurnace`.
