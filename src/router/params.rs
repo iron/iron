@@ -9,7 +9,11 @@ impl Params {
     pub fn new<I: Iterator<String>>(uri: &str, matcher: Regex, params: I) -> Params {
         let captures = matcher.captures(uri).unwrap();
         Params {
-            captures: params.map(|p| (p.clone(), captures.name(p.as_slice()).to_string())).collect()
+            captures: params.map(
+                          // Map captures into (String, String) pairs so they
+                          // can be collected into a HashMap<String, String>
+                          |p| (p.clone(), captures.name(p.as_slice()).to_string())
+                      ).collect()
         }
     }
 
