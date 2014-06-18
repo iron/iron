@@ -32,5 +32,5 @@ updateDependency () {
 }
 
 updateDependency 'https://github.com/sfackler/rust-openssl.git' 'rust-openssl' '/build'
-updateDependency 'https://github.com/chris-morgan/rust-http.git' 'rust-http' '/build'
-updateDependency 'https://github.com/reem/anymap.git' 'anymap' '/build'
+updateDependency 'https://github.com/reem/rust-http.git' 'rust-http' '/build'
+updateDependency 'https://github.com/chris-morgan/anymap.git' 'anymap' '/build'
