@@ -2,7 +2,7 @@
 #![comment = "Rapid Web Development in Rust"]
 #![license = "MIT"]
 
-//#![deny(missing_doc)]
+#![deny(missing_doc)]
 #![deny(unused_result)]
 #![deny(unnecessary_qualification)]
 #![deny(non_camel_case_types)]
