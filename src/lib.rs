@@ -16,16 +16,13 @@ extern crate http;
 extern crate anymap;
 
 pub use request::Request;
-pub use request::ironrequest::IronRequest;
-
 pub use response::Response;
-pub use response::ironresponse::IronResponse;
 
 pub use iron::{Iron, ServerT};
 pub use ingot::Ingot;
 
 pub use furnace::Furnace;
-pub use furnace::ironfurnace::IronFurnace;
+pub use furnace::stackfurnace::StackFurnace;
 
 pub use alloy::Alloy;
 

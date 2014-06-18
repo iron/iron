@@ -4,20 +4,17 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
 
 use http::server::{Server, Config};
-use http::server;
+use http::server::request::{Star, AbsoluteUri, AbsolutePath, Authority};
 
 use super::ingot::Ingot;
+
 use super::furnace::Furnace;
-use super::response::{Response, HttpResponse};
-use super::request::{Request, HttpRequest};
+use super::furnace::stackfurnace::StackFurnace;
 
-use super::response::ironresponse::IronResponse;
-use super::request::ironrequest::IronRequest;
-use super::furnace::ironfurnace::IronFurnace;
+use super::response::Response;
+use super::request::Request;
 
-pub type ServerT =
-    Iron<IronRequest, IronResponse<'static, 'static>,
-         IronFurnace<IronRequest, IronResponse<'static, 'static>>>;
+pub type ServerT = Iron<StackFurnace>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -30,7 +27,7 @@ pub type ServerT =
 /// `Iron` contains the `Furnace` which holds the `Ingot`s necessary to run a server.
 /// `Iron` is the main interface to adding `Ingot`s, and has `Furnace` as a
 /// public field (for the sake of extensibility).
-pub struct Iron<Rq, Rs, F> {
+pub struct Iron<F> {
     /// The exposed internal field for storing `Furnace`.
     ///
     /// This is exposed for the sake of extensibility. It can be used to set
@@ -43,8 +40,8 @@ pub struct Iron<Rq, Rs, F> {
     port: Option<u16>
 }
 
-impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
-    fn clone(&self) -> Iron<Rq, Rs, F> {
+impl<F: Clone> Clone for Iron<F> {
+    fn clone(&self) -> Iron<F> {
         Iron {
             furnace: self.furnace.clone(),
             ip: self.ip.clone(),
@@ -53,11 +50,7 @@ impl<Rq, Rs, F: Clone> Clone for Iron<Rq, Rs, F> {
     }
 }
 
-impl<'a, 'b,
-     Rq: Request + HttpRequest,
-     Rs: Response + HttpResponse<'a, 'b>,
-     F: Furnace<Rq, Rs>>
-        Iron<Rq, Rs, F> {
+impl<F: Furnace> Iron<F> {
     /// `smelt` a new `Ingot`.
     ///
     /// This adds an `Ingot` to the `Iron`'s `furnace`, so that any requests
@@ -65,7 +58,7 @@ impl<'a, 'b,
     ///
     /// `Iron.smelt` delegates to `iron.furnace.smelt`, so that any `Ingot`
     /// added is added to the `Iron` instance's `furnace`.
-    pub fn smelt<I: Ingot<Rq, Rs>>(&mut self, ingot: I) {
+    pub fn smelt<I: Ingot>(&mut self, ingot: I) {
         self.furnace.smelt(ingot);
     }
 
@@ -88,10 +81,9 @@ impl<'a, 'b,
     ///
     /// Custom furnaces can be used with `from_furnace`, instead of `new`.
     #[inline]
-    pub fn new<Rq, Rs>() -> Iron<Rq, Rs, F> {
-        let furnace = Furnace::new();
+    pub fn new() -> Iron<F> {
         Iron {
-            furnace: furnace,
+            furnace: Furnace::new(),
             ip: None,
             port: None
         }
@@ -111,7 +103,7 @@ impl<'a, 'b,
     /// Most users will not need to touch `from_furnace`. This should only be
     /// used if you need custom handling of `Ingot`s. Normally, the default
     /// `IronFurnace` is sufficient.
-    pub fn from_furnace<Rq, Rs, F>(furnace: F) -> Iron<Rq, Rs, F> {
+    pub fn from_furnace<F>(furnace: F) -> Iron<F> {
         Iron {
             furnace: furnace,
             ip: None,
@@ -125,11 +117,7 @@ impl<'a, 'b,
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
-impl<'a, 'b,
-     Rq: Request + HttpRequest,
-     Rs: Response + HttpResponse<'a, 'b>,
-     F: Furnace<Rq, Rs>>
-        Server for Iron<Rq, Rs, F> {
+impl<F: Furnace> Server for Iron<F> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
             ip: self.ip.unwrap(),
@@ -137,18 +125,27 @@ impl<'a, 'b,
         } }
     }
 
-    fn handle_request(&self, req: &server::Request, res: &mut server::ResponseWriter) {
+    fn handle_request(&self, req: &Request, res: &mut Response) {
         let mut furnace = self.furnace.clone();
-        handler::<'a, 'b, Rq, Rs, F>(&mut furnace, req, res);
+        furnace.forge(&mut copy_request(req), res, None);
     }
 }
 
-fn handler<'a, 'b,
-            Rq: Request + HttpRequest,
-            Rs: Response + HttpResponse<'a, 'b>,
-            F: Furnace<Rq, Rs>>
-        (furnace: &mut F, req: &server::Request, res: &mut server::ResponseWriter) {
-    let mut request: Rq = HttpRequest::from_http(req);
-    let mut response: Rs = HttpResponse::from_http(res);
-    furnace.forge(&mut request, &mut response, None);
+// Makes up for no Clone impl on Request objects.
+fn copy_request(req: &Request) -> Request {
+    Request {
+        remote_addr: req.remote_addr,
+        headers: req.headers.clone(),
+        body: req.body.clone(),
+        method: req.method.clone(),
+        request_uri: match req.request_uri {
+            Star => Star,
+            AbsoluteUri(ref u) => AbsoluteUri(u.clone()),
+            AbsolutePath(ref p) => AbsolutePath(p.clone()),
+            Authority(ref s) => Authority(s.clone())
+        },
+        close_connection: req.close_connection,
+        version: (1, 1)
+    }
 }
+
