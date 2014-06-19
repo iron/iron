@@ -5,6 +5,8 @@ use std::io::util::copy;
 
 pub use Response = http::server::response::ResponseWriter;
 
+mod mimes;
+
 /// Allow file-serving
 pub trait ServeFile: Writer {
     /// Serve the file located at `path`.
