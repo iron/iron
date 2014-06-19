@@ -32,7 +32,7 @@ updateDependency () {
 }
 
 updateDependency 'https://github.com/sfackler/rust-openssl.git' 'rust-openssl' '/build'
-updateDependency 'https://github.com/reem/rust-http.git' 'rust-http' '/build'
+updateDependency 'https://github.com/chris-morgan/rust-http.git' 'rust-http' '/build'
 updateDependency 'https://github.com/chris-morgan/anymap.git' 'anymap' '/build'
 
 curl http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types | \
