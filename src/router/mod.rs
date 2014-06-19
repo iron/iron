@@ -1,8 +1,10 @@
 use regex::Regex;
-use http::method::{Method, Options};
-use http::status::{InternalServerError};
+use http::method::Method;
 use iron::{Middleware, Request, Response, Alloy};
 use iron::middleware::{Status, Continue, Unwind};
+use iron::request::GetUrl;
+// Waiting on upstream changes.
+//use iron::mixins::{GetUrl};
 
 pub mod params;
 mod glob;
@@ -38,7 +40,7 @@ impl Router {
     pub fn new() -> Router { Router { routes: Vec::new() } }
     pub fn route(&mut self, method: Method, glob: String,
                  params: Vec<String>, handler: Handler) {
-        self.add_route(Route {
+        self.routes.push(Route {
             method: method,
             glob: glob.clone(),
             matches: glob::deglob(glob),
@@ -46,22 +48,21 @@ impl Router {
             params: params
         });
     }
-
-    fn add_route(&mut self, route: Route) {
-        if !self.options.contains(&route.method) {
-            self.options.push(route.method.clone())
-        }
-        self.routes.push(route);
-    }
 }
 
 impl Middleware for Router {
     fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
+        let request_uri = match req.url() {
+            Some(uri) => uri.clone(),
+            // Not an AbsolutePath, not our domain.
+            None => { return Continue; }
+        };
+
         for route in self.routes.iter() {
-            if route.matches.is_match(format!("{}", req.uri()).as_slice()) {
+            if route.matches.is_match(request_uri.as_slice()) {
                 alloy.insert::<params::Params>(
                     params::Params::new(
-                        format!("{}", req.uri()).as_slice(),
+                        request_uri.as_slice(),
                         route.matches.clone(),
                         route.params.clone().move_iter()
                     )
