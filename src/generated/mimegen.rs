@@ -4,6 +4,17 @@ use std::str::from_utf8;
 
 use super::{get_file_reader, get_file_writer};
 
+macro_rules! parse_word(
+    ($iter:ident, $word:ident, $breaker:pat, $next:expr) => (
+        match $iter.next() {
+            Some(Ok($breaker)) => break,
+            Some(Ok(c)) => $word.push(c),
+            Some(Err(e)) => return Err(e),
+            None => $next
+        }
+    );
+)
+
 pub fn generate(list: Path, module: Path) -> IoResult<()> {
     let mut reader = get_file_reader(list);
     let mut writer = get_file_writer(module);
@@ -43,30 +54,10 @@ pub fn get_content_type(path: &Path) -> Option<MediaType> {
         let mut ext = vec![];
         let mut type_ = vec![];
         let mut subtype = vec![];
-        loop {
-            match byter.next() {
-                Some(Ok(b' ')) => break,
-                Some(Ok(c)) => ext.push(c),
-                Some(Err(e)) => return Err(e),
-                None => break 'read
-            }
-        }
-        loop {
-            match byter.next() {
-                Some(Ok(b' ')) => break,
-                Some(Ok(c)) => type_.push(c),
-                Some(Err(e)) => return Err(e),
-                None => break 'read
-            }
-        }
-        loop {
-            match byter.next() {
-                Some(Ok(b'\n')) => break,
-                Some(Ok(c)) => subtype.push(c),
-                Some(Err(e)) => return Err(e),
-                None => break 'read
-            }
-        }
+        
+        loop { parse_word!(byter, ext, b' ', break 'read); }
+        loop { parse_word!(byter, type_, b' ', break 'read); }
+        loop{ parse_word!(byter, subtype, b'\n', break 'read); }
 
         if !seen.contains_key(&ext) {
 

@@ -1,3 +1,5 @@
+#![feature(macro_rules)]
+
 // Interact with the OS.
 // Based on the code generators in chris-morgan's rust-http
 
