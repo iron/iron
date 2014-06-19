@@ -1,8 +1,10 @@
+extern crate http;
 extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
 
 use iron::{Iron, Alloy, Middleware, Request, Response, ServerT};
+use iron::mixin::Serve;
 use iron::middleware::{Status, Continue};
 
 #[deriving(Clone)]
@@ -13,7 +15,7 @@ impl Middleware for HelloWorld {
              _request: &mut Request,
              response: &mut Response,
              _alloy: &mut Alloy) -> Status {
-        let _ = response.write(b"Hello World!");
+        let _ = response.serve(::http::status::Ok, "Hello, world!");
         Continue
     }
 }
