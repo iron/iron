@@ -5,6 +5,8 @@ use std::io::util::copy;
 
 pub use Response = http::server::response::ResponseWriter;
 
+use self::mimes::get_content_type;
+
 mod mimes;
 
 /// Allow file-serving
@@ -25,6 +27,7 @@ pub trait ServeFile: Writer {
 impl<'a> ServeFile for Response<'a> {
     fn serve_file(&mut self, path: &Path) -> IoResult<()> {
         let mut file = try!(File::open(path));
+        self.headers.content_type = get_content_type(path);
         copy(&mut file, self)
     }
 }
