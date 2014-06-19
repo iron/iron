@@ -13,7 +13,7 @@ impl Middleware for HelloWorld {
              _request: &mut Request,
              response: &mut Response,
              _alloy: &mut Alloy) -> Status {
-        let _ = response.write(bytes!("Hello World!"));
+        let _ = response.write(b"Hello World!");
         Continue
     }
 }
