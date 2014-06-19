@@ -1,38 +1,30 @@
 use regex::Regex;
 use http::method::{Method, Options};
 use http::status::{InternalServerError};
-use iron::{Ingot, Request, Response, Alloy};
-use iron::ingot::{Status, Continue, Unwind};
+use iron::{Middleware, Request, Response, Alloy};
+use iron::middleware::{Status, Continue, Unwind};
 
 pub mod params;
 mod glob;
 
-pub type Handler<Rq, Rs> = fn(&mut Rq, &mut Rs, &mut Alloy) -> ();
+pub type Handler = fn(&mut Request, &mut Response, &mut Alloy) -> ();
 
-pub struct Router<Rq, Rs> {
+#[deriving(Clone)]
+pub struct Router {
     options: Vec<Method>,
-    routes: Vec<Route<Rq, Rs>>
+    routes: Vec<Route>
 }
 
-impl<Rq, Rs> Clone for Router<Rq, Rs> {
-    fn clone(&self) -> Router<Rq, Rs> {
-        Router {
-            options: self.options.clone(),
-            routes: self.routes.clone()
-        }
-    }
-}
-
-struct Route<Rq, Rs> {
+struct Route {
     method: Method,
     glob: String,
     matches: Regex,
-    handler: Handler<Rq, Rs>,
+    handler: Handler,
     params: Vec<String>
 }
 
-impl<Rq, Rs> Clone for Route<Rq, Rs> {
-    fn clone(&self) -> Route<Rq, Rs> {
+impl Clone for Route {
+    fn clone(&self) -> Route {
         Route {
             method: self.method.clone(),
             glob: self.glob.clone(),
@@ -43,10 +35,10 @@ impl<Rq, Rs> Clone for Route<Rq, Rs> {
     }
 }
 
-impl<Rq, Rs> Router<Rq, Rs> {
-    pub fn new() -> Router<Rq, Rs> { Router { options: Vec::new(), routes: Vec::new() } }
+impl Router {
+    pub fn new() -> Router { Router { options: Vec::new(), routes: Vec::new() } }
     pub fn route(&mut self, method: Method, glob: String,
-                 params: Vec<String>, handler: Handler<Rq, Rs>) {
+                 params: Vec<String>, handler: Handler) {
         self.add_route(Route {
             method: method,
             glob: glob.clone(),
@@ -56,7 +48,7 @@ impl<Rq, Rs> Router<Rq, Rs> {
         });
     }
 
-    fn add_route(&mut self, route: Route<Rq, Rs>) {
+    fn add_route(&mut self, route: Route) {
         if !self.options.contains(&route.method) {
             self.options.push(route.method.clone())
         }
@@ -64,8 +56,8 @@ impl<Rq, Rs> Router<Rq, Rs> {
     }
 }
 
-impl<Rq: Request, Rs: Response> Ingot<Rq, Rs> for Router<Rq, Rs> {
-    fn enter(&mut self, req: &mut Rq, res: &mut Rs, alloy: &mut Alloy) -> Status {
+impl Middleware for Router {
+    fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
         if *req.method() == Options {
             match res.write(
                 self.options.iter()
