@@ -6,6 +6,7 @@ use super::{get_file_reader, get_file_writer};
 
 macro_rules! parse_word(
     ($iter:ident, $word:ident, $breaker:pat, $next:expr) => (
+        // Loop to parse a word out of a line
         match $iter.next() {
             Some(Ok($breaker)) => break,
             Some(Ok(c)) => $word.push(c),
@@ -15,27 +16,17 @@ macro_rules! parse_word(
     );
 )
 
+// Generate response/mimegen.rs
 pub fn generate(list: Path, module: Path) -> IoResult<()> {
     let mut reader = get_file_reader(list);
     let mut writer = get_file_writer(module);
 
     try!(writer.write(
-b"// This automatically generated file is included in response.rs.
-use std::path::BytesContainer;
+b"// This automatically generated file is included in response/mimes.rs.
 
 use http::headers::content_type::MediaType;
 
-pub fn get_content_type(path: &Path) -> Option<MediaType> {
-    let path_str = path.container_as_str().unwrap();
-    let ext_pos = regex!(\".[a-z0-9]+$\").find(path_str);
-    let mut ext;
-    match ext_pos {
-        Some((start, _)) => {
-            ext = path_str.as_slice().slice_from(start);
-        },
-        None => return None
-    }
-
+pub fn get_generated_content_type(ext: &str) -> Option<MediaType> {
     match ext {
 "   ));
 
