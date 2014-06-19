@@ -31,6 +31,7 @@ pub use alloy::Alloy;
 
 pub mod request;
 pub mod response;
+pub mod mixin;
 pub mod middleware;
 pub mod alloy;
 pub mod furnace;
