@@ -3,6 +3,8 @@
 use std::io::{IoResult, File};
 use std::io::util::copy;
 
+use http::status::Status;
+
 pub use Response = http::server::response::ResponseWriter;
 
 use self::mimes::get_content_type;
@@ -31,3 +33,20 @@ impl<'a> ServeFile for Response<'a> {
         copy(&mut file, self)
     }
 }
+
+/// Send data with a statuscode quickly.
+pub trait SendData {
+    /// Write the statuscode and data to the response.
+    ///
+    /// send will forward write errors to the request to its
+    /// caller.
+    fn send(&mut self, status: Status, body: &str) -> IoResult<()>;
+}
+
+impl<'a> SendData for Response<'a> {
+    fn send(&mut self, status: Status, body: &str) -> IoResult<()> {
+        self.status = status;
+        Ok(try!(self.write(body.as_bytes())))
+    }
+}
+
