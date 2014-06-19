@@ -12,6 +12,9 @@
 #![feature(macro_rules, phase)]
 //! The main crate for the Iron library.
 
+extern crate regex;
+#[phase(plugin)] extern crate regex_macros;
+
 extern crate http;
 extern crate anymap;
 
