@@ -2,9 +2,7 @@ use regex::Regex;
 use http::method::Method;
 use iron::{Middleware, Request, Response, Alloy};
 use iron::middleware::{Status, Continue, Unwind};
-use iron::request::GetUrl;
-// Waiting on upstream changes.
-//use iron::mixins::{GetUrl};
+use iron::mixin::{GetUrl};
 
 pub mod params;
 mod glob;
