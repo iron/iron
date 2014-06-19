@@ -1,5 +1,6 @@
 use std::io::IoResult;
 use std::collections::hashmap::HashMap;
+use std::str::from_utf8;
 
 use super::{get_file_reader, get_file_writer};
 
@@ -69,27 +70,18 @@ pub fn get_content_type(path: &Path) -> Option<MediaType> {
 
         if !seen.contains_key(&ext) {
 
-            try!(writer.write(
-b"        \""));
-            try!(writer.write(ext.as_slice()));
-            try!(writer.write(b"\" => Some(MediaType {
-        type_: \""));
-            try!(writer.write(type_.as_slice()));
-            try!(writer.write(b"\".to_str(),
-        subtype: \""));
-            try!(writer.write(subtype.as_slice()));
-            try!(writer.write(b"\".to_str(),
+            try!(write!(writer,
+"    \"{}\" => Some(MediaType {{
+        type_: \"{}\".to_str(),
+        subtype: \"{}\".to_str(),
         parameters: vec![]
-        }),
-"           ));
+    }}),\n", from_utf8(ext.as_slice()).unwrap(),
+             from_utf8(type_.as_slice()).unwrap(),
+             from_utf8(subtype.as_slice()).unwrap()));
 
             seen.insert(ext, true);
         }
     }
 
-    writer.write(
-b"        _ => None
-    }
-}
-"   )
+    writer.write(b"        _ => None\n    }\n}\n")
 }
