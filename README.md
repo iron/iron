@@ -42,8 +42,7 @@ resolution algorithm by swapping in your own Furnace.
 
 ## Examples
 
-Here’s an as of yet hypothetical\* setup for an api with two different
-versions:
+Here’s a setup for an api with two different versions:
 
 ```rust
 extern crate iron;
@@ -59,9 +58,9 @@ use logger:Logger;
 use hypothetical::database;
 
 fn setup_api_v1(router: &mut Router) {
-    router.get('/users/:userid', |_req: &mut Rq, res: &mut Rs, alloy: &mut Alloy| {
+    router.get("/users/:userid", |_req, res, alloy| {
         let params = alloy.find::<Params>().unwrap();
-        res.write(database::get("Users", params.get("userid").unwrap()));
+        res.write(database::get("Users", params.get("userid").unwrap()).as_bytes());
     });
 }
 fn setup_api_v2(router: &mut Router) { ... }
@@ -85,8 +84,6 @@ fn main() {
 }
 
 ```
-
-\* Most of these middleware are in development and not finished yet.
 
 Here’s a sample middleware implementation of a RequestTimer middleware:
 
