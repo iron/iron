@@ -11,7 +11,6 @@ pub type Handler = fn(&mut Request, &mut Response, &mut Alloy) -> ();
 
 #[deriving(Clone)]
 pub struct Router {
-    options: Vec<Method>,
     routes: Vec<Route>
 }
 
@@ -36,7 +35,7 @@ impl Clone for Route {
 }
 
 impl Router {
-    pub fn new() -> Router { Router { options: Vec::new(), routes: Vec::new() } }
+    pub fn new() -> Router { Router { routes: Vec::new() } }
     pub fn route(&mut self, method: Method, glob: String,
                  params: Vec<String>, handler: Handler) {
         self.add_route(Route {
@@ -58,20 +57,6 @@ impl Router {
 
 impl Middleware for Router {
     fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-        if *req.method() == Options {
-            match res.write(
-                self.options.iter()
-                    .map(|p| format!("{}", p))
-                    .collect::<Vec<String>>()
-                    .connect(" ").as_bytes()) {
-                Ok(_) => {},
-                Err(err) => {
-                    error!("Failed to write response: {}", err);
-                    *res.status_mut() = InternalServerError;
-                }
-            }
-            return Unwind;
-        }
         for route in self.routes.iter() {
             if route.matches.is_match(format!("{}", req.uri()).as_slice()) {
                 alloy.insert::<params::Params>(
