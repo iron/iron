@@ -1,13 +1,14 @@
 use std::io::IoResult;
+use std::collections::hashmap::HashMap;
 
-use super::{get_reader, get_writer};
+use super::{get_file_reader, get_file_writer};
 
 pub fn generate(list: Path, module: Path) -> IoResult<()> {
-    let mut reader = get_reader(list);
-    let mut writer = get_writer(module);
+    let mut reader = get_file_reader(list);
+    let mut writer = get_file_writer(module);
 
-    try!(writer.write(b"\
-// This automatically generated file is included in response.rs.
+    try!(writer.write(
+b"// This automatically generated file is included in response.rs.
 use std::path::BytesContainer;
 
 use http::headers::content_type::MediaType;
@@ -24,7 +25,7 @@ pub fn get_content_type(path: &Path) -> Option<MediaType> {
     }
 
     match ext {
-"));
+"   ));
 
     /* Generated snippets will look like:
     "json" => Some(MediaType {
@@ -34,13 +35,61 @@ pub fn get_content_type(path: &Path) -> Option<MediaType> {
     }),
     */
 
-    // loop over lines
-        // loop over fields
-            // populate the enum
+    let mut byter = reader.bytes();
+    // avoid duplicates
+    let mut seen = HashMap::new();
+    'read: loop {
+        let mut ext = vec![];
+        let mut type_ = vec![];
+        let mut subtype = vec![];
+        loop {
+            match byter.next() {
+                Some(Ok(b' ')) => break,
+                Some(Ok(c)) => ext.push(c),
+                Some(Err(e)) => return Err(e),
+                None => break 'read
+            }
+        }
+        loop {
+            match byter.next() {
+                Some(Ok(b' ')) => break,
+                Some(Ok(c)) => type_.push(c),
+                Some(Err(e)) => return Err(e),
+                None => break 'read
+            }
+        }
+        loop {
+            match byter.next() {
+                Some(Ok(b'\n')) => break,
+                Some(Ok(c)) => subtype.push(c),
+                Some(Err(e)) => return Err(e),
+                None => break 'read
+            }
+        }
 
+        if !seen.contains_key(&ext) {
 
-writer.write(b"        _ => None
+            try!(writer.write(
+b"        \""));
+            try!(writer.write(ext.as_slice()));
+            try!(writer.write(b"\" => Some(MediaType {
+        type_: \""));
+            try!(writer.write(type_.as_slice()));
+            try!(writer.write(b"\".to_str(),
+        subtype: \""));
+            try!(writer.write(subtype.as_slice()));
+            try!(writer.write(b"\".to_str(),
+        parameters: vec![]
+        }),
+"           ));
+
+            seen.insert(ext, true);
+        }
+    }
+
+    writer.write(
+b"        _ => None
     }
 }
-")
+"   )
 }
