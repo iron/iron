@@ -8,7 +8,9 @@ use iron::{Iron, ServerT};
 use logger::Logger;
 
 fn main() {
+    let format_str = "URI: {uri}, Method: {method}, Status: {status}, Time: {response_time}";
+    let logger = Logger::new(from_str(format_str));
     let mut server: ServerT = Iron::new();
-    server.smelt(Logger::new());
+    server.smelt(logger);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }

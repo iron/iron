@@ -19,21 +19,20 @@ use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime};
 pub mod format;
 
 /// `Middleware` for logging request and response info to the terminal.
-/// `Logger` currently logs the request method, request URI, response status, and response
-/// time in the default format:
-///
-/// ```
-/// {method} {uri} -> {status} ({response_time} ms)
-/// ```
 #[deriving(Clone)]
 pub struct Logger {
-    entry_time: u64
+    entry_time: u64,
+    format: Option<Format>
 }
 
 impl Logger {
-    /// Create a new `Logger`.
-    pub fn new() -> Logger {
-        Logger { entry_time: 0u64 }
+    /// Create a new `Logger` with the specified `format`. If a `None` is passed in, uses the default format:
+    ///
+    /// ```
+    /// {method} {uri} -> {status} ({response_time} ms)
+    /// ```
+    pub fn new(format: Option<Format>) -> Logger {
+        Logger { entry_time: 0u64, format: format }
     }
 }
 
@@ -44,11 +43,11 @@ impl Middleware for Logger {
     }
     fn exit(&mut self, req: &mut Request, res: &mut Response, _al: &mut Alloy) -> Status {
         let response_time_ms = (precise_time_ns() - self.entry_time) as f64 / 1000000.0;
-        let Format(format) = Format::default(req, res);
+        let Format(format) = self.format.clone().unwrap_or(Format::default(req, res));
 
-        let render = |text: FormatText| {
-            match text {
-                Str(str) => String::from_str(str),
+        let render = |text: &FormatText| {
+            match *text {
+                Str(ref string) => string.clone(),
                 Method => format!("{}", req.method),
                 URI => format!("{}", req.request_uri),
                 Status => format!("{}", res.status),
@@ -64,7 +63,7 @@ impl Middleware for Logger {
                 for &attr in unit.attrs.iter() {
                     try!(t.attr(attr));
                 }
-                try!(write!(t, "{}", render(unit.text)));
+                try!(write!(t, "{}", render(&unit.text)));
                 try!(t.reset());
             }
             try!(writeln!(t, ""));
