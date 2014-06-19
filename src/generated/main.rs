@@ -27,14 +27,17 @@ fn main() {
     }
 }
 
-pub fn get_reader(path: Path) -> Box<Reader> {
+// Writing to this file will cause a run-time error,
+// but coercing it to a Box<Reader> prevents getting
+// an iterator to it, so it is left as is.
+pub fn get_file_reader(path: Path) -> File {
   match File::open_mode(&path, Open, Read) {
-    Ok(reader) => box reader as Box<Reader>,
+    Ok(reader) => reader,
     Err(e) => fail!("Unable to read file: {}", e.desc)
   }
 }
 
-pub fn get_writer(path: Path) -> Box<Writer> {
+pub fn get_file_writer(path: Path) -> Box<Writer> {
     match File::open_mode(&path, Truncate, Write) {
         Ok(writer) => box writer as Box<Writer>,
         Err(e) => fail!("Unable to write file: {}", e.desc)
