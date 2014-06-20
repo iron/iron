@@ -357,7 +357,6 @@ clean:
 	$(Q)rm -f "bin/main"
 	$(Q)rm -f "bin/test-internal"
 	$(Q)rm -f "bin/test-external"
-	$(Q)rm -rf "deps/"
 	$(Q)echo "--- Deleted binaries and documentation"
 
 clear-project:

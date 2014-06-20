@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# Determine target architecture
 TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
 
 # Update dependencies from git
@@ -8,20 +9,32 @@ TARGET=`rustc --version 2> /dev/null | awk '/host:/ { FS = " "; print $2 }'`
 # $2: name (usually the git repo name)
 #     The name under which the dependency will be stored
 # $3: build location
-#     The location to which the git builds (omit trailing '/')
-# $4: build command
-#     The argument to pass to make (not required)
+#     The location to which the dependency builds (omit trailing '/')
+# $4: build command (optional - `make`)
+#     The argument to pass to make
+# $5: dependencies already installed (optional - false)
+#     Pass true if all of the dependencies of this dependency are already
+#     compiled by previous updateDependency calls. This will compile this
+#     dependency with the previously compiled dependencies INSTEAD of running
+#     this dependency's ./configure script.
 updateDependency () {
-# Determine target architecture
+# Clear this dependency's folder if it exists already.
+if [ -d deps/$2 ]; then
+    rm -rf deps/$2
+fi
 # Fetch local copy (can be reset with make clean)
   git clone $1 deps/$2
 # Build dependency
 # (assumes existence of make)
   cd deps/$2
-  if [ -x configure ]; then
+  if [ $5 ]; then
+# Copy already loaded dependency
+    mkdir -p target/$TARGET/lib
+# (symlinking does not work on OS X)
+    cp ../../target/$TARGET/lib/* ./target/$TARGET/lib/
+  elif [ -x configure ]; then
     ./configure
   fi
-  make clean
   make $4
   cd ../..
 # Prepare folder structure dependency targets
