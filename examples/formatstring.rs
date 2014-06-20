@@ -8,7 +8,8 @@ use iron::{Iron, ServerT};
 use logger::Logger;
 
 fn main() {
-    let format_str = "URI: {uri}, Method: {method}, Status: {status}, Time: {response_time}";
+    let format_str =
+        "@[red]URI: {uri}@@, @[blue]Method: {method}@@, @[yellow]Status: {status}@@, @[green]Time: {response_time}@@";
     let logger = Logger::new(from_str(format_str));
     let mut server: ServerT = Iron::new();
     server.smelt(logger);

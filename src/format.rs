@@ -46,14 +46,15 @@ impl FromStr for Format {
         let mut string = String::from_str("");
         let mut name = String::from_str("");
         let mut chars = s.chars();
+        let mut color: Option<color::Color> = None;
         loop {
             match chars.next() {
                 None => {
-                    result.push(FormatUnit {text: Str(string), color: None, attrs: vec![]});
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
                     return Some(Format(result));
                 }
                 Some('{') => {
-                    result.push(FormatUnit {text: Str(string), color: None, attrs: vec![]});
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
                     string = String::from_str("");
                     loop {
                         match chars.next() {
@@ -69,7 +70,7 @@ impl FromStr for Format {
                                 match text {
                                     Str(_) => { return None; }
                                     _ => {
-                                        result.push(FormatUnit { text: text, color: None, attrs: vec![] });
+                                        result.push(FormatUnit { text: text, color: color, attrs: vec![] });
                                         name = String::from_str("");
                                         break;
                                     }
@@ -77,6 +78,39 @@ impl FromStr for Format {
                             }
                             Some(c) => { name.push_char(c); }
                         }
+                    }
+                }
+                Some('@') => {
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
+                    string = String::from_str("");
+                    match chars.next() {
+                        Some('@') => { color = None; }
+                        Some('[') => {
+                            loop {
+                                match chars.next() {
+                                    None => { return None; }
+                                    Some(']') => {
+                                        let col = match name.as_slice() {
+                                            "red" => Some(color::RED),
+                                            "blue" => Some(color::BLUE),
+                                            "yellow" => Some(color::YELLOW),
+                                            "green" => Some(color::GREEN),
+                                            _ => None
+                                        };
+                                        match col {
+                                            None => { return None; }
+                                            _ => {
+                                                color = col;
+                                                name = String::from_str("");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    Some(c) => { name.push_char(c); }
+                                }
+                            }
+                        }
+                        _ => { return None; }
                     }
                 }
                 Some(c) => { string.push_char(c); }
