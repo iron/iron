@@ -88,3 +88,13 @@ pub trait Middleware: Send + Clone {
 impl Clone for Box<Middleware + Send> {
     fn clone(&self) -> Box<Middleware + Send> { self.clone_box() }
 }
+
+impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) -> Status {
+    fn enter(&mut self,
+             req: &mut Request,
+             res: &mut Response,
+             alloy: &mut Alloy) -> Status {
+        (*self)(req, res, alloy)
+    }
+}
+
