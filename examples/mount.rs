@@ -1,17 +1,15 @@
 #![feature(phase)]
 
 extern crate iron;
-extern crate mount;
 extern crate http;
+#[phase(plugin, link)]
+extern crate mount;
 
 use std::io::net::ip::Ipv4Addr;
 
 use iron::{Iron, Middleware, Request, Response, Alloy, ServerT};
 use iron::middleware::{Status, Continue, Unwind};
 use iron::mixin::Serve;
-
-use mount::Mount;
-
 use http::status;
 
 #[deriving(Clone)]
@@ -41,11 +39,7 @@ impl Middleware for SendHello {
 
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.smelt({
-        let mut subserver: ServerT = Iron::new();
-        subserver.smelt(Intercept);
-        Mount::new("/blocked", subserver)
-    });
+    server.smelt(mount!("/blocked", Intercept));
     server.smelt(SendHello);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }

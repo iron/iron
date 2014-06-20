@@ -72,3 +72,14 @@ impl<F: Furnace> Middleware for Mount<F> {
     }
 }
 
+#[macro_export]
+macro_rules! mount(
+    ($route:expr, $midware:expr) => {
+        {
+            let mut subserver: ServerT = Iron::new();
+            subserver.smelt($midware);
+            mount::Mount::new($route, subserver)
+        }
+    }
+)
+
