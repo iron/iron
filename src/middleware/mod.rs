@@ -11,6 +11,7 @@ use super::alloy::Alloy;
 ///
 /// Most `Furnaces` will ignore the returned `Status` from the `exit` method of
 /// `Middleware`.
+#[deriving(Clone, Show)]
 pub enum Status {
     /// `Continue` indicates that this is an intermediate `Middleware` in the stack
     /// and the `Furnace` should continue passing requests down the `Furnace's`
