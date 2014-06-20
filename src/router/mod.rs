@@ -2,7 +2,7 @@ use regex::Regex;
 use http::method::Method;
 use iron::{Middleware, Request, Response, Alloy};
 use iron::middleware::{Status, Continue, Unwind};
-use iron::mixin::{GetUrl};
+use iron::mixin::GetUrl;
 
 pub mod params;
 mod glob;
@@ -52,7 +52,7 @@ impl Middleware for Router {
     fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
         let request_uri = match req.url() {
             Some(uri) => uri.clone(),
-            // Not an AbsolutePath, not our domain.
+            // Not an AbsolutePath, not our problem.
             None => { return Continue; }
         };
 
