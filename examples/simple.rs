@@ -3,7 +3,7 @@ extern crate http;
 extern crate router;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{ServerT, Iron, Alloy, IronRequest, IronResponse};
+use iron::{ServerT, Iron, Alloy, Request, Response};
 use http::method::Get;
 use router::{Router, Params};
 
@@ -11,7 +11,7 @@ fn main() {
     let mut server: ServerT = Iron::new();
     let mut router = Router::new();
 
-    fn handler(_req: &mut IronRequest, res: &mut IronResponse, alloy: &mut Alloy) {
+    fn handler(_req: &mut Request, res: &mut Response, alloy: &mut Alloy) {
         let query = alloy.find::<Params>().unwrap().get("query").unwrap();
         let _ = res.write(query.as_bytes());
     }
@@ -20,7 +20,7 @@ fn main() {
     router.route(
         Get,
         "/:query".to_string(),
-        vec!["query".to_string()], 
+        vec!["query".to_string()],
         handler);
 
     server.smelt(router);
