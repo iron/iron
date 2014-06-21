@@ -32,7 +32,7 @@ fn main() {
 
     // This adds the ResponseTime middleware so that
     // all requests and responses are passed through it.
-    server.smelt(ResponseTime::new());
+    server.link(ResponseTime::new());
 
     // Start the server on localhost:3000
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);

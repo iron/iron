@@ -14,7 +14,7 @@ fn hello_world(_req: &mut Request, res: &mut Response, _alloy: &mut Alloy) -> St
 
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.smelt(hello_world);
+    server.link(hello_world);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
