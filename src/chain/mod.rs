@@ -64,4 +64,12 @@ pub trait Chain: Send + Clone {
     /// pass a new instance of it to `Iron`, otherwise,
     /// this function will only be used internally.
     fn new() -> Self;
+
+    #[doc(hidden)]
+    fn clone_box(&self) -> Box<Chain + Send> { box self.clone() as Box<Chain + Send> }
 }
+
+impl Clone for Box<Chain> {
+    fn clone(&self) -> Box<Chain> { self.clone_box() }
+}
+

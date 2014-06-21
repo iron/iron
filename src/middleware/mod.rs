@@ -4,6 +4,7 @@
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
+use super::chain::Chain;
 
 /// The Status returned by `Middleware's` `enter` and `exit` methods. This indicates
 /// to the `Furnace` whether this is a terminal `Middleware` or whether to continue
@@ -81,7 +82,7 @@ pub trait Middleware: Send + Clone {
     }
 
     // Helper function to clone the Middleware.
-    #[allow(missing_doc)]
+    #[doc(hidden)]
     fn clone_box(&self) -> Box<Middleware + Send> { box self.clone() as Box<Middleware + Send> }
 }
 
@@ -105,6 +106,16 @@ impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) {
              alloy: &mut Alloy) -> Status {
         (*self)(req, res, alloy);
         Unwind
+    }
+}
+
+impl Middleware for Box<Chain + Send> {
+    fn enter(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
+        self.chain_enter(request, response, alloy)
+    }
+
+    fn exit(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
+        self.chain_exit(request, response, alloy)
     }
 }
 
