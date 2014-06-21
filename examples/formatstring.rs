@@ -1,17 +1,26 @@
 extern crate iron;
 extern crate logger;
+extern crate term;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Iron, ServerT};
+use iron::{Iron, ServerT, Request, Response};
 
 use logger::Logger;
-use logger::format::Format;
+use logger::format::{Format, FunctionAttrs};
+
+use term::attr;
 
 fn main() {
     let format_str =
-        "@[red]URI: {uri}@@, @[blue]Method: {method}@@, @[yellow]Status: {status}@@, @[green]Time: {response_time}@@";
-    let logger = Logger::new(Format::from_format_string(format_str, &mut vec![]));
+        "@[red A]URI: {uri}@@, @[blue blink underline]Method: {method}@@, @[yellow standout]Status: {status}@@, @[brightgreen]Time: {response_time}@@";
+    fn attrs(req: &Request, _res: &Response) -> Vec<attr::Attr> {
+        match format!("{}", req.request_uri).as_slice() {
+            "/" => vec![attr::Blink],
+            _ => vec![]
+        }
+    }
+    let logger = Logger::new(Format::from_format_string(format_str, &mut vec![], &mut vec![FunctionAttrs(attrs)]));
     let mut server: ServerT = Iron::new();
     server.smelt(logger);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);

@@ -15,7 +15,7 @@ use term::{Terminal, stdout};
 use std::io::IoResult;
 
 use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime,
-             ConstantColor, FunctionColor};
+             ConstantColor, FunctionColor, ConstantAttrs, FunctionAttrs};
 
 pub mod format;
 
@@ -65,8 +65,17 @@ impl Middleware for Logger {
                         None => ()
                     }
                 }
-                for &attr in unit.attrs.iter() {
-                    try!(t.attr(attr));
+                match unit.attrs {
+                    ConstantAttrs(ref attrs) => {
+                        for &attr in attrs.iter() {
+                            try!(t.attr(attr));
+                        }
+                    }
+                    FunctionAttrs(f) => {
+                        for &attr in f(req, res).iter() {
+                            try!(t.attr(attr));
+                        }
+                    }
                 }
                 try!(write!(t, "{}", render(&unit.text)));
                 try!(t.reset());

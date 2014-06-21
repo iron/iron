@@ -26,27 +26,29 @@ impl Format {
                 _ => None
             }
         }
-        Format::from_format_string("{method} {uri} -> @[]{status}@@ ({response_time})",
-           &mut vec![FunctionColor(status_color)]).unwrap()
+        Format::from_format_string("@[bold]{method}@@ {uri} @[bold]->@@ @[C]{status}@@ ({response_time})",
+           &mut vec![FunctionColor(status_color)], &mut vec![]).unwrap()
     }
 
     /// Create a `Format` from a format string, which can contain the fields
     /// `{method}`, `{uri}`, `{status}`, and `{response_time}`.
     /// Returns `None` if the format string syntax is incorrect.
-    pub fn from_format_string(s: &str, colors: &mut Vec<FormatColor>) -> Option<Format> {
+    pub fn from_format_string(s: &str, colors: &mut Vec<FormatColor>,
+                              attrses: &mut Vec<FormatAttrs>) -> Option<Format> {
         let mut result = vec![];
         let mut string = String::from_str("");
         let mut name = String::from_str("");
         let mut chars = s.chars();
         let mut color: FormatColor = ConstantColor(None);
+        let mut attrs: FormatAttrs = ConstantAttrs(vec![]);
         loop {
             match chars.next() {
                 None => {
-                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: attrs.clone()});
                     return Some(Format(result));
                 }
                 Some('{') => {
-                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: attrs.clone()});
                     string = String::from_str("");
                     loop {
                         match chars.next() {
@@ -62,7 +64,7 @@ impl Format {
                                 match text {
                                     Str(_) => { return None; }
                                     _ => {
-                                        result.push(FormatUnit { text: text, color: color, attrs: vec![] });
+                                        result.push(FormatUnit { text: text, color: color, attrs: attrs.clone() });
                                         name = String::from_str("");
                                         break;
                                     }
@@ -73,23 +75,39 @@ impl Format {
                     }
                 }
                 Some('@') => {
-                    result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
+                    result.push(FormatUnit {text: Str(string), color: color, attrs: attrs.clone()});
                     string = String::from_str("");
                     match chars.next() {
-                        Some('@') => { color = ConstantColor(None); }
+                        Some('@') => {
+                            color = ConstantColor(None);
+                            attrs = ConstantAttrs(vec![]);
+                        }
                         Some('[') => {
                             loop {
                                 match chars.next() {
                                     None => { return None; }
                                     Some(']') => {
-                                        color = match name.as_slice() {
-                                            "red" => ConstantColor(Some(color::RED)),
-                                            "blue" => ConstantColor(Some(color::BLUE)),
-                                            "yellow" => ConstantColor(Some(color::YELLOW)),
-                                            "green" => ConstantColor(Some(color::GREEN)),
-                                            "" => colors.shift().unwrap_or(ConstantColor(None)),
-                                            _ => ConstantColor(None)
-                                        };
+                                        for word in name.as_slice().split(' ') {
+                                            match word {
+                                                "A" => {
+                                                    attrs = attrses.shift().unwrap_or(ConstantAttrs(vec![]));
+                                                }
+                                                "C" => {
+                                                    color = colors.shift().unwrap_or(ConstantColor(None));
+                                                }
+                                                style => match style_from_name(style) {
+                                                    Some(Color(c)) => match color {
+                                                        ConstantColor(_) => { color = ConstantColor(Some(c)); }
+                                                        FunctionColor(_) => ()
+                                                    },
+                                                    Some(Attr(a)) => match attrs {
+                                                        ConstantAttrs(ref mut v) => { v.push(a); }
+                                                        FunctionAttrs(_) => ()
+                                                    },
+                                                    None => ()
+                                                }
+                                            }
+                                        }
                                         name = String::from_str("");
                                         break;
                                     }
@@ -106,10 +124,53 @@ impl Format {
     }
 }
 
+fn style_from_name(name: &str) -> Option<ColorOrAttr> {
+    match name {
+        "black" => Some(Color(color::BLACK)),
+        "blue" => Some(Color(color::BLUE)),
+        "brightblack" => Some(Color(color::BRIGHT_BLACK)),
+        "brightblue" => Some(Color(color::BRIGHT_BLUE)),
+        "brightcyan" => Some(Color(color::BRIGHT_CYAN)),
+        "brightgreen" => Some(Color(color::BRIGHT_GREEN)),
+        "brightmagenta" => Some(Color(color::BRIGHT_MAGENTA)),
+        "brightred" => Some(Color(color::BRIGHT_RED)),
+        "brightwhite" => Some(Color(color::BRIGHT_WHITE)),
+        "brightyellow" => Some(Color(color::BRIGHT_YELLOW)),
+        "cyan" => Some(Color(color::CYAN)),
+        "green" => Some(Color(color::GREEN)),
+        "magenta" => Some(Color(color::MAGENTA)),
+        "red" => Some(Color(color::RED)),
+        "white" => Some(Color(color::WHITE)),
+        "yellow" => Some(Color(color::YELLOW)),
+
+        "bold" => Some(Attr(attr::Bold)),
+        "dim" => Some(Attr(attr::Dim)),
+        "italic" => Some(Attr(attr::Italic(true))),
+        "underline" => Some(Attr(attr::Underline(true))),
+        "blink" => Some(Attr(attr::Blink)),
+        "standout" => Some(Attr(attr::Standout(true))),
+        "reverse" => Some(Attr(attr::Reverse)),
+        "secure" => Some(Attr(attr::Secure)),
+
+        _ => None
+    }
+}
+
+enum ColorOrAttr {
+    Color(color::Color),
+    Attr(attr::Attr)
+}
+
 /// A representation of color in a `FormatUnit`.
 pub enum FormatColor {
     ConstantColor(Option<color::Color>),
     FunctionColor(fn(&Request, &Response) -> Option<color::Color>)
+}
+
+/// A representation of attributes in a `FormatUnit`.
+pub enum FormatAttrs {
+    ConstantAttrs(Vec<attr::Attr>),
+    FunctionAttrs(fn(&Request, &Response) -> Vec<attr::Attr>)
 }
 
 impl Clone for FormatColor {
@@ -117,6 +178,32 @@ impl Clone for FormatColor {
         match *self {
             ConstantColor(color) => ConstantColor(color),
             FunctionColor(f) => FunctionColor(f)
+        }
+    }
+}
+
+impl Clone for FormatAttrs {
+    fn clone(&self) -> FormatAttrs {
+        match *self {
+            ConstantAttrs(ref attrs) => {
+                let mut attrs_clone = vec![];
+                for &attr in attrs.iter() {
+                    attrs_clone.push(match attr {
+                        attr::Bold => attr::Bold,
+                        attr::Dim => attr::Dim,
+                        attr::Italic(bool) => attr::Italic(bool),
+                        attr::Underline(bool) => attr::Underline(bool),
+                        attr::Blink => attr::Blink,
+                        attr::Standout(bool) => attr::Standout(bool),
+                        attr::Reverse => attr::Reverse,
+                        attr::Secure => attr::Secure,
+                        attr::ForegroundColor(color) => attr::ForegroundColor(color),
+                        attr::BackgroundColor(color) => attr::BackgroundColor(color)
+                    });
+                }
+                ConstantAttrs(attrs_clone)
+            }
+            FunctionAttrs(f) => FunctionAttrs(f)
         }
     }
 }
@@ -133,33 +220,10 @@ pub enum FormatText {
 }
 
 /// A `FormatText` with associated style information.
+#[deriving(Clone)]
 pub struct FormatUnit {
     pub text: FormatText,
     pub color: FormatColor,
-    pub attrs: Vec<attr::Attr>
+    pub attrs: FormatAttrs
 }
 
-impl Clone for FormatUnit {
-    fn clone(&self) -> FormatUnit {
-        let mut attrs = vec![];
-        for &attr in self.attrs.iter() {
-            attrs.push(match attr {
-                attr::Bold => attr::Bold,
-                attr::Dim => attr::Dim,
-                attr::Italic(bool) => attr::Italic(bool),
-                attr::Underline(bool) => attr::Underline(bool),
-                attr::Blink => attr::Blink,
-                attr::Standout(bool) => attr::Standout(bool),
-                attr::Reverse => attr::Reverse,
-                attr::Secure => attr::Secure,
-                attr::ForegroundColor(color) => attr::ForegroundColor(color),
-                attr::BackgroundColor(color) => attr::BackgroundColor(color)
-            });
-        }
-        FormatUnit {
-            text: self.text.clone(),
-            color: self.color.clone(),
-            attrs: attrs
-        }
-    }
-}
