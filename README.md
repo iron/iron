@@ -38,7 +38,7 @@ middleware and integrating them in Iron servers.
 In fact, Routing is middleware in Iron, as are Mounting, Body Parsing, and most
 other features. This allows for insanely flexible setups and allows almost all
 of Iron’s features to be swappable - you can even change the middleware
-resolution algorithm by swapping in your own Furnace.
+resolution algorithm by swapping in your own Chain.
 
 ## Examples
 
@@ -72,13 +72,13 @@ fn main() {
     let mut server: ServerT = Iron::new();
 
     // Setup Logging middleware
-    server.smelt(Logger::new());
+    server.link(Logger::new());
 
     // Mount sub-instances of Iron.
     // mount! is a macro from Mount that creates a sub-instance of Iron
-    // with the second argument smelted on to it.
-    server.smelt(mount!("/api/v1", api_v1_router));
-    server.smelt(mount!("/api/v2", api_v2_router));
+    // with the second argument linked to it.
+    server.link(mount!("/api/v1", api_v1_router));
+    server.link(mount!("/api/v2", api_v2_router));
 
     server.listen(Ipv4addr(127, 0, 0, 1), 3000);
 }
@@ -122,7 +122,7 @@ fn main() {
 
     // This adds the ResponseTime middleware so that
     // all requests and responses are passed through it.
-    server.smelt(ResponseTime::new());
+    server.link(ResponseTime::new());
 
     // Start the server on localhost:3000
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
