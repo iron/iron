@@ -7,15 +7,15 @@ use super::alloy::Alloy;
 use super::chain::Chain;
 
 /// The Status returned by `Middleware's` `enter` and `exit` methods. This indicates
-/// to the `Furnace` whether this is a terminal `Middleware` or whether to continue
-/// passing the `Request` and `Response` down the `Furnace's` stack.
+/// to the `Chain` whether this is a terminal `Middleware` or whether to continue
+/// passing the `Request` and `Response` down the `Chain's` stack.
 ///
-/// Most `Furnaces` will ignore the returned `Status` from the `exit` method of
+/// Most `Chains` will ignore the returned `Status` from the `exit` method of
 /// `Middleware`.
 #[deriving(Clone, Show)]
 pub enum Status {
     /// `Continue` indicates that this is an intermediate `Middleware` in the stack
-    /// and the `Furnace` should continue passing requests down the `Furnace's`
+    /// and the `Chain` should continue passing requests down the `Chain's`
     /// stack.
     ///
     /// Most `Middleware` will return `Continue` from both `enter` and `exit`.
@@ -23,7 +23,7 @@ pub enum Status {
 
     /// `Unwind` indicates that this is a terminal `Middleware` or that something
     /// went wrong. It can be used to immediately stop passing requests down the
-    /// `Furnace's` stack and start calling `exit` of all previous `Middleware`.
+    /// `Chain's` stack and start calling `exit` of all previous `Middleware`.
     ///
     /// For instance, an authorization `Middleware` might return `Unwind` if the
     /// `Request` fails an authentication check, and `Continue` otherwise.
@@ -31,7 +31,7 @@ pub enum Status {
 }
 
 /// All middleware should implement `Middleware`, which allows it to be `linked`
-/// to a `Furnace` so that it will be called for each incoming request.
+/// to a `Chain` so that it will be called for each incoming request.
 ///
 /// There are two sorts of data associated with `Middleware`, data internal
 /// to the `Middleware` and data that the `Middleware` would like to expose to
@@ -49,15 +49,15 @@ pub enum Status {
 /// a key value store from a type to an instance of that type. This means
 /// that each `Middleware` can have a unique type that it stores in the `Alloy`.
 /// This can either be an instance of that `Middleware` or some other type. Since
-/// the same `Alloy` is passed to all further `Middleware` in the `Furnace`, this
+/// the same `Alloy` is passed to all further `Middleware` in the `Chain`, this
 /// scheme allows you to expose data or functionality to future `Middleware`.
 pub trait Middleware: Send + Clone {
-    /// `enter` is called for each `Middleware` in a `Furnace` as a client request
+    /// `enter` is called for each `Middleware` in a `Chain` as a client request
     /// comes down the stack. `Middleware` have their `enter` methods called in the order
     /// in which they were added to the stack, that is, FIFO. `Middleware` should expose
     /// data through `Alloy` and store any data that will persist through the request here.
     ///
-    /// Returning `Unwind` from this handler will cause the `Furnace` to stop
+    /// Returning `Unwind` from this handler will cause the `Chain` to stop
     /// going down its stack and start bubbling back up through `Middleware`
     /// and calling `exit` on them.
     fn enter(&mut self,
@@ -67,12 +67,12 @@ pub trait Middleware: Send + Clone {
         Continue
     }
 
-    /// `exit` is called for each `Middleware` in a `Furnace` that has had its `enter`
+    /// `exit` is called for each `Middleware` in a `Chain` that has had its `enter`
     /// method called for this client request. A `Middleware's` `exit` method will be called
     /// as the stack is unwound in FILO order - i.e, `Middleware` have their `exit`
     /// methods called in opposite order from which `enter` was called.
     ///
-    /// While this method must return a `Status`, most `Furnaces` will ignore
+    /// While this method must return a `Status`, most `Chains` will ignore
     /// this method's return value.
     fn exit(&mut self,
             _request: &mut Request,

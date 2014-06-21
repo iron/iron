@@ -1,4 +1,4 @@
-//! Exposes the `chain` trait and `StackFurnace` type.
+//! Exposes the `chain` trait and `StackChain` type.
 
 use super::response::Response;
 use super::request::Request;

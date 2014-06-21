@@ -5,7 +5,7 @@ use super::super::alloy::Alloy;
 
 use super::Chain;
 
-/// The default `Furnace` used by `Iron`.
+/// The default `Chain` used by `Iron`.
 /// `StackChain` runs each `Request` through all `Middleware` in its stack.
 /// When it hits `Middleware` which returns `Unwind`, it passes
 /// the `Request` back up through all `Middleware` it has hit so far.
@@ -25,7 +25,7 @@ impl Clone for StackChain {
     }
 }
 
-/// `StackChain` is a `Furnace`
+/// `StackChain` is a `Chain`
 impl Chain for StackChain {
     fn chain_enter(&mut self,
              request: &mut Request,
@@ -62,7 +62,7 @@ impl Chain for StackChain {
         Continue
     }
 
-    /// Add `Middleware` to the `Furnace`.
+    /// Add `Middleware` to the `Chain`.
     fn link<M: Middleware>(&mut self, middleware: M) {
         self.stack.push(box middleware);
     }
