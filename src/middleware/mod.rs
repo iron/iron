@@ -30,7 +30,7 @@ pub enum Status {
     Unwind
 }
 
-/// All middleware should implement `Middleware`, which allows it to be `smelted`
+/// All middleware should implement `Middleware`, which allows it to be `linked`
 /// to a `Furnace` so that it will be called for each incoming request.
 ///
 /// There are two sorts of data associated with `Middleware`, data internal
@@ -39,7 +39,7 @@ pub enum Status {
 ///
 /// Internal data should be stored on the `struct` that implements `Middleware`
 /// itself. All `Middleware` are cloned for each client request, so the object
-/// initially smelted on to the `Iron` instance will be provided as `&mut self` to
+/// initially linked to the `Iron` instance will be provided as `&mut self` to
 /// enter for every request. Data stored on a `Middleware` instance does _not_ persist
 /// between requests and is _not_ shared between different, concurrent, requests.
 /// The same is true for data stored on an `Alloy`.

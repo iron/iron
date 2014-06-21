@@ -11,7 +11,7 @@ use super::Chain;
 /// the `Request` back up through all `Middleware` it has hit so far.
 pub struct StackChain {
     /// The storage used by `StackChain` to hold all `Middleware`
-    /// that have been `smelted` on to it.
+    /// that have been `linked` to it.
     stack: Vec<Box<Middleware + Send>>,
     exit_stack: Vec<Box<Middleware + Send>>
 }
