@@ -1,6 +1,6 @@
 use super::super::request::Request;
 use super::super::response::Response;
-use super::super::middleware::{Middleware, Continue, Unwind};
+use super::super::middleware::{Middleware, Status, Continue, Unwind};
 use super::super::alloy::Alloy;
 
 use super::Furnace;
@@ -24,7 +24,7 @@ impl Furnace for StackFurnace {
     fn forge(&mut self,
              request: &mut Request,
              response: &mut Response,
-             opt_alloy: Option<&mut Alloy>) {
+             opt_alloy: Option<&mut Alloy>) -> Status {
         // Create a placeholder alloy.
         let mut alloy = &mut Alloy::new();
 
@@ -41,9 +41,15 @@ impl Furnace for StackFurnace {
         // path through `Middleware` in reverse order than we did on the way in.
         let mut exit_stack = vec![];
 
+        // Track whether we've been unwound. This adds extensibility for filtering routes.
+        let mut status = Continue;
+
         'enter: for middleware in self.stack.mut_iter() {
             match middleware.enter(request, response, alloy) {
-                Unwind   => break 'enter,
+                Unwind   => {
+                    status = Unwind;
+                    break 'enter
+                },
                 // Mark the middleware for traversal on exit.
                 Continue => exit_stack.push(middleware)
             }
@@ -54,8 +60,14 @@ impl Furnace for StackFurnace {
         exit_stack.reverse();
         // Call each middleware's exit handler.
         'exit: for middleware in exit_stack.mut_iter() {
-            let _ = middleware.exit(request, response, alloy);
+            let _ = match middleware.exit(request, response, alloy) {
+                Unwind   => status = Unwind,
+                Continue => {}
+            };
         }
+
+        // Return whether the stack ever unwound
+        status
     }
     /// Add `Middleware` to the `Furnace`.
     fn smelt<M: Middleware>(&mut self, middleware: M) {

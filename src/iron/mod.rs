@@ -124,7 +124,7 @@ impl<F: Furnace> Server for Iron<F> {
 
     fn handle_request(&self, req: &Request, res: &mut Response) {
         let mut furnace = self.furnace.clone();
-        furnace.forge(&mut copy_request(req), res, None);
+        let _ = furnace.forge(&mut copy_request(req), res, None);
     }
 }
 
