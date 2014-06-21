@@ -3,7 +3,7 @@
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
-use super::middleware::Middleware;
+use super::middleware::{Middleware, Status};
 
 /// The default `Furnace` used by `Iron`.
 pub mod stackfurnace;
@@ -26,7 +26,7 @@ pub trait Furnace: Send + Clone {
     fn forge(&mut self,
              _request: &mut Request,
              _response: &mut Response,
-             Option<&mut Alloy>);
+             Option<&mut Alloy>) -> Status;
 
     /// `smelt` is responsible for adding new `Middleware` to the `Furnace's` internal
     /// storage of `Middleware`. Different `Furnaces` may implement different behavior
