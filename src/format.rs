@@ -1,6 +1,5 @@
 use iron::{Request, Response};
 use term::{attr, color};
-use std::from_str::FromStr;
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
@@ -17,36 +16,29 @@ impl Format {
     /// green for 200s, yellow for 300s, and red for 400s and 500s. For now,
     /// this needs to take `req`/`res` as arguments in order to color the status
     /// appropriately.
-    pub fn default(_req: &Request, res: &Response) -> Format {
-        let status_color = match res.status.code() / 100 {
-            1 => color::BLUE, // Information
-            2 => color::GREEN, // Success
-            3 => color::YELLOW, // Redirection
-            _ => color::RED, // Error
-        };
-        Format(vec![
-            FormatUnit { text: Method, color: None, attrs: vec![attr::Bold] },
-            FormatUnit { text: Str(String::from_str(" ")), color: None, attrs: vec![] },
-            FormatUnit { text: URI, color: None, attrs: vec![] },
-            FormatUnit { text: Str(String::from_str(" -> ")), color: None, attrs: vec![attr::Bold] },
-            FormatUnit { text: Status, color: Some(status_color), attrs: vec![] },
-            FormatUnit { text: Str(String::from_str(" (")), color: None, attrs: vec![] },
-            FormatUnit { text: ResponseTime, color: None, attrs: vec![] },
-            FormatUnit { text: Str(String::from_str(")")), color: None, attrs: vec![] }
-        ])
+    pub fn default() -> Format {
+        fn status_color(_req: &Request, res: &Response) -> Option<color::Color> {
+            match res.status.code() / 100 {
+                1 => Some(color::BLUE), // Information
+                2 => Some(color::GREEN), // Success
+                3 => Some(color::YELLOW), // Redirection
+                4 | 5 => Some(color::RED), // Error
+                _ => None
+            }
+        }
+        Format::from_format_string("{method} {uri} -> @[]{status}@@ ({response_time})",
+           &mut vec![FunctionColor(status_color)]).unwrap()
     }
-}
 
-impl FromStr for Format {
     /// Create a `Format` from a format string, which can contain the fields
     /// `{method}`, `{uri}`, `{status}`, and `{response_time}`.
     /// Returns `None` if the format string syntax is incorrect.
-    fn from_str(s: &str) -> Option<Format> {
+    pub fn from_format_string(s: &str, colors: &mut Vec<FormatColor>) -> Option<Format> {
         let mut result = vec![];
         let mut string = String::from_str("");
         let mut name = String::from_str("");
         let mut chars = s.chars();
-        let mut color: Option<color::Color> = None;
+        let mut color: FormatColor = ConstantColor(None);
         loop {
             match chars.next() {
                 None => {
@@ -84,27 +76,22 @@ impl FromStr for Format {
                     result.push(FormatUnit {text: Str(string), color: color, attrs: vec![]});
                     string = String::from_str("");
                     match chars.next() {
-                        Some('@') => { color = None; }
+                        Some('@') => { color = ConstantColor(None); }
                         Some('[') => {
                             loop {
                                 match chars.next() {
                                     None => { return None; }
                                     Some(']') => {
-                                        let col = match name.as_slice() {
-                                            "red" => Some(color::RED),
-                                            "blue" => Some(color::BLUE),
-                                            "yellow" => Some(color::YELLOW),
-                                            "green" => Some(color::GREEN),
-                                            _ => None
+                                        color = match name.as_slice() {
+                                            "red" => ConstantColor(Some(color::RED)),
+                                            "blue" => ConstantColor(Some(color::BLUE)),
+                                            "yellow" => ConstantColor(Some(color::YELLOW)),
+                                            "green" => ConstantColor(Some(color::GREEN)),
+                                            "" => colors.shift().unwrap_or(ConstantColor(None)),
+                                            _ => ConstantColor(None)
                                         };
-                                        match col {
-                                            None => { return None; }
-                                            _ => {
-                                                color = col;
-                                                name = String::from_str("");
-                                                break;
-                                            }
-                                        }
+                                        name = String::from_str("");
+                                        break;
                                     }
                                     Some(c) => { name.push_char(c); }
                                 }
@@ -115,6 +102,21 @@ impl FromStr for Format {
                 }
                 Some(c) => { string.push_char(c); }
             }
+        }
+    }
+}
+
+/// A representation of color in a `FormatUnit`.
+pub enum FormatColor {
+    ConstantColor(Option<color::Color>),
+    FunctionColor(fn(&Request, &Response) -> Option<color::Color>)
+}
+
+impl Clone for FormatColor {
+    fn clone(&self) -> FormatColor {
+        match *self {
+            ConstantColor(color) => ConstantColor(color),
+            FunctionColor(f) => FunctionColor(f)
         }
     }
 }
@@ -133,7 +135,7 @@ pub enum FormatText {
 /// A `FormatText` with associated style information.
 pub struct FormatUnit {
     pub text: FormatText,
-    pub color: Option<color::Color>,
+    pub color: FormatColor,
     pub attrs: Vec<attr::Attr>
 }
 
