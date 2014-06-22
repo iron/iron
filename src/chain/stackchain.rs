@@ -76,3 +76,48 @@ impl Chain for StackChain {
     }
 }
 
+#[cfg(test)]
+mod test {
+    pub use super::*;
+    pub use super::super::super::request::Request;
+    pub use super::super::super::response::Response;
+    pub use super::super::super::alloy::Alloy;
+    pub use super::super::super::middleware::{Middleware, Status, Continue};
+
+    #[deriving(Clone)]
+    pub struct CallCount {
+        enter: u64,
+        exit: u64
+    }
+
+    impl Middleware for CallCount {
+        fn enter(&mut self, _req: &mut Request,
+                 _res: &mut Response, _alloy: &mut Alloy) -> Status {
+            self.enter += 1; Continue
+        }
+
+        fn exit(&mut self, _req: &mut Request,
+                _res: &mut Response, _alloy: &mut Alloy) -> Status {
+            self.exit += 1; Continue
+        }
+    }
+
+    mod dispatch {
+        use super::{CallCount, Middleware};
+        use super::super::StackChain;
+        use super::super::super::Chain;
+        use std::mem::{uninitialized, transmute};
+
+        #[test]
+        fn calls_middleware_enter() {
+            let mut testchain: StackChain = Chain::new();
+            testchain.link(CallCount { enter: 0, exit: 0 });
+            unsafe {
+                let _ = testchain.dispatch(uninitialized(), uninitialized(), uninitialized());
+                assert_eq!(transmute::<Box<Middleware + Send>, Box<CallCount>>(testchain.stack.get(0).clone()).enter, 1);
+                assert_eq!(transmute::<Box<Middleware + Send>, Box<CallCount>>(testchain.stack.get(0).clone()).exit, 1);
+            }
+        }
+    }
+}
+

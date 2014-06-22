@@ -9,7 +9,7 @@
 #![deny(unused_variable)]
 #![deny(unnecessary_typecast)]
 
-#![feature(macro_rules, phase)]
+#![feature(macro_rules, phase, globs)]
 //! The main crate for the Iron library.
 
 extern crate regex;
