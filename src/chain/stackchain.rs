@@ -148,9 +148,9 @@ mod test {
         #[test]
         fn calls_all_middleware_enter_exit() {
             let mut testchain: StackChain = Chain::new();
-            let enter_exits: Vector<(Arc<Mutex<u64>>, Arc<Mutex<u64>>)> = vec![];
+            let enter_exits: Vec<(Arc<Mutex<u64>>, Arc<Mutex<u64>>)> = vec![];
 
-            for num in range(0, 10) {
+            for _ in range(0, 10) {
                 let (enter, exit) = (Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
             }
@@ -167,6 +167,45 @@ mod test {
                 assert_eq!(*enter.lock(), 1);
                 assert_eq!(*exit.lock(), 1);
             }
+        }
+    }
+
+    mod chain_enter {
+        use super::{CallCount, Arc, Mutex};
+        use super::super::StackChain;
+        use super::super::super::Chain;
+        use std::mem::{uninitialized};
+
+        #[test]
+        fn calls_middleware_enter() {
+            let mut testchain: StackChain = Chain::new();
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+            unsafe {
+                let _ = testchain.chain_enter(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+            assert_eq!(*enter.lock(), 1);
+        }
+
+        #[test]
+        fn doesnt_call_middleware_exit() {
+            let mut testchain: StackChain = Chain::new();
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+            unsafe {
+                let _ = testchain.chain_enter(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+            assert_eq!(*exit.lock(), 0);
         }
     }
 }
