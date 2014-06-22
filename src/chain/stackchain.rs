@@ -83,40 +83,66 @@ mod test {
     pub use super::super::super::response::Response;
     pub use super::super::super::alloy::Alloy;
     pub use super::super::super::middleware::{Middleware, Status, Continue};
+    pub use std::sync::{Arc, Mutex};
 
     #[deriving(Clone)]
     pub struct CallCount {
-        enter: u64,
-        exit: u64
+        enter: Arc<Mutex<u64>>,
+        exit: Arc<Mutex<u64>>
     }
 
     impl Middleware for CallCount {
         fn enter(&mut self, _req: &mut Request,
                  _res: &mut Response, _alloy: &mut Alloy) -> Status {
-            self.enter += 1; Continue
+            let mut enter = self.enter.lock();
+            *enter += 1;
+            Continue
         }
 
         fn exit(&mut self, _req: &mut Request,
                 _res: &mut Response, _alloy: &mut Alloy) -> Status {
-            self.exit += 1; Continue
+            let mut exit = self.exit.lock();
+            *exit += 1;
+            Continue
         }
     }
 
     mod dispatch {
-        use super::{CallCount, Middleware};
+        use super::{CallCount, Arc, Mutex};
         use super::super::StackChain;
         use super::super::super::Chain;
-        use std::mem::{uninitialized, transmute};
+        use std::mem::{uninitialized};
 
         #[test]
         fn calls_middleware_enter() {
             let mut testchain: StackChain = Chain::new();
-            testchain.link(CallCount { enter: 0, exit: 0 });
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
             unsafe {
-                let _ = testchain.dispatch(uninitialized(), uninitialized(), uninitialized());
-                assert_eq!(transmute::<Box<Middleware + Send>, Box<CallCount>>(testchain.stack.get(0).clone()).enter, 1);
-                assert_eq!(transmute::<Box<Middleware + Send>, Box<CallCount>>(testchain.stack.get(0).clone()).exit, 1);
+                let _ = testchain.dispatch(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
             }
+            assert_eq!(*enter.lock(), 1);
+        }
+
+        #[test]
+        fn calls_middleware_exit() {
+            let mut testchain: StackChain = Chain::new();
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+            unsafe {
+                let _ = testchain.dispatch(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+            assert_eq!(*exit.lock(), 1);
         }
     }
 }
