@@ -8,56 +8,56 @@ use http::server::request::{Star, AbsoluteUri, AbsolutePath, Authority};
 
 use super::middleware::Middleware;
 
-use super::furnace::Furnace;
-use super::furnace::stackfurnace::StackFurnace;
+use super::chain::Chain;
+use super::chain::stackchain::StackChain;
 
 use super::response::Response;
 use super::request::Request;
 
-pub type ServerT = Iron<StackFurnace>;
+pub type ServerT = Iron<StackChain>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
-/// The server can be made with a specific `Furnace` (using `from_furnace`)
-/// or with a new `Furnace` (using `new`). `Iron` is used to manage the server
+/// The server can be made with a specific `Chain` (using `from_chain`)
+/// or with a new `Chain` (using `new`). `Iron` is used to manage the server
 /// processes:
-/// `Iron.smelt` is used to add new `Middleware`, and
+/// `Iron.link` is used to add new `Middleware`, and
 /// `Iron.listen` is used to kick off a server process.
 ///
-/// `Iron` contains the `Furnace` which holds the `Middleware` necessary to run a server.
-/// `Iron` is the main interface to adding `Middleware`, and has `Furnace` as a
+/// `Iron` contains the `Chain` which holds the `Middleware` necessary to run a server.
+/// `Iron` is the main interface to adding `Middleware`, and has `Chain` as a
 /// public field (for the sake of extensibility).
-pub struct Iron<F> {
+pub struct Iron<C> {
     /// This is exposed for the sake of extensibility. It can be used to set
-    /// furnace to implement your server's middleware stack with custom behavior.
-    /// Most users will not need to touch `furnace`. This should only be used if you
-    /// need custom handling of `Middleware`. Normally, the default `StackFurnace` is
+    /// chain to implement your server's middleware stack with custom behavior.
+    /// Most users will not need to touch `chain`. This should only be used if you
+    /// need custom handling of `Middleware`. Normally, the default `StackChain` is
     /// sufficient.
-    pub furnace: F,
+    pub chain: C,
     ip: Option<IpAddr>,
     port: Option<u16>
 }
 
-impl<F: Clone> Clone for Iron<F> {
-    fn clone(&self) -> Iron<F> {
+impl<C: Clone> Clone for Iron<C> {
+    fn clone(&self) -> Iron<C> {
         Iron {
-            furnace: self.furnace.clone(),
+            chain: self.chain.clone(),
             ip: self.ip.clone(),
             port: self.port
         }
     }
 }
 
-impl<F: Furnace> Iron<F> {
-    /// `smelt` a new `Middleware`.
+impl<C: Chain> Iron<C> {
+    /// `link` a new `Middleware`.
     ///
-    /// Adds `Middleware` to the `Iron's` `furnace`, so that any requests
+    /// Adds `Middleware` to the `Iron's` `chain`, so that any requests
     /// are passed through those `Middleware`.
     ///
-    /// `Iron.smelt` delegates to `Iron.furnace.smelt`, so that any `Middleware`
-    /// added is added to the `Iron` instance's `furnace`.
-    pub fn smelt<M: Middleware>(&mut self, middleware: M) {
-        self.furnace.smelt(middleware);
+    /// `Iron.link` delegates to `Iron.chain.link`, so that any `Middleware`
+    /// added is added to the `Iron` instance's `chain`.
+    pub fn link<M: Middleware>(&mut self, middleware: M) {
+        self.chain.link(middleware);
     }
 
     /// Kick off the server process.
@@ -65,7 +65,7 @@ impl<F: Furnace> Iron<F> {
     /// Call this once to begin listening for requests on the server.
     /// This is a blocking operation, and is the final op that should be called
     /// on the `Iron` instance. Once `listen` is called, requests will be
-    /// handled as defined through the `Iron's` `furnace's` `Middleware`.
+    /// handled as defined through the `Iron's` `chain's` `Middleware`.
     pub fn listen(mut self, ip: IpAddr, port: u16) {
         self.ip = Some(ip);
         self.port = Some(port);
@@ -75,34 +75,34 @@ impl<F: Furnace> Iron<F> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server.
-    /// This creates an `Iron` with a default `furnace`, the `StackFurnace`.
+    /// This creates an `Iron` with a default `chain`, the `StackChain`.
     ///
-    /// Custom furnaces can be used with `from_furnace`, instead of `new`.
+    /// Custom chains can be used with `from_chain`, instead of `new`.
     #[inline]
-    pub fn new() -> Iron<F> {
+    pub fn new() -> Iron<C> {
         Iron {
-            furnace: Furnace::new(),
+            chain: Chain::new(),
             ip: None,
             port: None
         }
     }
 
-    /// Instantiate a new instance of `Iron` from an existing `Furnace`.
+    /// Instantiate a new instance of `Iron` from an existing `Chain`.
     ///
-    /// This will create a new `Iron` from a give `Furnace`.
+    /// This will create a new `Iron` from a give `Chain`.
     ///
-    /// This `Furnace` *may already have `Middleware` in it*. An empty default
-    /// `Furnace` can be created more easily using `new`.
+    /// This `Chain` *may already have `Middleware` in it*. An empty default
+    /// `Chain` can be created more easily using `new`.
     ///
-    /// The `Furnace` can also be configured to handle `Middleware` differently than
-    /// `StackFurnace`. For example, this can be used to implement a `Furnace`
+    /// The `Chain` can also be configured to handle `Middleware` differently than
+    /// `StackChain`. For example, this can be used to implement a `Chain`
     /// that logs debug messages as it serves requests.
     ///
-    /// Most users will not need to touch `from_furnace`. This should only be
+    /// Most users will not need to touch `from_chain`. This should only be
     /// used if you need custom handling of `Middleware`.
-    pub fn from_furnace<F>(furnace: F) -> Iron<F> {
+    pub fn from_chain(chain: C) -> Iron<C> {
         Iron {
-            furnace: furnace,
+            chain: chain,
             ip: None,
             port: None
         }
@@ -114,7 +114,7 @@ impl<F: Furnace> Iron<F> {
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
-impl<F: Furnace> Server for Iron<F> {
+impl<C: Chain> Server for Iron<C> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr {
             ip: self.ip.unwrap(),
@@ -123,8 +123,8 @@ impl<F: Furnace> Server for Iron<F> {
     }
 
     fn handle_request(&self, req: &Request, res: &mut Response) {
-        let mut furnace = self.furnace.clone();
-        furnace.forge(&mut copy_request(req), res, None);
+        let mut chain = self.chain.clone();
+        let _ = chain.dispatch(&mut copy_request(req), res, None);
     }
 }
 

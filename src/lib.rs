@@ -24,8 +24,8 @@ pub use response::Response;
 pub use iron::{Iron, ServerT};
 pub use middleware::Middleware;
 
-pub use furnace::Furnace;
-pub use furnace::stackfurnace::StackFurnace;
+pub use chain::Chain;
+pub use chain::stackchain::StackChain;
 
 pub use alloy::Alloy;
 
@@ -34,6 +34,6 @@ pub mod response;
 pub mod mixin;
 pub mod middleware;
 pub mod alloy;
-pub mod furnace;
+pub mod chain;
 pub mod iron;
 
