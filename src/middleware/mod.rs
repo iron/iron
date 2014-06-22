@@ -98,3 +98,13 @@ impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) -> Status {
     }
 }
 
+impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) {
+    fn enter(&mut self,
+             req: &mut Request,
+             res: &mut Response,
+             alloy: &mut Alloy) -> Status {
+        (*self)(req, res, alloy);
+        Unwind
+    }
+}
+
