@@ -208,5 +208,48 @@ mod test {
             assert_eq!(*exit.lock(), 0);
         }
     }
+
+    mod chain_exit {
+        use super::{CallCount, Arc, Mutex};
+        use super::super::StackChain;
+        use super::super::super::Chain;
+        use std::mem::{uninitialized};
+
+        #[test]
+        fn calls_middleware_exit() {
+            let mut testchain: StackChain = Chain::new();
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.exit_stack.push(box CallCount {
+                enter: enter.clone(), exit: exit.clone()
+            });
+            unsafe {
+                let _  = testchain.chain_exit(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+            assert_eq!(*exit.lock(), 1);
+        }
+
+        #[test]
+        fn doesnt_call_middleware_enter() {
+            let mut testchain: StackChain = Chain::new();
+            let enter = Arc::new(Mutex::new(0));
+            let exit = Arc::new(Mutex::new(0));
+            testchain.exit_stack.push(box CallCount {
+                enter: enter.clone(), exit: exit.clone()
+            });
+            unsafe {
+                let _  = testchain.chain_exit(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+            assert_eq!(*enter.lock(), 0);
+        }
+    }
 }
 
