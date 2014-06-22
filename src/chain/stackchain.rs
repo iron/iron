@@ -144,6 +144,30 @@ mod test {
             }
             assert_eq!(*exit.lock(), 1);
         }
+
+        #[test]
+        fn calls_all_middleware_enter_exit() {
+            let mut testchain: StackChain = Chain::new();
+            let enter_exits: Vector<(Arc<Mutex<u64>>, Arc<Mutex<u64>>)> = vec![];
+
+            for num in range(0, 10) {
+                let (enter, exit) = (Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)));
+                testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+            }
+
+            unsafe {
+                let _ = testchain.dispatch(
+                    uninitialized(),
+                    uninitialized(),
+                    uninitialized()
+                );
+            }
+
+            for (enter, exit) in enter_exits.move_iter() {
+                assert_eq!(*enter.lock(), 1);
+                assert_eq!(*exit.lock(), 1);
+            }
+        }
     }
 }
 
