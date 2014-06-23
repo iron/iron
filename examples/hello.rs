@@ -3,7 +3,7 @@ extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Iron, Alloy, Request, Response, ServerT};
+use iron::{Iron, Chain, Alloy, Request, Response, ServerT};
 use iron::mixin::Serve;
 use iron::middleware::{Status, Continue};
 
@@ -14,7 +14,7 @@ fn hello_world(_req: &mut Request, res: &mut Response, _alloy: &mut Alloy) -> St
 
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.link(hello_world);
+    server.chain.link(hello_world);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
