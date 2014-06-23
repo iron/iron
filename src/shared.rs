@@ -1,8 +1,14 @@
-use iron::Middleware;
+use iron::{Middleware, Request, Response, Alloy};
+use iron::middleware::Status;
 use std::sync::Arc;
 
+pub trait ShareableMiddleware {
+    fn shared_enter(&self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status;
+    fn shared_exit(&self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status;
+}
+
 pub struct Shared {
-    pub middleware: Arc<Box<Middleware + Send + Share>>
+    pub middleware: Arc<Box<ShareableMiddleware + Send + Share>>
 }
 
 // Needed to hack name resolution in our Clone impl
@@ -13,6 +19,16 @@ impl Clone for Shared {
         Shared {
             middleware: clone(&self.middleware)
         }
+    }
+}
+
+impl Middleware for Shared {
+    fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
+        self.middleware.shared_enter(req, res, alloy)
+    }
+
+    fn exit(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
+        self.middleware.shared_exit(req, res, alloy)
     }
 }
 
