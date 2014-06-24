@@ -7,8 +7,6 @@ use iron::mixin::GetUrl;
 pub mod params;
 mod glob;
 
-pub type Handler = fn(&mut Request, &mut Response, &mut Alloy) -> ();
-
 #[deriving(Clone)]
 pub struct Router {
     routes: Vec<Route>
@@ -18,7 +16,7 @@ struct Route {
     method: Method,
     glob: String,
     matches: Regex,
-    handler: Handler,
+    handler: Box<Middleware + Send>,
     params: Vec<String>
 }
 
@@ -28,7 +26,7 @@ impl Clone for Route {
             method: self.method.clone(),
             glob: self.glob.clone(),
             matches: self.matches.clone(),
-            handler: self.handler,
+            handler: self.handler.clone_box(),
             params: self.params.clone()
         }
     }
@@ -36,13 +34,13 @@ impl Clone for Route {
 
 impl Router {
     pub fn new() -> Router { Router { routes: Vec::new() } }
-    pub fn route(&mut self, method: Method, glob: String,
-                 params: Vec<String>, handler: Handler) {
+    pub fn route<M: Middleware + Send>(&mut self, method: Method, glob: String,
+                                       params: Vec<String>, handler: M) {
         self.routes.push(Route {
             method: method,
             glob: glob.clone(),
             matches: glob::deglob(glob),
-            handler: handler,
+            handler: box handler,
             params: params
         });
     }
@@ -56,7 +54,7 @@ impl Middleware for Router {
             None => { return Continue; }
         };
 
-        for route in self.routes.iter() {
+        for route in self.routes.mut_iter() {
             if route.matches.is_match(request_uri.as_slice()) {
                 alloy.insert::<params::Params>(
                     params::Params::new(
@@ -65,7 +63,8 @@ impl Middleware for Router {
                         route.params.clone().move_iter()
                     )
                 );
-                (route.handler)(req, res, alloy);
+                let _ = route.handler.enter(req, res, alloy);
+                let _ = route.handler.exit(req, res, alloy);
                 return Unwind;
             }
         }

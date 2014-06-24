@@ -14,7 +14,6 @@ extern crate regex;
 #[cfg(test)] extern crate test;
 
 pub use router::Router;
-pub use router::Handler;
 pub use router::params::Params;
 
 mod router;
