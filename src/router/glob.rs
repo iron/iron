@@ -16,7 +16,7 @@ pub fn deglob(glob: String) -> Regex {
         .replace_all(deglobbed.as_slice(), |cap: &Captures| {
             "(?P<".to_string().append(cap.at(1)).append(">[a-zA-Z0-9_-]*)")
         });
-    Regex::new("^".to_string().append(debound.as_slice()).append("$").as_slice()).unwrap()
+    Regex::new("^".to_string().append(debound.as_slice()).append(r"(\?[a-zA-Z0-9_=&-]*)?$").as_slice()).unwrap()
 }
 
 #[cfg(test)]
@@ -64,6 +64,13 @@ mod test {
         let glob_regex = deglob("/users/:groupid/:userid".to_string());
         assert_eq!(glob_regex.captures("/users/7374/234").unwrap().name("userid"), "234");
         assert_eq!(glob_regex.captures("/users/7374/234").unwrap().name("groupid"), "7374");
+    }
+
+    #[test]
+    fn test_querystring_match() {
+        // Does this work with url parameters?
+        let glob_regex = deglob("/users".to_string());
+        assert!(glob_regex.is_match("/users?foo=bar"));
     }
 
     #[bench]
