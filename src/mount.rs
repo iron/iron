@@ -1,18 +1,18 @@
 use http::server::request::{AbsolutePath};
 use regex::Regex;
 
-use iron::{Iron, Middleware, Request, Response, Alloy, Furnace};
+use iron::{Iron, Middleware, Request, Response, Alloy, Chain};
 use iron::middleware::{Status, Continue, Unwind};
 
 #[deriving(Clone)]
-pub struct Mount<F> {
+pub struct Mount<C> {
     route: String,
     matches: Regex,
-    iron: Iron<F>
+    iron: Iron<C>
 }
 
-impl<F> Mount<F> {
-    pub fn new(route: &str, iron: Iron<F>) -> Mount<F> {
+impl<C> Mount<C> {
+    pub fn new(route: &str, iron: Iron<C>) -> Mount<C> {
         Mount {
             route: route.to_string(),
             iron: iron,
@@ -25,14 +25,14 @@ fn to_regex(route: &str) -> Regex {
     Regex::new("^".to_string().append(route).as_slice()).unwrap()
 }
 
-impl<F: Furnace> Middleware for Mount<F> {
+impl<C: Chain> Middleware for Mount<C> {
     fn enter(&mut self,
              req: &mut Request,
              res: &mut Response,
              alloy: &mut Alloy) -> Status {
         // This method is ugly, but it is hard to make it pretty
         // because we can't both borrow path from inside of request
-        // while allowing furnace.forge to borrow it as mutable.
+        // while allowing chain.dispatch to borrow it as mutable.
 
         match req.request_uri {
            AbsolutePath(ref path) => {
@@ -56,7 +56,7 @@ impl<F: Furnace> Middleware for Mount<F> {
         } // Previous borrow of req ends here.
 
         // So we can borrow it again here.
-        self.iron.furnace.forge(req, res, Some(alloy));
+        let _ = self.iron.chain.dispatch(req, res, Some(alloy));
 
         // And repair the damage here, for future middleware
         match req.request_uri {
@@ -77,7 +77,7 @@ macro_rules! mount(
     ($route:expr, $midware:expr) => {
         {
             let mut subserver: ServerT = Iron::new();
-            subserver.smelt($midware);
+            subserver.link($midware);
             mount::Mount::new($route, subserver)
         }
     }

@@ -39,8 +39,8 @@ impl Middleware for SendHello {
 
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.smelt(mount!("/blocked", Intercept));
-    server.smelt(SendHello);
+    server.link(mount!("/blocked", Intercept));
+    server.link(SendHello);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
