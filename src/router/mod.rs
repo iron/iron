@@ -34,13 +34,13 @@ impl Clone for Route {
 
 impl Router {
     pub fn new() -> Router { Router { routes: Vec::new() } }
-    pub fn route(&mut self, method: Method, glob: String,
-                 params: Vec<String>, handler: Box<Middleware + Send>) {
+    pub fn route<M: Middleware + Send>(&mut self, method: Method, glob: String,
+                                       params: Vec<String>, handler: M) {
         self.routes.push(Route {
             method: method,
             glob: glob.clone(),
             matches: glob::deglob(glob),
-            handler: handler,
+            handler: box handler,
             params: params
         });
     }
