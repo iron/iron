@@ -23,7 +23,7 @@ fn main() {
         vec!["query".to_string()],
         handler);
 
-    server.smelt(router);
+    server.link(router);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
