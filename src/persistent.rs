@@ -28,9 +28,3 @@ impl<D: Send + Share, P> Persistent<D, P> {
     }
 }
 
-impl<D: Send + Share, P> Persistent<D, P> {
-    pub fn new(data: D) -> Persistent<D, P> {
-        return Persistent { data: Arc::new(RWLock::new(data)) };
-    }
-}
-
