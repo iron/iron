@@ -7,6 +7,8 @@ use iron::mixin::GetUrl;
 pub mod params;
 mod glob;
 
+/// `Router` provides an interface for creating complex routes as middleware
+/// for the Iron framework.
 #[deriving(Clone)]
 pub struct Router {
     routes: Vec<Route>
@@ -33,7 +35,31 @@ impl Clone for Route {
 }
 
 impl Router {
+    /// `new` constructs a new, blank `Router`.
     pub fn new() -> Router { Router { routes: Vec::new() } }
+    /// Add a new route to a `Router`, matching both a method and glob pattern.
+    ///
+    /// `route` supports express-style glob patterns: `*` for a single wildcard
+    /// segment, `**` for any-number of wildcard segments, and `:param` for
+    /// matching storing that segment of the request url in the `Params`
+    /// object, which is stored on an Alloy.
+    ///
+    /// For instance, to route `Get` requests on any route matching
+    /// `/users/:userid/:friend` and store `userid` and `friend` in
+    /// the exposed Params object:
+    ///
+    /// ```rust
+    /// router.route(
+    ///     ::http::method::Get /* The HTTP verb */,
+    ///     '/users/:userid/:friend'.to_string() /* A glob pattern to match */,
+    ///     controller /* Any Middleware */);
+    /// ```
+    ///
+    /// The controller provided to route can be any `Middleware`, which allows
+    /// extreme flexibility when handling routes. For instance, you could provide
+    /// a `Chain`, a `Middleware`, which contains an authorization middleware and
+    /// a controller function, so that you can confirm that the request is
+    /// authorized for this route before handling it.
     pub fn route<M: Middleware + Send>(&mut self, method: Method, glob: String,
                                        params: Vec<String>, handler: M) {
         self.routes.push(Route {

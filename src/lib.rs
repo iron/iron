@@ -5,7 +5,7 @@
         non_camel_case_types, unused_variable, unnecessary_typecast)]
 #![feature(phase, globs)]
 
-//! Router provides a fast router middleware for the Iron web framework.
+//! `Router` provides a fast router middleware for the Iron web framework.
 
 extern crate http;
 extern crate iron;
