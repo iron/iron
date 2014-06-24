@@ -7,6 +7,9 @@
 extern crate iron;
 
 pub use persistent::Persistent;
+pub use shared::Shared;
 
 pub mod persistent;
+pub mod shared;
+pub mod mixin;
 
