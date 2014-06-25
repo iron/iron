@@ -4,6 +4,12 @@ use regex::Regex;
 use iron::{Iron, Middleware, Request, Response, Alloy, Chain};
 use iron::middleware::{Status, Continue, Unwind};
 
+/// `Mount` is a simple mounting middleware.
+///
+/// `Mount` allows you to mount other instances of Iron within a larger
+/// instance of Iron. Mounted instances of Iron receive a modified version
+/// of the request url with the mount pattern removed from the start of the
+/// url.
 #[deriving(Clone)]
 pub struct Mount<C> {
     route: String,
@@ -12,6 +18,8 @@ pub struct Mount<C> {
 }
 
 impl<C> Mount<C> {
+    /// Creates a new instance of `Mount` mounting the given instance of Iron
+    /// on the given path.
     pub fn new(route: &str, iron: Iron<C>) -> Mount<C> {
         Mount {
             route: route.to_string(),
