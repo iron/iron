@@ -251,5 +251,57 @@ mod test {
             assert_eq!(*enter.lock(), 0);
         }
     }
+
+    mod bench {
+        use super::super::super::super::middleware::Middleware;
+
+        #[deriving(Clone)]
+        struct Noop;
+
+        impl Middleware for Noop {}
+
+        macro_rules! bench_noop_x (
+            ($name:ident, $num:expr, $method:ident) => {
+                #[bench]
+                fn $name(b: &mut Bencher) {
+                    let mut testchain: StackChain = Chain::new();
+                    for _ in range(0, $num) {
+                        testchain.link(Noop);
+                    }
+                    b.iter(|| {
+                        black_box(unsafe {
+                            let _ = testchain.$method(
+                                uninitialized(),
+                                uninitialized(),
+                                uninitialized()
+                            );
+                        })
+                    });
+                }
+            }
+        )
+
+        macro_rules! bench_method (
+            ($method:ident) => {
+                mod $method {
+                    use std::mem::uninitialized;
+                    use test::{Bencher, black_box};
+                    use super::Noop;
+                    use super::super::super::StackChain;
+                    use super::super::super::super::Chain;
+
+                    bench_noop_x!(bench_empty, 0, $method)
+                    bench_noop_x!(bench_1, 1, $method)
+                    bench_noop_x!(bench_2, 2, $method)
+                    bench_noop_x!(bench_3, 3, $method)
+                    bench_noop_x!(bench_4, 4, $method)
+                    bench_noop_x!(bench_10, 10, $method)
+                }
+            }
+        )
+
+        bench_method!(dispatch)
+        bench_method!(chain_enter)
+    }
 }
 
