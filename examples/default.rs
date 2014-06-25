@@ -1,3 +1,4 @@
+//! Example of a simple logger
 extern crate iron;
 extern crate logger;
 
@@ -7,6 +8,8 @@ use iron::{Iron, ServerT, Chain};
 
 use logger::Logger;
 
+// Logger has a default formatting of the strings printed 
+// to console. 
 fn main() {
     let logger = Logger::new(None);
     let mut server: ServerT = Iron::new();
