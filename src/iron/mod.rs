@@ -6,8 +6,6 @@ use std::io::net::ip::{SocketAddr, IpAddr};
 use http::server::{Server, Config};
 use http::server::request::{Star, AbsoluteUri, AbsolutePath, Authority};
 
-use super::middleware::Middleware;
-
 use super::chain::Chain;
 use super::chain::stackchain::StackChain;
 
@@ -21,18 +19,16 @@ pub type ServerT = Iron<StackChain>;
 /// The server can be made with a specific `Chain` (using `from_chain`)
 /// or with a new `Chain` (using `new`). `Iron` is used to manage the server
 /// processes:
-/// `Iron.link` is used to add new `Middleware`, and
+/// `Iron.chain.link` is used to add new `Middleware`, and
 /// `Iron.listen` is used to kick off a server process.
 ///
 /// `Iron` contains the `Chain` which holds the `Middleware` necessary to run a server.
 /// `Iron` is the main interface to adding `Middleware`, and has `Chain` as a
 /// public field (for the sake of extensibility).
 pub struct Iron<C> {
-    /// This is exposed for the sake of extensibility. It can be used to set
-    /// chain to implement your server's middleware stack with custom behavior.
-    /// Most users will not need to touch `chain`. This should only be used if you
-    /// need custom handling of `Middleware`. Normally, the default `StackChain` is
-    /// sufficient.
+    /// Add `Middleware` to the `Iron's` `chain` so that requests
+    /// are passed through those `Middleware`.
+    /// `Middleware` is added to the chain with with `chain.link`.
     pub chain: C,
     ip: Option<IpAddr>,
     port: Option<u16>
@@ -49,17 +45,6 @@ impl<C: Clone> Clone for Iron<C> {
 }
 
 impl<C: Chain> Iron<C> {
-    /// `link` a new `Middleware`.
-    ///
-    /// Adds `Middleware` to the `Iron's` `chain`, so that any requests
-    /// are passed through those `Middleware`.
-    ///
-    /// `Iron.link` delegates to `Iron.chain.link`, so that any `Middleware`
-    /// added is added to the `Iron` instance's `chain`.
-    pub fn link<M: Middleware>(&mut self, middleware: M) {
-        self.chain.link(middleware);
-    }
-
     /// Kick off the server process.
     ///
     /// Call this once to begin listening for requests on the server.

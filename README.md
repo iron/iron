@@ -52,7 +52,7 @@ extern crate logger;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Request, Response, Alloy, ServerT};
+use iron::{Chain, Request, Response, Alloy, ServerT};
 use router::{Router, Params};
 use logger:Logger;
 use hypothetical::database;
@@ -72,13 +72,13 @@ fn main() {
     let mut server: ServerT = Iron::new();
 
     // Setup Logging middleware
-    server.link(Logger::new());
+    server.chain.link(Logger::new());
 
     // Mount sub-instances of Iron.
     // mount! is a macro from Mount that creates a sub-instance of Iron
     // with the second argument linked to it.
-    server.link(mount!("/api/v1", api_v1_router));
-    server.link(mount!("/api/v2", api_v2_router));
+    server.chain.link(mount!("/api/v1", api_v1_router));
+    server.chain.link(mount!("/api/v2", api_v2_router));
 
     server.listen(Ipv4addr(127, 0, 0, 1), 3000);
 }
@@ -92,7 +92,7 @@ extern crate iron;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Request, Response, Middleware, Alloy, ServerT};
+use iron::{Chain, Request, Response, Middleware, Alloy, ServerT};
 use iron::middleware::{Status, Continue};
 
 use time::precise_time_ns;
@@ -122,7 +122,7 @@ fn main() {
 
     // This adds the ResponseTime middleware so that
     // all requests and responses are passed through it.
-    server.link(ResponseTime::new());
+    server.chain.link(ResponseTime::new());
 
     // Start the server on localhost:3000
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);

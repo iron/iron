@@ -2,7 +2,7 @@ extern crate iron;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Request, Response, Middleware, Alloy, ServerT};
+use iron::{Iron, Chain, Request, Response, Middleware, Alloy, ServerT};
 use iron::middleware::{Status, Continue};
 
 use time::precise_time_ns;
@@ -32,7 +32,7 @@ fn main() {
 
     // This adds the ResponseTime middleware so that
     // all requests and responses are passed through it.
-    server.link(ResponseTime::new());
+    server.chain.link(ResponseTime::new());
 
     // Start the server on localhost:3000
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
