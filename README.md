@@ -8,7 +8,7 @@ Iron does not come bundled with any middleware - instead,
 Iron is a robust and efficient framework for plugging in middleware.
 
 After spawning, handling a single request through Iron’s middleware stack
-with a single no-op middleware takes only _300 nanoseconds_.
+with a single no-op middleware takes only _47 nanoseconds_.
 
 ## Installation
 
@@ -58,27 +58,37 @@ use logger:Logger;
 use hypothetical::database;
 
 fn setup_api_v1(router: &mut Router) {
-    router.get("/users/:userid", |_req, res, alloy| {
+    fn get_user(_req: &mut Request, res: &mut Response, alloy: &mut Alloy) {
         let params = alloy.find::<Params>().unwrap();
         res.write(database::get("Users", params.get("userid").unwrap()).as_bytes());
-    });
+    }
+    router.get("/users/:userid", get_user);
 }
 fn setup_api_v2(router: &mut Router) { ... }
 
 fn main() {
-    let api_v1_router = setup_api_v1(&mut Router::new());
-    let api_v2_router = setup_api_v2(&mut Router::new());
+    let api_v1_router = Router::new();
+    setup_api_v1(&mut api_v1_router);
+
+    let api_v2_router = Router::new();
+    setup_api_v2(&mut api_v2_router);
 
     let mut server: ServerT = Iron::new();
 
     // Setup Logging middleware
-    server.chain.link(Logger::new());
+    server.link(Logger::new());
 
-    // Mount sub-instances of Iron.
-    // mount! is a macro from Mount that creates a sub-instance of Iron
-    // with the second argument linked to it.
-    server.chain.link(mount!("/api/v1", api_v1_router));
-    server.chain.link(mount!("/api/v2", api_v2_router));
+    // Mount sub-middleware.
+    server.chain.link(Mount::new("/api/v1", api_v1_router));
+    server.chain.link(Mount::new("/api/v2", api_v2_router));
+
+    // Since Box<Chain>'s are middleware, we can use them in *any* place a
+    // middleware is expected.
+    server.chain.link(
+        Mount::new(
+            "/secret", box vec![authorize, secrets].iter().collect::<StackChain>()
+        )
+    );
 
     server.listen(Ipv4addr(127, 0, 0, 1), 3000);
 }
