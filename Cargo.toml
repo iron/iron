@@ -1,0 +1,25 @@
+[package]
+
+name = "iron"
+version = "0.0.0"
+readme = "README.md"
+authors = [
+    "Jonathan Reem <jonathan.reem@gmail.com>",
+    "Zach Pomerantz <zmp@umich.edu>",
+    "Patrick Tran <patrick.tran06@gmail.com>",
+    "Michael Reinhard <mcreinhard@gmail.com>"]
+tags = ["web", "server", "middleware", "framework"]
+
+[[lib]]
+
+name = "iron"
+path = "src/lib.rs"
+
+[dependencies.rust-http]
+
+git = "https://github.com/reem/rust-http.git"
+
+[dependencies.AnyMap]
+
+git = "https://github.com/reem/anymap.git"
+
