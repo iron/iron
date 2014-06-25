@@ -1,11 +1,19 @@
 use regex::Regex;
 use std::collections::hashmap::HashMap;
 
+/// `Params` contains a `HashMap` of all the glob parameters stored in alloy.
+///
+/// For instance, for a glob pattern like `/users/:userid` `Params` will
+/// contain the key `userid` matched with the value from the request url.
+/// This works for any number of parameters in a glob pattern.
+///
+/// These values can be accessed using `Params::get`.
 pub struct Params {
     captures: HashMap<String, String>
 }
 
 impl Params {
+    #[doc(hidden)]
     pub fn new<I: Iterator<String>>(uri: &str, matcher: Regex, params: I) -> Params {
         let captures = matcher.captures(uri).unwrap();
         Params {
@@ -17,7 +25,14 @@ impl Params {
         }
     }
 
-    pub fn get<'a>(&'a self, param: &'static str) -> Option<String> {
+    /// `get` allows you to query the HashMap contained inside Params.
+    ///
+    /// You can use `get` to access the parameters in the glob pattern
+    /// for the matched route which are from the request url.
+    ///
+    /// If your route contains `:groupid`, for instance, then you can get its
+    /// value from a `Params` by doing `params.get("groupid")`.
+    pub fn get<'a>(&'a self, param: &str) -> Option<String> {
         self.captures.find(&param.to_string()).and_then(|p| Some(p.clone()))
     }
 }
