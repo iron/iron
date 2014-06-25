@@ -14,7 +14,8 @@ use term::{Terminal, stdout};
 
 use std::io::IoResult;
 
-use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime};
+use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime,
+             ConstantColor, FunctionColor, ConstantAttrs, FunctionAttrs};
 
 pub mod format;
 
@@ -43,7 +44,7 @@ impl Middleware for Logger {
     }
     fn exit(&mut self, req: &mut Request, res: &mut Response, _al: &mut Alloy) -> Status {
         let response_time_ms = (precise_time_ns() - self.entry_time) as f64 / 1000000.0;
-        let Format(format) = self.format.clone().unwrap_or(Format::default(req, res));
+        let Format(format) = self.format.clone().unwrap_or(Format::default());
 
         let render = |text: &FormatText| {
             match *text {
@@ -57,11 +58,24 @@ impl Middleware for Logger {
         let log = |mut t: Box<Terminal<Box<Writer + Send>> + Send>| -> IoResult<()> {
             for unit in format.iter() {
                 match unit.color {
-                    Some(color) => { try!(t.fg(color)); }
-                    None => ()
+                    ConstantColor(Some(color)) => { try!(t.fg(color)); }
+                    ConstantColor(None) => (),
+                    FunctionColor(f) => match f(req, res) {
+                        Some(color) => { try!(t.fg(color)); }
+                        None => ()
+                    }
                 }
-                for &attr in unit.attrs.iter() {
-                    try!(t.attr(attr));
+                match unit.attrs {
+                    ConstantAttrs(ref attrs) => {
+                        for &attr in attrs.iter() {
+                            try!(t.attr(attr));
+                        }
+                    }
+                    FunctionAttrs(f) => {
+                        for &attr in f(req, res).iter() {
+                            try!(t.attr(attr));
+                        }
+                    }
                 }
                 try!(write!(t, "{}", render(&unit.text)));
                 try!(t.reset());
