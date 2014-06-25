@@ -4,7 +4,6 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
 
 use http::server::{Server, Config};
-use http::server::request::{Star, AbsoluteUri, AbsolutePath, Authority};
 
 use super::chain::Chain;
 use super::chain::stackchain::StackChain;
@@ -107,27 +106,8 @@ impl<C: Chain> Server for Iron<C> {
         } }
     }
 
-    fn handle_request(&self, req: &Request, res: &mut Response) {
+    fn handle_request(&self, mut req: Request, res: &mut Response) {
         let mut chain = self.chain.clone();
-        let _ = chain.dispatch(&mut copy_request(req), res, None);
+        let _ = chain.dispatch(&mut req, res, None);
     }
 }
-
-// Makes up for no Clone impl on Request objects.
-fn copy_request(req: &Request) -> Request {
-    Request {
-        remote_addr: req.remote_addr,
-        headers: req.headers.clone(),
-        body: req.body.clone(),
-        method: req.method.clone(),
-        request_uri: match req.request_uri {
-            Star => Star,
-            AbsoluteUri(ref u) => AbsoluteUri(u.clone()),
-            AbsolutePath(ref p) => AbsolutePath(p.clone()),
-            Authority(ref s) => Authority(s.clone())
-        },
-        close_connection: req.close_connection,
-        version: (1, 1)
-    }
-}
-
