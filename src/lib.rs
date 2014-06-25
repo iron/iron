@@ -17,6 +17,8 @@ extern crate regex;
 
 extern crate http;
 extern crate anymap;
+#[cfg(test)]
+extern crate test;
 
 pub use request::Request;
 pub use response::Response;
