@@ -75,11 +75,7 @@ all: $(DEFAULT)
 
 help:
 	$(Q)echo "--- rust-empty (0.5 000)" \
-	&& echo "make run               - Runs executable" \
-	&& echo "make exe               - Builds main executable" \
-	&& echo "make lib               - Both static and dynamic library" \
-	&& echo "make rlib              - Static library" \
-	&& echo "make dylib             - Dynamic library" \
+	&& echo "make lib               - Run cargo build" \
 	&& echo "make test              - Tests library internally and externally" \
 	&& echo "make test-internal     - Tests library internally" \
 	&& echo "make test-external     - Tests library externally" \
@@ -87,45 +83,23 @@ help:
 	&& echo "make bench-internal    - Benchmarks library internally" \
 	&& echo "make bench-external    - Benchmarks library externally" \
 	&& echo "make doc               - Builds documentation for library" \
-	&& echo "make git-ignore        - Setup files to be ignored by Git" \
 	&& echo "make examples          - Builds examples" \
-	&& echo "make cargo-lite-exe    - Setup executable package" \
-	&& echo "make cargo-lite-lib    - Setup library package" \
-	&& echo "make cargo-exe         - EXPERIMENTAL: Setup executable package" \
-	&& echo "make cargo-lib         - EXPERIMENTAL: Setup library package" \
-	&& echo "make rust-ci-lib       - Setup Travis CI Rust library" \
-	&& echo "make rust-ci-exe       - Setup Travis CI Rust executable" \
 	&& echo "make rusti             - Setup 'rusti.sh' for interactive Rust" \
 	&& echo "make watch             - Setup 'watch.sh' for compilation on save" \
 	&& echo "make loc               - Count lines of code in src folder" \
 	&& echo "make nightly-install   - Installs Rust nightly built" \
 	&& echo "make nightly-uninstall - Uninstalls Rust nightly built" \
-	&& echo "make clean             - Deletes binaries and documentation." \
-	&& echo "make clear-project     - WARNING: Deletes project files except 'Makefile'" \
-	&& echo "make clear-git         - WARNING: Deletes Git setup" \
-	&& echo "make symlink-info      - Symlinked libraries dependency info" \
-	&& echo "make target-dir        - Creates directory for current target"
+	&& echo "make clean             - Deletes binaries and documentation."
 
 .PHONY: \
 		bench \
 		bench-internal \
 		bench-external \
-		cargo-lib \
-		cargo-exe \
-		cargo-lite-lib \
-		cargo-lite-exe \
 		clean \
-		clear-git \
-		clear-project \
 		loc \
 		nightly-install \
 		nightly-uninstall \
-		run \
 		rusti \
-		rust-ci-lib \
-		rust-ci-exe \
-		symlink-info \
-		target-dir \
 		test \
 		test-internal \
 	  test-external \
@@ -157,93 +131,11 @@ nightly-uninstall:
 		fi \
 	)
 
-cargo-lite-exe: $(EXE_ENTRY_FILE)
-	$(Q)( \
-		test -e cargo-lite.conf \
-		&& echo "--- The file 'cargo-lite.conf' already exists" \
-	) \
-	|| \
-	( \
-		echo -e "deps = [\n]\n\n[build]\ncrate_root = \"$(EXE_ENTRY_FILE)\"\nrustc_args = []\n" > cargo-lite.conf \
-		&& echo "--- Created 'cargo-lite.conf' for executable" \
-		&& cat cargo-lite.conf \
-	)
-
-cargo-lite-lib: $(LIB_ENTRY_FILE)
-	$(Q)( \
-		test -e cargo-lite.conf \
-		&& echo "--- The file 'cargo-lite.conf' already exists" \
-	) \
-	|| \
-	( \
-		echo -e "deps = [\n]\n\n[build]\ncrate_root = \"$(LIB_ENTRY_FILE)\"\ncrate_type = \"library\"\nrustc_args = []\n" > cargo-lite.conf \
-		&& echo "--- Created 'cargo-lite.conf' for library" \
-		&& cat cargo-lite.conf \
-	)
-
-cargo-exe: $(EXE_ENTRY_FILE)
-	$(Q)( \
-		test -e Cargo.toml \
-		&& echo "--- The file 'Cargo.toml' already exists" \
-	) \
-	|| \
-	( \
-		name=$${PWD##/*/} ; \
-		readme=$$((test -e README.md && echo -e "readme = \"README.md\"") || ("")) ; \
-		echo -e "[project]\n\nname = \"$$name\"\nversion = \"0.0\"\n$$readme\nauthors = [\"Your Name <your@email.com>\"]\ntags = []\n\n[[bin]]\n\nname = \"$$name\"\npath = \"$(EXE_ENTRY_FILE)\"\n" > Cargo.toml \
-		&& echo "--- Created 'Cargo.toml' for executable" \
-		&& cat Cargo.toml \
-	)
-
-cargo-lib: $(EXE_ENTRY_FILE)
-	$(Q)( \
-		test -e Cargo.toml \
-		&& echo "--- The file 'Cargo.toml' already exists" \
-	) \
-	|| \
-	( \
-		name=$${PWD##/*/} ; \
-		readme=$$((test -e README.md && echo -e "readme = \"README.md\"") || ("")) ; \
-		echo -e "[project]\n\nname = \"$$name\"\nversion = \"0.0\"\n$$readme\nauthors = [\"Your Name <your@email.com>\"]\ntags = []\n\n[[lib]]\n\nname = \"$$name\"\npath = \"$(LIB_ENTRY_FILE)\"\n" > Cargo.toml \
-		&& echo "--- Created 'Cargo.toml' for executable" \
-		&& cat Cargo.toml \
-	)
-
-rust-ci-lib: $(LIB_ENTRY_FILE)
-	$(Q)( \
-		test -e .travis.yml \
-		&& echo "--- The file '.travis.yml' already exists" \
-	) \
-	|| \
-	( \
-		echo -e "install:\n  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local\nscript:\n  - make lib\n" > .travis.yml \
-		&& echo "--- Created '.travis.yml' for library" \
-		&& cat .travis.yml \
-	)
-
-rust-ci-exe: $(EXE_ENTRY_FILE)
-	$(Q)( \
-		test -e .travis.yml \
-		&& echo "--- The file '.travis.yml' already exists" \
-	) \
-	|| \
-	( \
-		echo -e "install:\n  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local\nscript:\n  - make exe\n" > .travis.yml \
-		&& echo "--- Created '.travis.yml' for executable" \
-		&& cat .travis.yml \
-	)
-
 doc: $(SOURCE_FILES) | src/
 	$(Q)$(RUSTDOC) $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" -L "$(TARGET_DEP_DIR)" \
 	&& echo "--- Built documentation"
 
-run: exe
-	$(Q)cd bin/ \
-	&& ./main
-
 target-dir: $(TARGET_LIB_DIR)
-
-exe: bin/main | $(TARGET_LIB_DIR)
 
 bin/main: $(SOURCE_FILES) | bin/ $(EXE_ENTRY_FILE)
 	$(Q)$(COMPILER) $(COMPILER_FLAGS) $(EXE_ENTRY_FILE) -o bin/main -L "$(TARGET_LIB_DIR)" -L "$(TARGET_DEP_DIR)" \
@@ -278,20 +170,14 @@ bench-external: test-external
 bench-internal: test-internal
 	$(Q)bin/test-internal --bench
 
-lib: rlib dylib
+lib: rlib
 	$(Q)echo "--- Type 'make test' to test library"
 
 rlib: $(RLIB)
 
 $(RLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) $(COMPILER_FLAGS) --crate-type=rlib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" -L "$(TARGET_DEP_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
+	cargo build \
 	&& echo "--- Built rlib"
-
-dylib: $(DYLIB)
-
-$(DYLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) $(COMPILER_FLAGS) --crate-type=dylib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" -L "$(TARGET_DEP_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
-	&& echo "--- Built dylib"
 
 bin/:
 	$(Q)mkdir -p bin
@@ -313,18 +199,6 @@ examples-dir:
 
 rust-dir:
 	$(Q)mkdir -p .rust
-
-git-ignore:
-	$(Q)( \
-		test -e .gitignore \
-		&& echo "--- The file '.gitignore' already exists" \
-	) \
-	|| \
-	( \
-		echo -e ".DS_Store\n*~\n*#\n*.o\n*.so\n*.swp\n*.dylib\n*.dSYM\n*.dll\n*.rlib\n*.dummy\n*.exe\n*-test\n/bin/main\n/bin/test-internal\n/bin/test-external\n/doc/\n/target/\n/build/\n/.rust/\nrusti.sh\nwatch.sh\n/examples/**\n!/examples/*.rs\n!/examples/assets/" > .gitignore \
-		&& echo "--- Created '.gitignore' for git" \
-		&& cat .gitignore \
-	)
 
 examples: $(EXAMPLE_FILES)
 
@@ -361,29 +235,6 @@ clean:
 	$(Q)rm -f "bin/test-internal"
 	$(Q)rm -f "bin/test-external"
 	$(Q)echo "--- Deleted binaries and documentation"
-
-clear-project:
-	$(Q)rm -f ".symlink-info"
-	$(Q)rm -f "cargo-lite.conf"
-	$(Q)rm -f "Cargo.toml"
-	$(Q)rm -f ".travis.yml"
-	$(Q)rm -f "rusti.sh"
-	$(Q)rm -f "watch.sh"
-	$(Q)rm -rf "target/"
-	$(Q)rm -rf "src/"
-	$(Q)rm -rf "bin/"
-	$(Q)rm -rf "examples/"
-	$(Q)rm -rf "doc/"
-	$(Q)echo "--- Removed all source files, binaries and documentation" \
-	&& echo "--- Content in project folder" \
-	&& ls -a
-
-clear-git:
-	$(Q)rm -f ".gitignore"
-	$(Q)rm -rf ".git"
-	$(Q)echo "--- Removed Git" \
-	&& echo "--- Content in project folder" \
-	&& ls -a
 
 # borrowed from http://stackoverflow.com/q/649246/1256624
 define RUSTI_SCRIPT
@@ -525,28 +376,3 @@ watch: $(TARGET_LIB_DIR)
 loc:
 	$(Q)echo "--- Counting lines of .rs files in 'src' (LOC):" \
 	&& find src/ -type f -name "*.rs" -exec cat {} \; | wc -l
-
-# Finds the original locations of symlinked libraries and
-# prints the commit hash with remote branches containing that commit.
-symlink-info:
-	$(Q)	current=$$(pwd) ; \
-	for symlib in $$(find target/*/lib -type l) ; do \
-		cd $$current ; \
-		echo $$symlib ; \
-		original_file=$$(readlink $$symlib) ; \
-		original_dir=$$(dirname $$original_file) ; \
-		cd $$original_dir ; \
-		commit=$$(git rev-parse HEAD) ; \
-		echo $$commit ; \
-		echo "origin:" ; \
-		git config --get remote.origin.url ; \
-		echo "upstream:" ; \
-		git config --get remote.upstream.url ; \
-		echo "available in remote branches:" ; \
-		git branch -r --contains $$commit ; \
-		echo "" ; \
-	done \
-	> .symlink-info \
-	&& cd $$current \
-	&& echo "--- Created '.symlink-info'" \
-	&& cat .symlink-info
