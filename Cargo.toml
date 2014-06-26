@@ -4,7 +4,7 @@ name = "router"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.1.0"
 readme = "README.md"
-tags = ["web", "server", "middleware", "framework"]
+tags = ["web", "server", "middleware", "iron", "core", "router"]
 
 [[lib]]
 
