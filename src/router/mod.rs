@@ -50,9 +50,9 @@ impl Router {
     ///
     /// ```rust
     /// router.route(
-    ///     ::http::method::Get /* The HTTP verb */,
-    ///     '/users/:userid/:friend'.to_string() /* A glob pattern to match */,
-    ///     controller /* Any Middleware */);
+    ///     ::http::method::Get,
+    ///     "/users/:userid/:friend".to_string(),
+    ///     controller
     /// ```
     ///
     /// The controller provided to route can be any `Middleware`, which allows
