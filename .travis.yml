@@ -1,10 +1,10 @@
 install:
   - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local
-  - ./configure
+  - yes | sudo add-apt-repository ppa:cmrx64/cargo
+  - sudo apt-get update
+  - sudo apt-get install cargo
 script:
-  - make lib
-  - make test
-  - make examples
-  - make doc
+  - cargo build
+  - make all
 os:
   - linux
