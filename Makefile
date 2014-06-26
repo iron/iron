@@ -26,7 +26,7 @@ SHELL := /bin/bash
 
 # The default make command.
 # Change this to 'lib' if you are building a library.
-DEFAULT = lib
+DEFAULT = test examples doc
 # The entry file of library source.
 # Change this to support multi-crate source structure.
 # For advanced usage, you can rename the file 'rust-empty.mk'
@@ -52,16 +52,16 @@ TARGET = $(shell rustc --version 2> /dev/null | awk "/host:/ { print \$$2 }")
 # TARGET = x86_64-unknown-linux-gnu
 # TARGET = x86_64-apple-darwin
 
-TARGET_LIB_DIR = target/$(TARGET)/lib/
+TARGET_LIB_DIR = target/deps
 
 # Ask 'rustc' the file name of the library and use a dummy name if the source has not been created yet.
 # The dummy file name is used to trigger the creation of the source first time.
 # Next time 'rustc' will return the right file name.
 RLIB_FILE = $(shell (rustc --crate-type=rlib --crate-file-name "$(LIB_ENTRY_FILE)" 2> /dev/null) || (echo "dummy.rlib"))
 # You can't have quotes around paths because 'make' doesn't see it exists.
-RLIB = target/$(TARGET)/lib/$(RLIB_FILE)
+RLIB = $(TARGET_LIB_DIR)/$(RLIB_FILE)
 DYLIB_FILE = $(shell (rustc --crate-type=dylib --crate-file-name "$(LIB_ENTRY_FILE)" 2> /dev/null) || (echo "dummy.dylib"))
-DYLIB = target/$(TARGET)/lib/$(DYLIB_FILE)
+DYLIB = $(TARGET_LIB_DIR)/$(DYLIB_FILE)
 
 # Use 'VERBOSE=1' to echo all commands, for example 'make help VERBOSE=1'.
 ifdef VERBOSE
@@ -73,7 +73,7 @@ endif
 all: $(DEFAULT)
 
 help:
-	$(Q)echo "--- rust-empty (0.4 003)" \
+	$(Q)echo "--- rust-empty (0.5 000)" \
 	&& echo "make run               - Runs executable" \
 	&& echo "make exe               - Builds main executable" \
 	&& echo "make lib               - Both static and dynamic library" \
@@ -95,6 +95,7 @@ help:
 	&& echo "make rust-ci-lib       - Setup Travis CI Rust library" \
 	&& echo "make rust-ci-exe       - Setup Travis CI Rust executable" \
 	&& echo "make rusti             - Setup 'rusti.sh' for interactive Rust" \
+	&& echo "make watch             - Setup 'watch.sh' for compilation on save" \
 	&& echo "make loc               - Count lines of code in src folder" \
 	&& echo "make nightly-install   - Installs Rust nightly built" \
 	&& echo "make nightly-uninstall - Uninstalls Rust nightly built" \
@@ -126,7 +127,8 @@ help:
 		target-dir \
 		test \
 		test-internal \
-		test-external
+	  test-external \
+		watch
 
 nightly-install:
 	$(Q)cd ~ \
@@ -213,7 +215,7 @@ rust-ci-lib: $(LIB_ENTRY_FILE)
 	) \
 	|| \
 	( \
-		echo -e "before_install:\n  - yes | sudo add-apt-repository ppa:hansjorg/rust\n  - sudo apt-get update\ninstall:\n  - sudo apt-get install rust-nightly\nscript:\n  - make lib\n" > .travis.yml \
+		echo -e "install:\n  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local\nscript:\n  - make lib\n" > .travis.yml \
 		&& echo "--- Created '.travis.yml' for library" \
 		&& cat .travis.yml \
 	)
@@ -225,13 +227,13 @@ rust-ci-exe: $(EXE_ENTRY_FILE)
 	) \
 	|| \
 	( \
-		echo -e "before_install:\n  - yes | sudo add-apt-repository ppa:hansjorg/rust\n  - sudo apt-get update\ninstall:\n  - sudo apt-get install rust-nightly\nscript:\n  - make exe\n" > .travis.yml \
+		echo -e "install:\n  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - | sudo tar zxf - --strip-components 1 -C /usr/local\nscript:\n  - make exe\n" > .travis.yml \
 		&& echo "--- Created '.travis.yml' for executable" \
 		&& cat .travis.yml \
 	)
 
 doc: $(SOURCE_FILES) | src/
-	$(Q)$(RUSTDOC) $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" \
+	$(Q)$(RUSTDOC) $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built documentation"
 
 run: exe
@@ -243,7 +245,7 @@ target-dir: $(TARGET_LIB_DIR)
 exe: bin/main | $(TARGET_LIB_DIR)
 
 bin/main: $(SOURCE_FILES) | bin/ $(EXE_ENTRY_FILE)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $(EXE_ENTRY_FILE) -o bin/main -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $(EXE_ENTRY_FILE) -o bin/main -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built executable" \
 	&& echo "--- Type 'make run' to run executable"
 
@@ -256,7 +258,7 @@ test-external: bin/test-external
 	&& ./test-external
 
 bin/test-external: $(SOURCE_FILES) | rlib bin/ src/test.rs
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test src/test.rs -o bin/test-external -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test src/test.rs -o bin/test-external -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built external test runner"
 
 test-internal: bin/test-internal
@@ -264,7 +266,7 @@ test-internal: bin/test-internal
 	&& ./test-internal
 
 bin/test-internal: $(SOURCE_FILES) | rlib src/ bin/
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test $(LIB_ENTRY_FILE) -o bin/test-internal -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test $(LIB_ENTRY_FILE) -o bin/test-internal -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built internal test runner"
 
 bench: bench-internal bench-external
@@ -281,22 +283,22 @@ lib: rlib dylib
 rlib: $(RLIB)
 
 $(RLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=rlib $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" --out-dir "target/$(TARGET)/lib/" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=rlib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
 	&& echo "--- Built rlib"
 
 dylib: $(DYLIB)
 
 $(DYLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=dylib $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" --out-dir "target/$(TARGET)/lib/" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=dylib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
 	&& echo "--- Built dylib"
 
-bin:
+bin/:
 	$(Q)mkdir -p bin
 
 $(TARGET_LIB_DIR):
 	$(Q)mkdir -p $(TARGET_LIB_DIR)
 
-src:
+src/:
 	$(Q)mkdir -p src
 
 examples-dir:
@@ -318,7 +320,7 @@ git-ignore:
 	) \
 	|| \
 	( \
-		echo -e ".DS_Store\n*~\n*#\n*.o\n*.so\n*.swp\n*.dylib\n*.dSYM\n*.dll\n*.rlib\n*.dummy\n*.exe\n*-test\n/bin/main\n/bin/test-internal\n/bin/test-external\n/doc/\n/target/\n/build/\n/.rust/\nrusti.sh\n" > .gitignore \
+		echo -e ".DS_Store\n*~\n*#\n*.o\n*.so\n*.swp\n*.dylib\n*.dSYM\n*.dll\n*.rlib\n*.dummy\n*.exe\n*-test\n/bin/main\n/bin/test-internal\n/bin/test-external\n/doc/\n/target/\n/build/\n/.rust/\nrusti.sh\nwatch.sh\n/examples/**\n!/examples/*.rs\n!/examples/assets/" > .gitignore \
 		&& echo "--- Created '.gitignore' for git" \
 		&& cat .gitignore \
 	)
@@ -326,7 +328,7 @@ git-ignore:
 examples: $(EXAMPLE_FILES)
 
 $(EXAMPLE_FILES): lib examples-dir
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $@ -L "target/$(TARGET)/lib" --out-dir examples/ \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $@ -L "$(TARGET_LIB_DIR)" --out-dir examples/ \
 	&& echo "--- Built examples"
 
 $(EXE_ENTRY_FILE): | src/
@@ -362,8 +364,10 @@ clean:
 clear-project:
 	$(Q)rm -f ".symlink-info"
 	$(Q)rm -f "cargo-lite.conf"
+	$(Q)rm -f "Cargo.toml"
 	$(Q)rm -f ".travis.yml"
 	$(Q)rm -f "rusti.sh"
+	$(Q)rm -f "watch.sh"
 	$(Q)rm -rf "target/"
 	$(Q)rm -rf "src/"
 	$(Q)rm -rf "bin/"
@@ -390,7 +394,7 @@ while true; do
   echo -n "> "
   read line
   TMP="`mktemp r.XXXXXX`"
-  $(COMPILER) - -o $$TMP -L "target/$(TARGET)/lib/" <<EOF
+  $(COMPILER) - -o $$TMP -L "$(TARGET_LIB_DIR)/" <<EOF
   #![feature(globs, macro_rules, phase, struct_variant)]
   extern crate arena;
   extern crate collections;
@@ -442,6 +446,79 @@ rusti: $(TARGET_LIB_DIR)
 		&& chmod +x rusti.sh \
 		&& echo "--- Created 'rusti.sh'" \
 		&& echo "--- Type './rusti.sh' to start interactive Rust" \
+	)
+
+# borrowed from http://stackoverflow.com/q/649246/1256624
+define WATCH_SCRIPT
+#!/bin/bash
+
+#written by zzmp
+
+# This script will recompile a rust project using `make`
+# every time something in the specified directory changes.
+
+# Watch files in infinite loop
+watch () {
+  if [ -e "$$2" ]; then
+    echo "Watching files in $$2.."
+    CTIME=$$(date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s")
+    while :; do
+      sleep 1
+      for f in `find $$2 -type f -name "*.rs"`; do
+        eval $$(stat -s $$f)
+        if [ $$st_mtime -gt $$CTIME ]; then
+          CTIME=$$(date -j -f "%a %b %d %T %Z %Y" "`date`" "+%s")
+          echo "~~~ Rebuilding"
+          $$1
+          if [ ! $$? -eq 0 ]; then
+            echo ""
+          fi
+        fi
+      done
+    done
+  else
+    echo "$$2 is not a valid directory"
+  fi
+}
+
+# Capture user input with defaults
+CMD=$${1:-make}
+DIR=$${2:-src}
+
+if [ $${CMD:0:2} = '-h' ]; then
+echo '
+This script will recompile a rust project using `make`
+every time something in the specified directory changes.
+
+Use: ./watch.sh [CMD] [DIR]
+Example: ./watch.sh "make run" src
+
+CMD: Command to execute
+     Complex commands may be passed as strings
+     `make` by default
+DIR: Directory to watch
+     src by default
+
+If DIR is supplied, CMD must be as well.\n'
+else
+  watch "$$CMD" "$$DIR"
+fi
+
+endef
+export WATCH_SCRIPT
+
+watch: $(TARGET_LIB_DIR)
+	$(Q)( \
+		test -e watch.sh \
+		&& echo "--- The file 'watch.sh' already exists" \
+	) \
+	|| \
+	( \
+		echo -e "$$WATCH_SCRIPT" > watch.sh \
+		&& chmod +x watch.sh \
+		&& echo "--- Created 'watch.sh'" \
+		&& echo "--- Type './watch.sh' to start compilation on save" \
+		&& echo "--- Type './watch.sh -h' for more options" \
 	)
 
 loc:
