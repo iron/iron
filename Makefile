@@ -26,7 +26,7 @@ SHELL := /bin/bash
 
 # The default make command.
 # Change this to 'lib' if you are building a library.
-DEFAULT = lib
+DEFAULT = test examples doc
 # The entry file of library source.
 # Change this to support multi-crate source structure.
 # For advanced usage, you can rename the file 'rust-empty.mk'
@@ -41,7 +41,7 @@ SOURCE_FILES = $(shell test -e src/ && find src -type f)
 COMPILER = rustc
 
 # For release:
-  COMPILER_FLAGS = -O
+  COMPILER_FLAGS = --opt-level=3
 # For debugging:
 # COMPILER_FLAGS = -g
 
@@ -52,16 +52,16 @@ TARGET = $(shell rustc --version 2> /dev/null | awk "/host:/ { print \$$2 }")
 # TARGET = x86_64-unknown-linux-gnu
 # TARGET = x86_64-apple-darwin
 
-TARGET_LIB_DIR = target/$(TARGET)/lib/
+TARGET_LIB_DIR = target/deps
 
 # Ask 'rustc' the file name of the library and use a dummy name if the source has not been created yet.
 # The dummy file name is used to trigger the creation of the source first time.
 # Next time 'rustc' will return the right file name.
 RLIB_FILE = $(shell (rustc --crate-type=rlib --crate-file-name "$(LIB_ENTRY_FILE)" 2> /dev/null) || (echo "dummy.rlib"))
 # You can't have quotes around paths because 'make' doesn't see it exists.
-RLIB = target/$(TARGET)/lib/$(RLIB_FILE)
+RLIB = $(TARGET_LIB_DIR)/$(RLIB_FILE)
 DYLIB_FILE = $(shell (rustc --crate-type=dylib --crate-file-name "$(LIB_ENTRY_FILE)" 2> /dev/null) || (echo "dummy.dylib"))
-DYLIB = target/$(TARGET)/lib/$(DYLIB_FILE)
+DYLIB = $(TARGET_LIB_DIR)/$(DYLIB_FILE)
 
 # Use 'VERBOSE=1' to echo all commands, for example 'make help VERBOSE=1'.
 ifdef VERBOSE
@@ -127,7 +127,7 @@ help:
 		target-dir \
 		test \
 		test-internal \
-	    test-external \
+	  test-external \
 		watch
 
 nightly-install:
@@ -233,7 +233,7 @@ rust-ci-exe: $(EXE_ENTRY_FILE)
 	)
 
 doc: $(SOURCE_FILES) | src/
-	$(Q)$(RUSTDOC) $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" \
+	$(Q)$(RUSTDOC) $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built documentation"
 
 run: exe
@@ -245,7 +245,7 @@ target-dir: $(TARGET_LIB_DIR)
 exe: bin/main | $(TARGET_LIB_DIR)
 
 bin/main: $(SOURCE_FILES) | bin/ $(EXE_ENTRY_FILE)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $(EXE_ENTRY_FILE) -o bin/main -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $(EXE_ENTRY_FILE) -o bin/main -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built executable" \
 	&& echo "--- Type 'make run' to run executable"
 
@@ -258,7 +258,7 @@ test-external: bin/test-external
 	&& ./test-external
 
 bin/test-external: $(SOURCE_FILES) | rlib bin/ src/test.rs
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test src/test.rs -o bin/test-external -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test src/test.rs -o bin/test-external -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built external test runner"
 
 test-internal: bin/test-internal
@@ -266,7 +266,7 @@ test-internal: bin/test-internal
 	&& ./test-internal
 
 bin/test-internal: $(SOURCE_FILES) | rlib src/ bin/
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test $(LIB_ENTRY_FILE) -o bin/test-internal -L "target/$(TARGET)/lib" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --test $(LIB_ENTRY_FILE) -o bin/test-internal -L "$(TARGET_LIB_DIR)" \
 	&& echo "--- Built internal test runner"
 
 bench: bench-internal bench-external
@@ -283,13 +283,13 @@ lib: rlib dylib
 rlib: $(RLIB)
 
 $(RLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=rlib $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" --out-dir "target/$(TARGET)/lib/" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=rlib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
 	&& echo "--- Built rlib"
 
 dylib: $(DYLIB)
 
 $(DYLIB): $(SOURCE_FILES) | $(LIB_ENTRY_FILE) $(TARGET_LIB_DIR)
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=dylib $(LIB_ENTRY_FILE) -L "target/$(TARGET)/lib" --out-dir "target/$(TARGET)/lib/" \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) --crate-type=dylib $(LIB_ENTRY_FILE) -L "$(TARGET_LIB_DIR)" --out-dir "$(TARGET_LIB_DIR)/" \
 	&& echo "--- Built dylib"
 
 bin/:
@@ -328,7 +328,7 @@ git-ignore:
 examples: $(EXAMPLE_FILES)
 
 $(EXAMPLE_FILES): lib examples-dir
-	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $@ -L "target/$(TARGET)/lib" --out-dir examples/ \
+	$(Q)$(COMPILER) --target "$(TARGET)" $(COMPILER_FLAGS) $@ -L "$(TARGET_LIB_DIR)" --out-dir examples/ \
 	&& echo "--- Built examples"
 
 $(EXE_ENTRY_FILE): | src/
@@ -394,7 +394,7 @@ while true; do
   echo -n "> "
   read line
   TMP="`mktemp r.XXXXXX`"
-  $(COMPILER) - -o $$TMP -L "target/$(TARGET)/lib/" <<EOF
+  $(COMPILER) - -o $$TMP -L "$(TARGET_LIB_DIR)/" <<EOF
   #![feature(globs, macro_rules, phase, struct_variant)]
   extern crate arena;
   extern crate collections;
