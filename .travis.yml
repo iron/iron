@@ -4,7 +4,6 @@ install:
   - sudo apt-get update
   - sudo apt-get install cargo
 script:
-  - ./configure
   - cargo build
   - make test
   - make examples
