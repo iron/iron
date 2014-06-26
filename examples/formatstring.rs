@@ -1,3 +1,4 @@
+//! Example of logger with custom formatting
 extern crate iron;
 extern crate logger;
 extern crate term;
@@ -11,6 +12,8 @@ use logger::format::{Format, FunctionAttrs};
 
 use term::attr;
 
+// This is an example of using a format string that can specify colors and attributes
+// to specific words that are printed out to the console. 
 fn main() {
     let format_str =
         "@[red A]URI: {uri}@@, @[blue blink underline]Method: {method}@@, @[yellow standout]Status: {status}@@, @[brightgreen]Time: {response_time}@@";
