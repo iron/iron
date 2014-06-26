@@ -76,6 +76,15 @@ impl Chain for StackChain {
     }
 }
 
+impl FromIterator<Box<Middleware + Send>> for StackChain {
+    fn from_iter<T: Iterator<Box<Middleware + Send>>>(mut iterator: T) -> StackChain {
+        StackChain {
+            stack: iterator.collect(),
+            exit_stack: vec![]
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     pub use super::*;
