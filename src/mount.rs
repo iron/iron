@@ -66,9 +66,6 @@ impl Middleware for Mount {
         match req.request_uri {
             AbsolutePath(ref mut path) => {
                 *path = path.as_slice().slice_from(self.route.len()).to_string();
-                if path.is_empty() {
-                    *path = "/".to_string();
-                }
             },
             // Absolutely cannot happen because of our previous check,
             // but this is here just to be careful.
