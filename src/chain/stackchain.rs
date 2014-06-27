@@ -150,7 +150,7 @@ mod test {
             let mut testchain: StackChain = Chain::new();
             let enter_exits: Vec<(Arc<Mutex<u64>>, Arc<Mutex<u64>>)> = vec![];
 
-            for _ in range(0, 10) {
+            for _ in range(0u8, 10) {
                 let (enter, exit) = (Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
             }
@@ -290,12 +290,12 @@ mod test {
                     use super::super::super::StackChain;
                     use super::super::super::super::Chain;
 
-                    bench_noop_x!(bench_empty, 0, $method)
-                    bench_noop_x!(bench_1, 1, $method)
-                    bench_noop_x!(bench_2, 2, $method)
-                    bench_noop_x!(bench_3, 3, $method)
-                    bench_noop_x!(bench_4, 4, $method)
-                    bench_noop_x!(bench_10, 10, $method)
+                    bench_noop_x!(bench_empty, 0u8, $method)
+                    bench_noop_x!(bench_1, 1u8, $method)
+                    bench_noop_x!(bench_2, 2u8, $method)
+                    bench_noop_x!(bench_3, 3u8, $method)
+                    bench_noop_x!(bench_4, 4u8, $method)
+                    bench_noop_x!(bench_10, 10u8, $method)
                 }
             }
         )

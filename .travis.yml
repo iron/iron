@@ -5,8 +5,6 @@ install:
   - sudo apt-get install cargo
 script:
   - cargo build
-  - make test
-  - make examples
-  - make doc
+  - make all
 os:
   - linux
