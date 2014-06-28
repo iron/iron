@@ -1,8 +1,11 @@
-use http::server::request::{AbsolutePath};
 use regex::Regex;
 
 use iron::{Middleware, Request, Response, Alloy, Chain};
 use iron::middleware::{Status, Continue};
+use iron::mixin::GetUrl;
+
+/// Exposes the original, unmodified path to be stored in an Alloy.
+pub struct OriginalUrl(String);
 
 /// `Mount` is a simple mounting middleware.
 ///
@@ -51,25 +54,30 @@ impl Middleware for Mount {
         // because we can't both borrow path from inside of request
         // while allowing chain.dispatch to borrow it as mutable.
 
-        match req.request_uri {
-           AbsolutePath(ref path) => {
+        match req.url() {
+           Some(path) => {
                // Short circuit if we don't match.
                 if !self.matches.is_match(path.as_slice()) {
                     return Continue;
                 }
            },
            // Short circuit if this is not an AbsolutePath.
-           _ => { return Continue; }
+           None => { return Continue; }
         }
 
         // We are a match, so fire off to our child instance.
-        match req.request_uri {
-            AbsolutePath(ref mut path) => {
+        match req.url_mut() {
+            Some(path) => {
+                // Insert the unmodified path into the alloy.
+                match alloy.find::<OriginalUrl>() {
+                    Some(_) => (),
+                    None => alloy.insert(OriginalUrl(path.clone()))
+                }
                 *path = path.as_slice().slice_from(self.route.len()).to_string();
             },
             // Absolutely cannot happen because of our previous check,
             // but this is here just to be careful.
-            _ => { return Continue; }
+            None => { return Continue; }
         } // Previous borrow of req ends here.
 
         // So we can borrow it again here.
@@ -77,12 +85,12 @@ impl Middleware for Mount {
         let _ = self.middleware.exit(req, res, alloy);
 
         // And repair the damage here, for future middleware
-        match req.request_uri {
-            AbsolutePath(ref mut path) => {
+        match req.url_mut() {
+            Some(path) => {
                 *path = self.route.clone().append(path.as_slice());
             },
             // This really, really should never happen.
-            _ => { fail!("The impossible happened."); }
+            None => { fail!("The impossible happened."); }
         }
 
         // We dispatched the request, so return the terminator.

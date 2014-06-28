@@ -11,7 +11,6 @@ extern crate http;
 extern crate iron;
 extern crate regex;
 
-pub use Mount = mount::Mount;
-
+pub use mount::{Mount, OriginalUrl};
 mod mount;
 
