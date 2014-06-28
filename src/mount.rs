@@ -5,7 +5,7 @@ use iron::middleware::{Status, Continue};
 use iron::mixin::GetUrl;
 
 /// Exposes the original, unmodified path to be stored in an Alloy.
-pub struct OriginalUrl(String);
+pub struct OriginalUrl(pub String);
 
 /// `Mount` is a simple mounting middleware.
 ///
