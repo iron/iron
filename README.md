@@ -28,7 +28,7 @@ mount is a part of Iron's [core bundle](https://github.com/iron/core).
 
 ## Installation
 
-If you're using a `Cargo` to manage dependencies, just add mount to the toml:
+If you're using a `Cargo.toml` to manage dependencies, just add mount to the toml:
 
 ```toml
 [dependencies.mount]
