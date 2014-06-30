@@ -6,18 +6,19 @@ persistent [![Build Status](https://secure.travis-ci.org/iron/persistent.png?bra
 ## Example
 
 ```rust
-extern crate iron;
-extern crate http;
-use iron::{Iron, ServerT, Chain, Request, Response, Alloy};
-
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.chain.link(hello_world); // Add middleware to the server's stack
+    server.chain.link(FromFn::new(counter)); // Add persistent counter to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
-    res.serve(::http::Ok, "Hello, world!");
+pub struct HitCounter;
+
+fn counter(_: &mut Request, _: &mut Response, alloy: &mut Alloy) -> Status {
+    let mut count = alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
+    *count += 1;
+    println!("{} hits!", *count);
+    Continue
 }
 ```
 
@@ -25,8 +26,8 @@ fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
 
 persistent is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- ...
-- ...
+- Share persistent data across requests
+- Read or modify locally stored data
 
 ## Installation
 
