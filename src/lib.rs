@@ -10,7 +10,7 @@ extern crate term;
 use iron::{Middleware, Alloy, Request, Response};
 use iron::middleware::{Status, Continue};
 use time::precise_time_ns;
-use term::{Terminal, stdout};
+use term::{Terminal, WriterWrapper, stdout};
 
 use std::io::IoResult;
 
@@ -55,7 +55,7 @@ impl Middleware for Logger {
                 ResponseTime => format!("{} ms", response_time_ms)
             }
         };
-        let log = |mut t: Box<Terminal<Box<Writer + Send>> + Send>| -> IoResult<()> {
+        let log = |mut t: Box<Terminal<WriterWrapper> + Send>| -> IoResult<()> {
             for unit in format.iter() {
                 match unit.color {
                     ConstantColor(Some(color)) => { try!(t.fg(color)); }
