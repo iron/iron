@@ -6,18 +6,23 @@ router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=mast
 ## Example
 
 ```rust
-extern crate iron;
-extern crate http;
-use iron::{Iron, ServerT, Chain, Request, Response, Alloy};
-
 fn main() {
+    let mut router = Router::new();
+    router.route( // Setup our route.
+        Get,
+        "/:class/:id".to_string(),
+        vec!["class".to_string(), "id".to_string()],
+        echo_to_term);
+
     let mut server: ServerT = Iron::new();
-    server.chain.link(hello_world); // Add middleware to the server's stack
+    server.chain.link(router); // Add middleware to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
-    res.serve(::http::Ok, "Hello, world!");
+fn echo_to_term(_: &mut Request, res: &mut Response, alloy: &mut Alloy) {
+    let query = alloy.find::<Params>().unwrap();
+    println!("Class: {}\t id: {}",
+             query.get("class").unwrap(), query.get("id").unwrap());
 }
 ```
 
@@ -25,8 +30,8 @@ fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
 
 router is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- ...
-- ...
+- Route client requests based on their paths
+- Parse parameters and provide them to other middleware/handlers
 
 ## Installation
 
