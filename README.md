@@ -6,18 +6,16 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 ## Example
 
 ```rust
-extern crate iron;
-extern crate http;
-use iron::{Iron, ServerT, Chain, Request, Response, Alloy};
-
 fn main() {
     let mut server: ServerT = Iron::new();
-    server.chain.link(hello_world); // Add middleware to the server's stack
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
+    server.chain.link(Mount::new("/blocked", FromFn::New(intercept)));
+    server.chain.link(other_middleware);
+    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
-    res.serve(::http::Ok, "Hello, world!");
+fn intercept(_req: &mut Request, _res: &mut Response,
+             _alloy: &mut Alloy) -> Status {
+    Unwind
 }
 ```
 
@@ -25,8 +23,8 @@ fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
 
 mount is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- ...
-- ...
+- Mount middleware on a new path, hiding the old path from the middleware stack.
+- Integrate API's and authorization with special handlers for different paths.
 
 ## Installation
 
