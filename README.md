@@ -3,22 +3,31 @@ Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)]
 
 > Express-inspired, rapid, scalable, concurrent and safe server development
 
-## Hello, world!
+## Simple ResponseTimer Middleware
 
 ```rust
-extern crate iron;
-extern crate http;
-use iron::{Iron, ServerT, Chain, Request, Response, Alloy};
+#[deriving(Clone)]
+pub struct ResponseTime{ entry: u64 }
 
-fn main() {
-    let mut server: ServerT = Iron::new();
-    server.chain.link(hello_world); // Add middleware to the server's stack
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
+impl ResponseTime { fn new() -> ResponseTime { ResponseTime{ entry: 0u64 } } }
+
+// This Trait defines middleware.
+impl MiddleWare for ResponseTime {
+    fn enter(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+        self.entry = precise_time_ns();
+        Continue // Continue to other middleware in the stack
+    }
+
+    fn exit(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+        let delta = precise_time_ns() - self.entry;
+        println!("Request took {} ms.", (delta as f64) / 100000.0)
+        Continue
+    }
 }
 
-fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
-    res.serve(::http::Ok, "Hello, world!");
-}
+// ...
+server.chain.link(ResponseTime::new());
+// ...
 ```
 
 Iron is a high level web framework built in and for Rust.</br>
@@ -69,35 +78,11 @@ Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 Along with the [online documentation](http://docs.ironframework.io/),
 you can build a local copy with `make doc`.
 
+### Building Middleware
+
+`impl Middleware` to create your own, or pass a function with the correct signature to `FromFn::new`.
+
 ## [Examples](https://ironframework.io/)
-
-Building your own middleware (abbreviated for clarity):
-
-```rust
-#[deriving(Clone)]
-pub struct ResponseTime{ entry: u64 }
-
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime{ entry: 0u64 } } }
-
-// This Trait defines middleware.
-// (It is already impl'ed for fn's of the correct signature.)
-impl MiddleWare for ResponseTime {
-    fn enter(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-        self.entry = precise_time_ns();
-        Continue // Continue to other middleware in the stack
-    }
-
-    fn exit(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-        let delta = precise_time_ns() - self.entry;
-        println!("Request took {} ms.", (delta as f64) / 100000.0)
-        Continue
-    }
-}
-
-// ...
-server.chain.link(ResponseTime::new());
-// ...
-```
 
 [See more powerful examples.](/examples)
 
