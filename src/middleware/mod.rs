@@ -90,25 +90,6 @@ impl Clone for Box<Middleware + Send> {
     fn clone(&self) -> Box<Middleware + Send> { self.clone_box() }
 }
 
-impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) -> Status {
-    fn enter(&mut self,
-             req: &mut Request,
-             res: &mut Response,
-             alloy: &mut Alloy) -> Status {
-        (*self)(req, res, alloy)
-    }
-}
-
-impl Middleware for fn(&mut Request, &mut Response, &mut Alloy) {
-    fn enter(&mut self,
-             req: &mut Request,
-             res: &mut Response,
-             alloy: &mut Alloy) -> Status {
-        (*self)(req, res, alloy);
-        Unwind
-    }
-}
-
 impl Middleware for Box<Chain + Send> {
     fn enter(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
         self.chain_enter(request, response, alloy)
@@ -116,6 +97,43 @@ impl Middleware for Box<Chain + Send> {
 
     fn exit(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
         self.chain_exit(request, response, alloy)
+    }
+}
+
+/// A temporary wrapper struct for allowing fn's to be used as Middleware
+///
+/// For instance, you can FromFn to wrap a simple controller:
+///
+/// ```
+/// fn hello_world(...) -> Status { res.write(b"Hello World!"); Continue }
+///
+/// server.chain.link(FromFn::new(hello_world));
+/// ```
+///
+pub struct FromFn {
+    func: fn(&mut Request, &mut Response, &mut Alloy) -> Status
+}
+
+impl FromFn {
+    /// Constructs a new FromFn given a fn of the correct signature.
+    pub fn new(func: fn(&mut Request, &mut Response, &mut Alloy) -> Status) -> FromFn {
+        FromFn {
+            func: func
+        }
+    }
+}
+
+impl Clone for FromFn {
+    fn clone(&self) -> FromFn {
+        FromFn {
+            func: self.func
+        }
+    }
+}
+
+impl Middleware for FromFn {
+    fn enter(&mut self, res: &mut Request, req: &mut Response, alloy: &mut Alloy) -> Status {
+        (self.func)(res, req, alloy)
     }
 }
 
