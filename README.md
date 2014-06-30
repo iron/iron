@@ -7,26 +7,24 @@ logger [![Build Status](https://secure.travis-ci.org/iron/logger.png?branch=mast
 
 ```rust
 extern crate iron;
-extern crate http;
-use iron::{Iron, ServerT, Chain, Request, Response, Alloy};
+
+use std::io::net::ip::Ipv4Addr;
+use iron::{Iron, ServerT, Chain};
 
 fn main() {
+    let logger = Logger::new(None);
     let mut server: ServerT = Iron::new();
-    server.chain.link(hello_world); // Add middleware to the server's stack
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
-}
-
-fn hello_world(_: &mut Request, res: &mut Response, _: &mut Alloy) {
-    res.serve(::http::Ok, "Hello, world!");
+    server.chain.link(logger);
+    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 ```
 
 ## Overview
 
-logger is a part of Iron's [core bundle](https://github.com/iron/core).
+Logger is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- ...
-- ...
+- Logger prints request and response information to the terminal, using either a default format or a custom format string.
+- Format strings can specify fields to be logged as well as ANSI terminal colors and attributes.
 
 ## Installation
 
