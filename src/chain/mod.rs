@@ -69,7 +69,7 @@ pub trait Chain: Send + Clone {
     fn clone_box(&self) -> Box<Chain + Send> { box self.clone() as Box<Chain + Send> }
 }
 
-impl Clone for Box<Chain> {
-    fn clone(&self) -> Box<Chain> { self.clone_box() }
+impl Clone for Box<Chain + Send> {
+    fn clone(&self) -> Box<Chain + Send> { self.clone_box() }
 }
 
