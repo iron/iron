@@ -7,7 +7,7 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 
 ```rust
 fn main() {
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     server.chain.link(Mount::new("/blocked", FromFn::New(intercept)));
     server.chain.link(other_middleware);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
