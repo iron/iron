@@ -3,15 +3,15 @@
 
 use std::io::net::ip::{SocketAddr, IpAddr};
 
-use http::server::{Server, Config};
-
+use http = http::server;
 use super::chain::Chain;
 use super::chain::stackchain::StackChain;
 
 use super::response::Response;
 use super::request::Request;
 
-pub type ServerT = Iron<StackChain>;
+/// The "default server", using a `StackChain`.
+pub type Server = Iron<StackChain>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -51,6 +51,7 @@ impl<C: Chain> Iron<C> {
     /// on the `Iron` instance. Once `listen` is called, requests will be
     /// handled as defined through the `Iron's` `chain's` `Middleware`.
     pub fn listen(mut self, ip: IpAddr, port: u16) {
+        use http::server::Server;
         self.ip = Some(ip);
         self.port = Some(port);
         self.serve_forever();
@@ -98,9 +99,9 @@ impl<C: Chain> Iron<C> {
 /// This `impl` allows `Iron` to be used as a `Server` by
 /// [rust-http]('https://github.com/chris-morgan/rust-http').
 /// This is not used by users of this library.
-impl<C: Chain> Server for Iron<C> {
-    fn get_config(&self) -> Config {
-        Config { bind_address: SocketAddr {
+impl<C: Chain> http::Server for Iron<C> {
+    fn get_config(&self) -> http::Config {
+        http::Config { bind_address: SocketAddr {
             ip: self.ip.unwrap(),
             port: self.port.unwrap()
         } }

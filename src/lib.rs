@@ -24,7 +24,7 @@ extern crate test;
 pub use request::Request;
 pub use response::Response;
 
-pub use iron::{Iron, ServerT};
+pub use iron::{Iron, Server};
 pub use middleware::{Middleware, Status, Continue, Unwind, FromFn};
 
 pub use chain::Chain;
