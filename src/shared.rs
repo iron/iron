@@ -1,5 +1,4 @@
-use iron::{Middleware, Request, Response, Alloy};
-use iron::middleware::Status;
+use iron::{Middleware, Request, Response, Alloy, Status};
 use std::sync::Arc;
 
 /// `Middleware` implementing this trait can be linked using `Shared` so that
