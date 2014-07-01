@@ -1,7 +1,6 @@
 use regex::Regex;
 
-use iron::{Middleware, Request, Response, Alloy, Chain};
-use iron::middleware::{Status, Continue};
+use iron::{Middleware, Request, Response, Alloy, Chain, Status, Continue};
 use iron::mixin::GetUrl;
 
 /// Exposes the original, unmodified path to be stored in an Alloy.
