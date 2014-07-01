@@ -3,6 +3,11 @@ router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=mast
 
 > Routing middleware for the [Iron](https://github.com/iron/iron) web framework.
 
+Router is a fast, convenient, and flexible routing middleware for Iron. It
+allows complex glob patterns and named url parameters and also allows handlers
+to be any Middleware - including Chain, which provides enormous amounts of
+flexibility for handling and dispatching requests.
+
 ## Example
 
 ```rust
