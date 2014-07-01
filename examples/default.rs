@@ -4,7 +4,7 @@ extern crate logger;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Iron, ServerT, Chain};
+use iron::{Iron, Server, Chain};
 
 use logger::Logger;
 
@@ -12,7 +12,7 @@ use logger::Logger;
 // to console. 
 fn main() {
     let logger = Logger::new(None);
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     server.chain.link(logger);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }

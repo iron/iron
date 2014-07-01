@@ -8,8 +8,7 @@ extern crate iron;
 extern crate time;
 extern crate term;
 
-use iron::{Middleware, Alloy, Request, Response};
-use iron::middleware::{Status, Continue};
+use iron::{Middleware, Alloy, Request, Response, Status, Continue};
 use time::precise_time_ns;
 use term::{Terminal, WriterWrapper, stdout};
 
