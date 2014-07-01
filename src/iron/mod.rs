@@ -59,34 +59,13 @@ impl<C: Chain> Iron<C> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server.
-    /// This creates an `Iron` with a default `chain`, the `StackChain`.
     ///
-    /// Custom chains can be used with `from_chain`, instead of `new`.
+    /// Custom chains can be used by explicitly specifying the type, as
+    /// `Iron::<CustomChain>::new()`.
     #[inline]
     pub fn new() -> Iron<C> {
         Iron {
             chain: Chain::new(),
-            ip: None,
-            port: None
-        }
-    }
-
-    /// Instantiate a new instance of `Iron` from an existing `Chain`.
-    ///
-    /// This will create a new `Iron` from a give `Chain`.
-    ///
-    /// This `Chain` *may already have `Middleware` in it*. An empty default
-    /// `Chain` can be created more easily using `new`.
-    ///
-    /// The `Chain` can also be configured to handle `Middleware` differently than
-    /// `StackChain`. For example, this can be used to implement a `Chain`
-    /// that logs debug messages as it serves requests.
-    ///
-    /// Most users will not need to touch `from_chain`. This should only be
-    /// used if you need custom handling of `Middleware`.
-    pub fn from_chain(chain: C) -> Iron<C> {
-        Iron {
-            chain: chain,
             ip: None,
             port: None
         }
