@@ -1,131 +1,94 @@
 Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)](https://travis-ci.org/iron/iron)
 ====
 
-> Express inspired, rapid, scalable, concurrent and safe server development
+> Express-inspired, rapid, scalable, concurrent and safe server development
 
-Iron is a high level web framework built in and for Rust.
-Iron does not come bundled with any middleware - instead,
-Iron is a robust and efficient framework for plugging in middleware.
+## Simple ResponseTimer Middleware
 
-After spawning, handling a single request through Iron’s middleware stack
-with a single no-op middleware takes only _300 nanoseconds_.
+```rust
+#[deriving(Clone)]
+pub struct ResponseTime{ entry: u64 }
 
-## Installation
+impl ResponseTime { fn new() -> ResponseTime { ResponseTime{ entry: 0u64 } } }
 
-```bash
-./configure   # Gets all dependencies and builds them
-make lib      # Build Iron itself -- you can stop here if you just want the library
-make test     # Build and run tests
-make examples # Build the examples
-make doc      # Build documentation using rustdoc
+// This Trait defines middleware.
+impl MiddleWare for ResponseTime {
+    fn enter(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+        self.entry = precise_time_ns();
+        Continue // Continue to other middleware in the stack
+    }
+
+    fn exit(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+        let delta = precise_time_ns() - self.entry;
+        println!("Request took {} ms.", (delta as f64) / 100000.0)
+        Continue
+    }
+}
+
+// ...
+server.chain.link(ResponseTime::new());
+// ...
 ```
 
-## Get Help
+Iron is a high level web framework built in and for Rust.</br>
+Iron does not come bundled with any middleware - instead, Iron is a robust and efficient framework for plugging in middleware.
 
-One of us (@reem, @zzmp, @theptrk, @mcreinhard) is usually on `#iron` on the
-mozilla irc. Come say hi and ask any questions you might have. We are also
-usually on `#rust` and `#rust-webdev`.
+**Iron focuses on providing a clean API for creating middleware and integrating
+them in Iron servers.**
+
+After spawning, handling a single request through Iron’s middleware stack
+with a single no-op middleware takes only 1.3 _micro_seconds. With ten middleware's,
+it is only 2.4 microseconds.
 
 ## Overview
 
 Iron aims to fill a void in the Rust web stack - a high level framework that is
 *extensible* and makes organizing complex server code easy.
 
-Whereas other web frameworks have focused mostly on creating an easy-to-use
-routing system, Iron focuses on providing a clean API for creating
-middleware and integrating them in Iron servers.
+Middleware is painless to build, and the [core bundle](https://github.com/iron/core)
+already includes:
+- [Routing](https://github.com/iron/router)
+- [Mounting](https://github.com/iron/mount)
+- [Static file-serving](https://github.com/iron/static-file)
+- [Body parsing](https://github.com/iron/body-parser)
+- [Url encoding](https://github.com/iron/urlencoding)
+- [Logging](https://github.com/iron/logger)
+- [Cookies](https://github.com/iron/cookie)
+- [Sessions](https://github.com/iron/session)
+- [Persistent storage](https://github.com/iron/persistent)
 
-In fact, Routing is middleware in Iron, as are Mounting, Body Parsing, and most
-other features. This allows for insanely flexible setups and allows almost all
+This allows for insanely flexible and powerful setups and allows nearly all
 of Iron’s features to be swappable - you can even change the middleware
-resolution algorithm by swapping in your own Chain.
+resolution algorithm by swapping in your own `Chain`.
 
-## Examples
+## Installation
 
-Here’s a setup for an api with two different versions:
+If you're using `Cargo`, just add Iron to the toml:
 
-```rust
-extern crate iron;
-extern crate router;
-extern crate mount;
-extern crate logger;
+```toml
+[dependencies.iron]
 
-use std::io::net::ip::Ipv4Addr;
-
-use iron::{Chain, Request, Response, Alloy, ServerT};
-use router::{Router, Params};
-use logger:Logger;
-use hypothetical::database;
-
-fn setup_api_v1(router: &mut Router) {
-    router.get("/users/:userid", |_req, res, alloy| {
-        let params = alloy.find::<Params>().unwrap();
-        res.write(database::get("Users", params.get("userid").unwrap()).as_bytes());
-    });
-}
-fn setup_api_v2(router: &mut Router) { ... }
-
-fn main() {
-    let api_v1_router = setup_api_v1(&mut Router::new());
-    let api_v2_router = setup_api_v2(&mut Router::new());
-
-    let mut server: ServerT = Iron::new();
-
-    // Setup Logging middleware
-    server.chain.link(Logger::new());
-
-    // Mount sub-instances of Iron.
-    // mount! is a macro from Mount that creates a sub-instance of Iron
-    // with the second argument linked to it.
-    server.chain.link(mount!("/api/v1", api_v1_router));
-    server.chain.link(mount!("/api/v2", api_v2_router));
-
-    server.listen(Ipv4addr(127, 0, 0, 1), 3000);
-}
-
+git = "https://github.com/iron/iron.git"
 ```
 
-Here’s a sample middleware implementation of a RequestTimer middleware:
+Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-```rust
-extern crate iron;
-extern crate time;
+## [Documentation](http://docs.ironframework.io/)
 
-use std::io::net::ip::Ipv4Addr;
-use iron::{Chain, Request, Response, Middleware, Alloy, ServerT};
-use iron::middleware::{Status, Continue};
+Along with the [online documentation](http://docs.ironframework.io/),
+you can build a local copy with `make doc`.
 
-use time::precise_time_ns;
+### Building Middleware
 
-#[deriving(Clone)]
-struct ResponseTime {
-    entry: u64
-};
+`impl Middleware` to create your own, or pass a function with the correct signature to `FromFn::new`.
 
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime(0u64) } }
+## [Examples](https://ironframework.io/)
 
-impl Middleware for ResponseTime {
-    fn enter(&mut self, _req: &mut Request, _res: &mut Response, _al: &mut Alloy) -> Status {
-        self.entry = precise_time_ns();
-        Continue
-    }
+[See more powerful examples.](/examples)
 
-    fn exit(&mut self, _req: &mut Request, _res: &mut Respose, _al: &mut Alloy) -> Status {
-        let delta = precise_time_ns() - self.enty;
-        println!("Request took: {} ms", (delta as f64) / 100000.0);
-        Continue
-    }
-}
+## Get Help
 
-fn main() {
-    let mut server: ServerT = Iron::new();
-
-    // This adds the ResponseTime middleware so that
-    // all requests and responses are passed through it.
-    server.chain.link(ResponseTime::new());
-
-    // Start the server on localhost:3000
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
-}
-```
-
+One of us ([@reem](https://github.com/reem/), [@zzmp](https://github.com/zzmp/),
+[@theptrk](https://github.com/theptrk/), [@mcreinhard](https://github.com/mcreinhard))
+is usually on `#iron` on the mozilla irc. Come say hi and ask any questions you might have.
+We are also usually on `#rust` and `#rust-webdev`.
