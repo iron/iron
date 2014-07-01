@@ -24,19 +24,18 @@ extern crate test;
 pub use request::Request;
 pub use response::Response;
 
-pub use iron::{Iron, ServerT};
-pub use middleware::Middleware;
+pub use iron::{Iron, Server};
+pub use middleware::{Middleware, Status, Continue, Unwind, FromFn};
 
 pub use chain::Chain;
 pub use chain::stackchain::StackChain;
 
 pub use alloy::Alloy;
 
-pub mod request;
-pub mod response;
 pub mod mixin;
-pub mod middleware;
-pub mod alloy;
-pub mod chain;
-pub mod iron;
-
+mod request;
+mod response;
+mod middleware;
+mod alloy;
+mod chain;
+mod iron;

@@ -2,8 +2,7 @@ extern crate iron;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Chain, Request, Response, Middleware, Alloy, ServerT};
-use iron::middleware::{Status, Continue};
+use iron::{Iron, Chain, Request, Response, Middleware, Alloy, Server, Status, Continue};
 
 use time::precise_time_ns;
 
@@ -28,7 +27,7 @@ impl Middleware for ResponseTime {
 }
 
 fn main() {
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
 
     // This adds the ResponseTime middleware so that
     // all requests and responses are passed through it.
