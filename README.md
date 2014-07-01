@@ -19,7 +19,7 @@ fn main() {
         vec!["class".to_string(), "id".to_string()],
         echo_to_term);
 
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     server.chain.link(router); // Add middleware to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
