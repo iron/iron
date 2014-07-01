@@ -7,7 +7,7 @@ persistent [![Build Status](https://secure.travis-ci.org/iron/persistent.png?bra
 
 ```rust
 fn main() {
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     server.chain.link(FromFn::new(counter)); // Add persistent counter to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
