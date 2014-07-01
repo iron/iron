@@ -2,8 +2,7 @@ use iron::Chain;
 use shared::{ShareableMiddleware, Shared};
 
 /// A mixin trait for providing the `link_shared` method to `Chain`, allowing
-/// for convenient additions of `ShareableMiddleware` as
-/// `Middleware`.
+/// for convenient additions of `ShareableMiddleware` as `Middleware`.
 pub trait SharedLink {
     /// Attach a `ShareableMiddleware` as a `Middleware`.
     fn link_shared<S: ShareableMiddleware + Send + Share>(&mut self, S);

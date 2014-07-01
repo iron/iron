@@ -12,17 +12,9 @@ extern crate iron;
 
 pub use persistent::Persistent;
 pub use shared::Shared;
+pub use mixin::SharedLink;
 
-/// Exposes the `Persistent` middleware, for sharing a single piece of data
-/// between requests.
-pub mod persistent;
-
-/// Exposes the `Shared` middleware, which wraps `ShareableMiddleware` so that
-/// they are not cloned for each request and improves performance by removing
-/// unnecessary cloning of immutable data.
-pub mod shared;
-
-/// Exposes a `link_shared` method on `Chain` objects, providing a convenient
-/// way to add shared middleware using `Shared`.
-pub mod mixin;
+mod persistent;
+mod shared;
+mod mixin;
 
