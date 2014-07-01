@@ -1,7 +1,6 @@
 use regex::Regex;
 use http::method::Method;
-use iron::{Middleware, Request, Response, Alloy};
-use iron::middleware::{Status, Continue, Unwind};
+use iron::{Middleware, Request, Response, Alloy, Status, Continue, Unwind};
 use iron::mixin::GetUrl;
 
 pub mod params;

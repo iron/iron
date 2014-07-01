@@ -3,13 +3,12 @@ extern crate http;
 extern crate router;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{ServerT, Iron, Alloy, Request, Response, Chain};
-use iron::middleware::{Status, Unwind, FromFn};
+use iron::{Server, Iron, Alloy, Request, Response, Chain, Status, Unwind, FromFn};
 use http::method::Get;
 use router::{Router, Params};
 
 fn main() {
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     let mut router = Router::new();
 
     fn handler(_req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
