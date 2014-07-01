@@ -2,8 +2,7 @@ extern crate iron;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Chain, Request, Response, Middleware, Alloy, ServerT};
-use iron::middleware::{Status, Continue};
+use iron::{Iron, Chain, Request, Response, Middleware, Alloy, ServerT, Status, Continue};
 
 use time::precise_time_ns;
 
