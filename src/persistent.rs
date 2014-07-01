@@ -1,5 +1,4 @@
-use iron::{Request, Response, Middleware, Alloy};
-use iron::middleware::{Status, Continue};
+use iron::{Request, Response, Middleware, Alloy, Status, Continue};
 use std::sync::{Arc, RWLock};
 
 /// A `Middleware` that allows for sharing a single piece of data between

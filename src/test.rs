@@ -5,8 +5,7 @@ extern crate persistent;
 mod test {
     use std::sync::{Arc, RWLock};
     use persistent::Persistent;
-    use iron::{Chain, StackChain, Request, Response, Alloy};
-    use iron::middleware::{Status, Continue, FromFn};
+    use iron::{Chain, StackChain, Request, Response, Alloy, Status, Continue, FromFn};
     use std::mem::uninitialized;
 
     fn unsafe_dispatch<C: Chain>(chain: &mut C) {

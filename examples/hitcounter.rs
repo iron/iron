@@ -8,8 +8,7 @@ extern crate persistent;
 use std::io::net::ip::Ipv4Addr;
 use persistent::Persistent;
 use http::status;
-use iron::{Request, Response, Alloy, Iron, ServerT, Chain};
-use iron::middleware::{Status, Continue, FromFn};
+use iron::{Request, Response, Alloy, Iron, Server, Chain, Status, Continue, FromFn};
 use iron::mixin::Serve;
 
 pub struct HitCounter;
@@ -29,7 +28,7 @@ fn serve_hits(_: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status 
 }
 
 fn main() {
-    let mut server: ServerT = Iron::new();
+    let mut server: Server = Iron::new();
     let counter: Persistent<uint, HitCounter> = Persistent::new(0u);
     server.chain.link(counter);
     server.chain.link(FromFn::new(hit_counter));
