@@ -57,9 +57,6 @@ pub trait Chain: Send + Clone {
     fn link<M: Middleware>(&mut self, _middleware: M);
 
     /// Create a new instance of `chain`.
-    /// If you are making your own chain, you'll need to
-    /// pass a new instance of it to `Iron`, otherwise,
-    /// this function will only be used internally.
     fn new() -> Self;
 
     #[doc(hidden)]
@@ -87,14 +84,14 @@ pub mod stackchain {
         /// The storage used by `StackChain` to hold all `Middleware`
         /// that have been `linked` to it.
         stack: Vec<Box<Middleware + Send>>,
-        exit_stack: Vec<Box<Middleware + Send>>
+        unwind: Option<uint>
     }
 
     impl Clone for StackChain {
         fn clone(&self) -> StackChain {
             StackChain {
                 stack: self.stack.clone(),
-                exit_stack: self.exit_stack.clone()
+                unwind: self.unwind.clone()
             }
         }
     }
@@ -108,13 +105,16 @@ pub mod stackchain {
             // The `exit_stack` will hold all `Middleware` that are passed through
             // in the enter loop. This is so we know to take exactly the same
             // path through `Middleware` in reverse order than we did on the way in.
-            self.exit_stack = vec![];
+            self.unwind = None;
 
-            'enter: for middleware in self.stack.mut_iter() {
+            'enter: for (i, middleware) in self.stack.mut_iter().enumerate() {
                 match middleware.enter(request, response, alloy) {
-                    Unwind   => return Unwind,
+                    Unwind   => {
+                        self.unwind = Some(i);
+                        return Unwind;
+                    }
                     // Mark the middleware for traversal on exit.
-                    Continue => self.exit_stack.push(middleware.clone_box())
+                    Continue => ()
                 }
             }
 
@@ -125,12 +125,17 @@ pub mod stackchain {
                  request: &mut Request,
                  response: &mut Response,
                  alloy: &mut Alloy) -> Status {
-            // Reverse the stack so we go through in the reverse order.
-            // i.e. LIFO.
-            self.exit_stack.reverse();
-            // Call each middleware's exit handler.
-            'exit: for middleware in self.exit_stack.mut_iter() {
-                let _ = middleware.exit(request, response, alloy);
+            match self.unwind {
+                Some(i) => {
+                    'exit: for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
+                        let _ = middleware.exit(request, response, alloy);
+                    }
+                },
+                None => {
+                    'exit: for middleware in self.stack.mut_iter().rev() {
+                        let _ = middleware.exit(request, response, alloy);
+                    }
+                }
             }
 
             Continue
@@ -145,7 +150,7 @@ pub mod stackchain {
         fn new() -> StackChain {
             StackChain {
                 stack: vec![],
-                exit_stack: vec![]
+                unwind: None
             }
         }
     }
@@ -154,7 +159,7 @@ pub mod stackchain {
         fn from_iter<T: Iterator<Box<Middleware + Send>>>(mut iterator: T) -> StackChain {
             StackChain {
                 stack: iterator.collect(),
-                exit_stack: vec![]
+                unwind: None
             }
         }
     }
@@ -303,10 +308,16 @@ pub mod stackchain {
                 let mut testchain: StackChain = Chain::new();
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
-                testchain.exit_stack.push(box CallCount {
+                testchain.link(CallCount {
                     enter: enter.clone(), exit: exit.clone()
                 });
                 unsafe {
+                    let _  = testchain.chain_enter(
+                        uninitialized(),
+                        uninitialized(),
+                        uninitialized()
+                    );
+
                     let _  = testchain.chain_exit(
                         uninitialized(),
                         uninitialized(),
@@ -321,9 +332,10 @@ pub mod stackchain {
                 let mut testchain: StackChain = Chain::new();
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
-                testchain.exit_stack.push(box CallCount {
+                testchain.link(CallCount {
                     enter: enter.clone(), exit: exit.clone()
                 });
+                testchain.unwind = Some(1);
                 unsafe {
                     let _  = testchain.chain_exit(
                         uninitialized(),
@@ -379,6 +391,7 @@ pub mod stackchain {
                         bench_noop_x!(bench_3, 3u8, $method)
                         bench_noop_x!(bench_4, 4u8, $method)
                         bench_noop_x!(bench_10, 10u8, $method)
+                        bench_noop_x!(bench_100, 100u8, $method)
                     }
                 }
             )
