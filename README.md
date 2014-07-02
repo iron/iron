@@ -38,9 +38,9 @@ git = "https://github.com/iron/logger.git"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://docs.ironframework.io/core/logger)
+## [Documentation](http://docs.ironframework.io/logger)
 
-Along with the [online documentation](http://docs.ironframework.io/core/logger),
+Along with the [online documentation](http://docs.ironframework.io/logger),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)
