@@ -40,6 +40,9 @@ After spawning, handling a single request through Iron’s middleware stack
 with a single no-op middleware takes only 0.9 _micro_ seconds - with ten middleware,
 it's only 1.1 microseconds.
 
+Iron averages 2500-3000+ requests per second for hello world, up to 600 more
+than Express and 1000 more than Koa.
+
 ## [Overview](http://ironframework.io)
 
 Iron aims to fill a void in the Rust web stack - a high level framework that is
@@ -92,3 +95,4 @@ One of us ([@reem](https://github.com/reem/), [@zzmp](https://github.com/zzmp/),
 [@theptrk](https://github.com/theptrk/), [@mcreinhard](https://github.com/mcreinhard))
 is usually on `#iron` on the mozilla irc. Come say hi and ask any questions you might have.
 We are also usually on `#rust` and `#rust-webdev`.
+
