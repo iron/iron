@@ -7,9 +7,9 @@ Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)]
 
 ```rust
 #[deriving(Clone)]
-pub struct ResponseTime{ entry: u64 }
+pub struct ResponseTime { entry: u64 }
 
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime{ entry: 0u64 } } }
+impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry: 0u64 } } }
 
 // This Trait defines middleware.
 impl MiddleWare for ResponseTime {
@@ -37,10 +37,10 @@ Iron does not come bundled with any middleware - instead, Iron is a robust and e
 them in Iron servers.**
 
 After spawning, handling a single request through Iron’s middleware stack
-with a single no-op middleware takes only 1.3 _micro_seconds. With ten middleware's,
-it is only 2.4 microseconds.
+with a single no-op middleware takes only 0.9 _micro_ seconds - with ten middleware,
+it's only 1.1 microseconds.
 
-## Overview
+## [Overview](http://ironframework.io)
 
 Iron aims to fill a void in the Rust web stack - a high level framework that is
 *extensible* and makes organizing complex server code easy.
@@ -63,7 +63,7 @@ resolution algorithm by swapping in your own `Chain`.
 
 ## Installation
 
-If you're using `Cargo`, just add Iron to the toml:
+If you're using `Cargo`, just add Iron to your `Cargo.toml`:
 
 ```toml
 [dependencies.iron]
@@ -71,7 +71,7 @@ If you're using `Cargo`, just add Iron to the toml:
 git = "https://github.com/iron/iron.git"
 ```
 
-Otherwise, `cargo build`, and the rlib will be in your `target` directory.
+Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `target` directory.
 
 ## [Documentation](http://docs.ironframework.io/)
 
@@ -82,9 +82,9 @@ you can build a local copy with `make doc`.
 
 `impl Middleware` to create your own, or pass a function with the correct signature to `FromFn::new`.
 
-## [Examples](https://ironframework.io/)
+## [More Examples](/examples)
 
-[See more powerful examples.](/examples)
+[See more examples.](/examples)
 
 ## Get Help
 
