@@ -16,13 +16,13 @@ macro_rules! parse_word(
     );
 )
 
-// Generate response/mimegen.rs
+// Generate response/mimes/mod.rs
 pub fn generate(list: Path, module: Path) -> IoResult<()> {
     let mut reader = get_file_reader(list);
     let mut writer = get_file_writer(module);
 
     try!(writer.write(
-b"// This automatically generated file is included in response/mimes.rs.
+b"// This is an automatically generated file.
 
 use http::headers::content_type::MediaType;
 
