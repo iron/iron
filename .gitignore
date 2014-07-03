@@ -14,7 +14,7 @@ deps/
 *-test
 /src/generated/mimes.txt
 /src/generated/mimegen
-/src/response/mimes/mimegen.rs
+/src/response/mimes/mod.rs
 /bin/main
 /bin/test-internal
 /bin/test-external

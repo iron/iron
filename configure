@@ -1,4 +1,4 @@
 curl http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types | \
 awk '{if ($1 != "#") { gsub("/"," ",$1); print $2 " " $1} }' > src/generated/mimes.txt
 rustc -O -o src/generated/mimegen src/generated/main.rs
-src/generated/mimegen src/generated/mimes.txt src/response/mimes/mimegen.rs
+src/generated/mimegen src/generated/mimes.txt src/response/mimes/mod.rs
