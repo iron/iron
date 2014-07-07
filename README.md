@@ -8,13 +8,14 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 ```rust
 fn main() {
     let mut server: Server = Iron::new();
+    // Mount intercept on "/blocked"
     server.chain.link(Mount::new("/blocked", FromFn::New(intercept)));
     server.chain.link(other_middleware);
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn intercept(_req: &mut Request, _res: &mut Response,
-             _alloy: &mut Alloy) -> Status {
+fn intercept(_: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+    // intercept will block all further middleware from running
     Unwind
 }
 ```
@@ -23,12 +24,11 @@ fn intercept(_req: &mut Request, _res: &mut Response,
 
 mount is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- Mount middleware on a new path, hiding the old path from the middleware stack.
-- Integrate API's and authorization with special handlers for different paths.
+- Mount middleware on a sub-path, hiding the old path from that middleware.
 
 ## Installation
 
-If you're using a `Cargo.toml` to manage dependencies, just add mount to the toml:
+If you're using `Cargo` to manage dependencies, just add mount to the toml:
 
 ```toml
 [dependencies.mount]
