@@ -40,8 +40,7 @@ After spawning, handling a single request through Iron’s middleware stack
 with a single no-op middleware takes only 0.9 _micro_ seconds - with ten middleware,
 it's only 1.1 microseconds.
 
-Iron averages 2500-3000+ requests per second for hello world, up to 600 more
-than Express and 1000 more than Koa.
+Iron averages 17,000+ requests per second for hello world.
 
 ## [Overview](http://ironframework.io)
 
