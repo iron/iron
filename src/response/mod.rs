@@ -2,6 +2,7 @@
 
 use std::io::{IoResult, File};
 use std::io::util::copy;
+use std::path::BytesContainer;
 
 use http::status::Status;
 
@@ -28,7 +29,7 @@ pub trait Serve: Writer {
     /// Write the `Status` and data to the `Response`.
     ///
     /// `serve` will forward write errors to its caller.
-    fn serve(&mut self, status: Status, body: &str) -> IoResult<()>;
+    fn serve<S: BytesContainer>(&mut self, status: Status, body: S) -> IoResult<()>;
 }
 
 impl<'a> Serve for Response<'a> {
@@ -38,9 +39,9 @@ impl<'a> Serve for Response<'a> {
         copy(&mut file, self)
     }
 
-    fn serve(&mut self, status: Status, body: &str) -> IoResult<()> {
+    fn serve<S: BytesContainer>(&mut self, status: Status, body: S) -> IoResult<()> {
         self.status = status;
-        Ok(try!(self.write(body.as_bytes())))
+        Ok(try!(self.write(body.container_as_bytes())))
     }
 }
 
