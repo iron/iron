@@ -32,8 +32,8 @@ pub fn get_generated_content_type(ext: &str) -> Option<MediaType> {
 
     /* Generated snippets will look like:
     "json" => Some(MediaType {
-        type_: "application".to_str(),
-        subtype: "json".to_str(),
+        type_: "application".to_string(),
+        subtype: "json".to_string(),
         parameters: vec![]
     }),
     */
@@ -54,8 +54,8 @@ pub fn get_generated_content_type(ext: &str) -> Option<MediaType> {
 
             try!(write!(writer,
 "    \"{}\" => Some(MediaType {{
-        type_: \"{}\".to_str(),
-        subtype: \"{}\".to_str(),
+        type_: \"{}\".to_string(),
+        subtype: \"{}\".to_string(),
         parameters: vec![]
     }}),\n", from_utf8(ext.as_slice()).unwrap(),
              from_utf8(type_.as_slice()).unwrap(),
