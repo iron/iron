@@ -3,8 +3,6 @@
 name = "logger"
 authors = ["Michael Reinhard <mcreinhard@gmail.com>"]
 version = "0.1.0"
-readme = "README.md"
-tags = ["web", "server", "middleware", "iron", "core", "logger"]
 
 [[lib]]
 
