@@ -53,7 +53,7 @@ already includes:
 - [Mounting](https://github.com/iron/mount)
 - [Static file-serving](https://github.com/iron/static-file)
 - [Body parsing](https://github.com/iron/body-parser)
-- [Url encoding](https://github.com/iron/urlencoding)
+- [Url encoding](https://github.com/iron/urlencoded)
 - [Logging](https://github.com/iron/logger)
 - [Cookies](https://github.com/iron/cookie)
 - [Sessions](https://github.com/iron/session)
