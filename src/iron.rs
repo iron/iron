@@ -76,7 +76,7 @@ impl<C: Chain> Iron<C> {
 /// Unused, but required for internal functionality.
 ///
 /// This `impl` allows `Iron` to be used as a `Server` by
-/// [rust-http]('https://github.com/chris-morgan/rust-http').
+/// [rust-http](https://github.com/chris-morgan/rust-http).
 /// This is not used by users of this library.
 impl<C: Chain> http::Server for Iron<C> {
     fn get_config(&self) -> http::Config {
