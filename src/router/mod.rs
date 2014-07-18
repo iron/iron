@@ -80,7 +80,7 @@ impl Middleware for Router {
         };
 
         for route in self.routes.mut_iter() {
-            if route.matches.is_match(request_uri.as_slice()) {
+            if route.method == req.method && route.matches.is_match(request_uri.as_slice()) {
                 alloy.insert::<params::Params>(
                     params::Params::new(
                         request_uri.as_slice(),
