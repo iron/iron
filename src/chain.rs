@@ -4,6 +4,7 @@ use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
 use super::middleware::{Middleware, Status, Continue};
+use super::mixin::Serve;
 
 /// `chains` are the backbone of `Iron`. They coordinate `Middleware`
 /// to ensure they are resolved and called in the right order,
@@ -78,8 +79,12 @@ pub mod stackchain {
 
     /// The default `Chain` used by `Iron`.
     /// `StackChain` runs each `Request` through all `Middleware` in its stack.
+    ///
     /// When it hits `Middleware` which returns `Unwind`, it passes
     /// the `Request` back up through all `Middleware` it has hit so far.
+    ///
+    /// If no `Middleware` return `Unwind` to indicate that they handled
+    /// the request, then a 404 is automatically returned.
     pub struct StackChain {
         /// The storage used by `StackChain` to hold all `Middleware`
         /// that have been `linked` to it.
@@ -98,6 +103,36 @@ pub mod stackchain {
 
     /// `StackChain` is a `Chain`
     impl Chain for StackChain {
+        fn dispatch(&mut self,
+                    request: &mut Request,
+                    response: &mut Response,
+                    opt_alloy: Option<&mut Alloy>) -> Status {
+            let mut alloy = &mut Alloy::new();
+            match opt_alloy {
+                Some(a) => alloy = a,
+                None => ()
+            };
+
+            let status = self.chain_enter(request, response, alloy);
+
+            match status {
+                Unwind => (),
+                Continue => {
+                    // If no middleware returned unwind, then we send a 404.
+                    // At least one middleware should return unwind when a
+                    // terminal endpoint, such as a router, has been reached.
+                    //
+                    // We don't write to the body as other middleware may want
+                    // to change headers.
+                    response.status = ::http::status::NotFound;
+                }
+            }
+
+            let _ = self.chain_exit(request, response, alloy);
+
+            status
+        }
+
         fn chain_enter(&mut self,
                  request: &mut Request,
                  response: &mut Response,
@@ -170,7 +205,7 @@ pub mod stackchain {
         pub use super::super::super::request::Request;
         pub use super::super::super::response::Response;
         pub use super::super::super::alloy::Alloy;
-        pub use super::super::super::middleware::{Middleware, Status, Continue};
+        pub use super::super::super::middleware::{Middleware, Status, Continue, Unwind};
         pub use std::sync::{Arc, Mutex};
 
         #[deriving(Clone)]
@@ -195,8 +230,18 @@ pub mod stackchain {
             }
         }
 
+        #[deriving(Clone)]
+        pub struct Stopper;
+
+        impl Middleware for Stopper {
+            fn enter(&mut self, _req: &mut Request,
+                     _res: &mut Response, _alloy: &mut Alloy) -> Status {
+                Unwind // Stop .status from being accessed, which fails.
+            }
+        }
+
         mod dispatch {
-            use super::{CallCount, Arc, Mutex};
+            use super::{CallCount, Arc, Mutex, Stopper};
             use super::super::StackChain;
             use super::super::super::Chain;
             use std::mem::{uninitialized};
@@ -207,6 +252,7 @@ pub mod stackchain {
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+                testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
                         uninitialized(),
@@ -223,6 +269,7 @@ pub mod stackchain {
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+                testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
                         uninitialized(),
@@ -243,6 +290,7 @@ pub mod stackchain {
                     testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
                 }
 
+                testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
                         uninitialized(),
@@ -259,7 +307,7 @@ pub mod stackchain {
         }
 
         mod chain_enter {
-            use super::{CallCount, Arc, Mutex};
+            use super::{CallCount, Arc, Mutex, Stopper};
             use super::super::StackChain;
             use super::super::super::Chain;
             use std::mem::{uninitialized};
@@ -270,6 +318,7 @@ pub mod stackchain {
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+                testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.chain_enter(
                         uninitialized(),
@@ -286,6 +335,7 @@ pub mod stackchain {
                 let enter = Arc::new(Mutex::new(0));
                 let exit = Arc::new(Mutex::new(0));
                 testchain.link(CallCount { enter: enter.clone(), exit: exit.clone() });
+                testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.chain_enter(
                         uninitialized(),
@@ -298,10 +348,10 @@ pub mod stackchain {
         }
 
         mod chain_exit {
-            use super::{CallCount, Arc, Mutex};
+            use super::{CallCount, Arc, Mutex, Stopper};
             use super::super::StackChain;
             use super::super::super::Chain;
-            use std::mem::{uninitialized};
+            use std::mem::uninitialized;
 
             #[test]
             fn calls_middleware_exit() {
@@ -311,6 +361,7 @@ pub mod stackchain {
                 testchain.link(CallCount {
                     enter: enter.clone(), exit: exit.clone()
                 });
+                testchain.link(Stopper);
                 unsafe {
                     let _  = testchain.chain_enter(
                         uninitialized(),
@@ -349,6 +400,7 @@ pub mod stackchain {
 
         mod bench {
             use super::super::super::super::middleware::Middleware;
+            pub use super::Stopper;
 
             #[deriving(Clone)]
             struct Noop;
@@ -363,6 +415,7 @@ pub mod stackchain {
                         for _ in range(0, $num) {
                             testchain.link(Noop);
                         }
+                        testchain.link(Stopper);
                         b.iter(|| {
                             black_box(unsafe {
                                 let _ = testchain.$method(
@@ -381,7 +434,7 @@ pub mod stackchain {
                     mod $method {
                         use std::mem::uninitialized;
                         use test::{Bencher, black_box};
-                        use super::Noop;
+                        use super::{Noop, Stopper};
                         use super::super::super::StackChain;
                         use super::super::super::super::Chain;
 
