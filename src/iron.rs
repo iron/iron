@@ -8,7 +8,7 @@ use http = http::server;
 use super::chain::Chain;
 use super::chain::stackchain::StackChain;
 
-use super::response::Response;
+use super::response::{HttpResponse, Response};
 use super::request::{HttpRequest, Request};
 
 /// The "default server", using a `StackChain`.
@@ -84,7 +84,15 @@ impl<C: Chain> http::Server for IronListener<C> {
         }
     }
 
-    fn handle_request(&self, mut req: Request, res: &mut Response) {
+    fn handle_request(&self, http_req: HttpRequest, http_res: &mut HttpResponse) {
+        // Create wrapper Request and Response
+        let mut req = Request::from_http(http_req).unwrap();
+        let mut res = Response::from_http(http_res);
+
+        // Dispatch the request
         let _ = self.chain.borrow_mut().dispatch(&mut req, res, None);
+
+        // Write the response back to http_res
+        res.write_back();
     }
 }
