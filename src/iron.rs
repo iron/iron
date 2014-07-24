@@ -2,6 +2,7 @@
 //! `Iron` library.
 
 use std::io::net::ip::{SocketAddr, IpAddr};
+use std::cell::RefCell;
 
 use http = http::server;
 use super::chain::Chain;
@@ -29,18 +30,17 @@ pub struct Iron<C> {
     /// are passed through those `Middleware`.
     /// `Middleware` is added to the chain with with `chain.link`.
     pub chain: C,
-    ip: Option<IpAddr>,
-    port: Option<u16>
 }
 
-impl<C: Clone> Clone for Iron<C> {
-    fn clone(&self) -> Iron<C> {
-        Iron {
-            chain: self.chain.clone(),
-            ip: self.ip.clone(),
-            port: self.port
-        }
-    }
+// The struct which actually listens and serves requests.
+//
+// IronListener holds its chain behind a RefCell to avoid a
+// second clone in the implementation of .serve_forever().
+#[deriving(Clone)]
+struct IronListener<C> {
+    chain: RefCell<C>,
+    ip: IpAddr,
+    port: u16
 }
 
 impl<C: Chain> Iron<C> {
@@ -50,44 +50,41 @@ impl<C: Chain> Iron<C> {
     /// This is a blocking operation, and is the final op that should be called
     /// on the `Iron` instance. Once `listen` is called, requests will be
     /// handled as defined through the `Iron's` `chain's` `Middleware`.
-    pub fn listen(mut self, ip: IpAddr, port: u16) {
+    pub fn listen(self, ip: IpAddr, port: u16) {
         use http::server::Server;
-        self.ip = Some(ip);
-        self.port = Some(port);
-        self.serve_forever();
+
+        IronListener {
+            chain: RefCell::new(self.chain),
+            ip: ip,
+            port: port
+        }.serve_forever();
     }
 
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server.
     ///
-    /// Custom chains can be used by explicitly specifying the type, as
-    /// `Iron::<CustomChain>::new()`.
+    /// Custom chains can be used by explicitly specifying the type as
+    /// in: `let customServer: Iron<CustomChain> = Iron::new();`
     #[inline]
     pub fn new() -> Iron<C> {
         Iron {
             chain: Chain::new(),
-            ip: None,
-            port: None
         }
     }
 }
 
-/// Unused, but required for internal functionality.
-///
-/// This `impl` allows `Iron` to be used as a `Server` by
-/// [rust-http](https://github.com/chris-morgan/rust-http).
-/// This is not used by users of this library.
-impl<C: Chain> http::Server for Iron<C> {
+impl<C: Chain> http::Server for IronListener<C> {
     fn get_config(&self) -> http::Config {
-        http::Config { bind_address: SocketAddr {
-            ip: self.ip.unwrap(),
-            port: self.port.unwrap()
-        } }
+        http::Config {
+            bind_address: SocketAddr {
+                ip: self.ip,
+                port: self.port
+            }
+        }
     }
 
     fn handle_request(&self, mut req: Request, res: &mut Response) {
-        let mut chain = self.chain.clone();
-        let _ = chain.dispatch(&mut req, res, None);
+        let _ = self.chain.borrow_mut().dispatch(&mut req, res, None);
     }
 }
