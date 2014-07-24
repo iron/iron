@@ -50,6 +50,7 @@
 
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
+#[phase(plugin, link)] extern crate log;
 
 extern crate contenttype;
 extern crate http;
