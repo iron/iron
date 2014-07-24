@@ -1,7 +1,6 @@
 //! An augmentation of the rust-http Response struct.
 
 use std::io::{IoResult, File, MemReader};
-use std::io::util::copy;
 use std::path::BytesContainer;
 
 use http::status::{Status, InternalServerError};
@@ -14,8 +13,19 @@ use contenttype::get_content_type;
 /// The response representation given to `Middleware`
 pub struct Response<'a, 'b> {
     http_res: &'a mut HttpResponse<'b>,
+
+    /// The body of the response.
+    ///
+    /// This is a Reader for generality, most data should
+    /// be sent using either `serve` or `serve_file`.
+    ///
+    /// Arbitrary Readers can be sent by assigning to body.
     pub body: Box<Reader>,
+
+    /// The headers of the response.
     pub headers: Box<HeaderCollection>,
+
+    /// The response status-code.
     pub status: Status
 }
 
@@ -33,7 +43,7 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
         self.status = status;
-        self.body = box MemReader::new(body.container_as_bytes().to_owned()) as Box<Reader>;
+        self.body = box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>;
     }
 
     /// Serve the file located at `path`.
