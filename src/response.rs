@@ -1,17 +1,39 @@
 //! An augmentation of the rust-http Response struct.
 
-use std::io::{IoResult, File};
+use std::io::{IoResult, File, MemReader};
 use std::io::util::copy;
 use std::path::BytesContainer;
 
-use http::status::Status;
+use http::status::{Status, InternalServerError};
+use http::headers::response::HeaderCollection;
 
-pub use Response = http::server::response::ResponseWriter;
+pub use HttpResponse = http::server::response::ResponseWriter;
 
 use contenttype::get_content_type;
 
-/// Adds common serving methods to Response.
-pub trait Serve: Writer {
+/// The response representation given to `Middleware`
+pub struct Response<'a, 'b> {
+    http_res: &'a mut HttpResponse<'b>,
+    pub body: Box<Reader>,
+    pub headers: Box<HeaderCollection>,
+    pub status: Status
+}
+
+impl<'a, 'b> Response<'a, 'b> {
+    pub fn from_http(http_res: &'a mut HttpResponse<'b>) -> Response<'a, 'b> {
+        Response {
+            headers: http_res.headers.clone(),
+            status: http_res.status.clone(),
+            http_res: http_res,
+            body: box MemReader::new(vec![]) as Box<Reader>
+        }
+    }
+
+    pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
+        self.status = status;
+        self.body = box MemReader::new(body.container_as_bytes().to_owned()) as Box<Reader>;
+    }
+
     /// Serve the file located at `path`.
     ///
     /// This is usually a terminal process, and `Middleware` may want to
@@ -21,25 +43,36 @@ pub trait Serve: Writer {
     ///
     /// `serve_file` will err out if the file does not exist, the process
     /// does not have correct permissions, or it has other issues in reading
-    /// from the file. Middleware should handle this gracefully.
-    fn serve_file(&mut self, &Path) -> IoResult<()>;
-
-    /// Write the `Status` and data to the `Response`.
-    ///
-    /// `serve` will forward write errors to its caller.
-    fn serve<S: BytesContainer>(&mut self, status: Status, body: S) -> IoResult<()>;
-}
-
-impl<'a> Serve for Response<'a> {
-    fn serve_file(&mut self, path: &Path) -> IoResult<()> {
-        let mut file = try!(File::open(path));
+    pub fn serve_file(&mut self, path: &Path) -> IoResult<()> {
+        let file = try!(File::open(path));
         self.headers.content_type = path.extension_str().and_then(get_content_type);
-        copy(&mut file, self)
+        self.body = box file as Box<Reader>;
+        Ok(())
     }
 
     fn serve<S: BytesContainer>(&mut self, status: Status, body: S) -> IoResult<()> {
         self.status = status;
         Ok(try!(self.write(body.container_as_bytes())))
+    }
+
+    pub fn write_back(mut self) {
+        self.http_res.headers = self.headers.clone();
+        self.http_res.status = self.status.clone();
+        let _ = match self.body.read_to_string() {
+            Ok(body) => {
+                self.http_res.write_content_auto(
+                    match self.headers.content_type {
+                        Some(ref ctype) => ctype.clone(),
+                        None => get_content_type("txt").unwrap()
+                    }, body)
+            },
+            Err(e) => Err(e)
+        }.map_err(|e| {
+            error!("Error reading/writing body: {}", e);
+            self.http_res.status = InternalServerError;
+            let _ = self.http_res.write(b"Internal Server Error")
+                .map_err(|e| error!("Error writing error message: {}", e));
+        });
     }
 }
 
