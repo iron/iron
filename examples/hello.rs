@@ -3,12 +3,12 @@ extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Iron, Chain, Alloy, Request, Response, Server, Status, Continue, FromFn};
+use iron::{Iron, Chain, Alloy, Request, Response, Server, Status, Unwind, FromFn};
 use iron::mixin::Serve;
 
 fn hello_world(_req: &mut Request, res: &mut Response, _alloy: &mut Alloy) -> Status {
     let _ = res.serve(::http::status::Ok, "Hello, world!");
-    Continue
+    Unwind
 }
 
 fn main() {
