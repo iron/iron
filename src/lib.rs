@@ -68,7 +68,6 @@ pub use chain::stackchain::StackChain;
 
 pub use alloy::Alloy;
 
-pub mod mixin;
 mod request;
 mod response;
 mod middleware;
