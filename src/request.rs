@@ -1,36 +1,37 @@
 //! An alias of the rust-http Request struct.
 
+use std::io::net::ip::SocketAddr;
 use http::server::request::{AbsolutePath};
-pub use Request = http::server::request::Request;
+use http::headers::request::HeaderCollection;
+use http::method::Method;
+pub use HttpRequest = http::server::request::Request;
 
-/// Adds a url getter method.
-pub trait GetUrl {
-    /// A url getter method for requests or responses.
-    fn url<'a>(&'a self) -> Option<&'a String>;
+pub struct Request {
+    pub url: String,
 
-    /// A mutable url getter method for requests or responses.
-    fn url_mut<'a>(&'a mut self) -> Option<&'a mut String>;
+    pub remote_addr: Option<SocketAddr>,
+
+    pub headers: Box<HeaderCollection>,
+
+    pub body: String,
+
+    pub method: Method,
 }
 
-impl GetUrl for Request {
-    /// Get the url from a Request
-    ///
-    /// Returns Some(&url) if this is an AbsolutePath
-    /// request, otherwise it returns None.
-    fn url<'a>(&'a self) -> Option<&'a String> {
-        match self.request_uri {
-            AbsolutePath(ref path) => Some(path),
-            _ => None
-        }
-    }
-
     /// Get a mutable url from a Request
+impl Request {
     ///
-    /// Returns Some(&mut url) if this is an AbsolutePath
-    /// request, otherwise it returns None.
-    fn url_mut<'a>(&'a mut self) -> Option<&'a mut String> {
-        match self.request_uri {
-            AbsolutePath(ref mut path) => Some(path),
+    pub fn from_http(req: HttpRequest) -> Option<Request> {
+        match req.request_uri {
+            AbsolutePath(path) => {
+                Some(Request {
+                    url: path,
+                    remote_addr: req.remote_addr,
+                    headers: req.headers,
+                    body: req.body,
+                    method: req.method
+                })
+            },
             _ => None
         }
     }

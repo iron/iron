@@ -9,7 +9,7 @@ use super::chain::Chain;
 use super::chain::stackchain::StackChain;
 
 use super::response::Response;
-use super::request::Request;
+use super::request::{HttpRequest, Request};
 
 /// The "default server", using a `StackChain`.
 pub type Server = Iron<StackChain>;
