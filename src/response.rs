@@ -20,6 +20,7 @@ pub struct Response<'a, 'b> {
 }
 
 impl<'a, 'b> Response<'a, 'b> {
+    /// Construct a Response from an HttpResponse reference
     pub fn from_http(http_res: &'a mut HttpResponse<'b>) -> Response<'a, 'b> {
         Response {
             headers: http_res.headers.clone(),
@@ -29,6 +30,7 @@ impl<'a, 'b> Response<'a, 'b> {
         }
     }
 
+    /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
         self.status = status;
         self.body = box MemReader::new(body.container_as_bytes().to_owned()) as Box<Reader>;
@@ -36,13 +38,14 @@ impl<'a, 'b> Response<'a, 'b> {
 
     /// Serve the file located at `path`.
     ///
-    /// This is usually a terminal process, and `Middleware` may want to
-    /// call `Unwind` after a file is served. If the status should be
-    /// anything other than `200`, the `Middleware` must set it, including in
+    /// This usually means a request has been handlded, and `Middleware`
+    /// may want to `Unwind` after a file is served. If the status should be
+    /// anything other than `200`, `Middleware` must set it, including in
     /// the case of an `Err`.
     ///
-    /// `serve_file` will err out if the file does not exist, the process
+    /// `serve_file` will error if the file does not exist, the process
     /// does not have correct permissions, or it has other issues in reading
+    /// from the file. `Middleware` should handle this gracefully.
     pub fn serve_file(&mut self, path: &Path) -> IoResult<()> {
         let file = try!(File::open(path));
         self.headers.content_type = path.extension_str().and_then(get_content_type);
@@ -50,11 +53,13 @@ impl<'a, 'b> Response<'a, 'b> {
         Ok(())
     }
 
-    fn serve<S: BytesContainer>(&mut self, status: Status, body: S) -> IoResult<()> {
-        self.status = status;
-        Ok(try!(self.write(body.container_as_bytes())))
-    }
-
+    /// Internal. Should not be called by the user.
+    ///
+    /// `write_back` is used to put all the data added to `self`
+    /// back onto an `HttpResponse` so that it is sent back to the
+    /// client.
+    ///
+    /// `write_back` consumes the `Response`.
     pub fn write_back(mut self) {
         self.http_res.headers = self.headers.clone();
         self.http_res.status = self.status.clone();
