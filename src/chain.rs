@@ -1,10 +1,11 @@
 //! Exposes the `chain` trait and `StackChain` type.
 
+use std::fmt::Show;
+
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
-use super::middleware::{Middleware, Status, Continue};
-use super::mixin::Serve;
+use super::middleware::{Middleware, Status, Continue, Error};
 
 /// `chains` are the backbone of `Iron`. They coordinate `Middleware`
 /// to ensure they are resolved and called in the right order,
@@ -31,8 +32,16 @@ pub trait Chain: Send + Clone {
             None => ()
         };
 
-        let status = self.chain_enter(request, response, alloy);
-        let _ = self.chain_exit(request, response, alloy);
+        let mut status = self.chain_enter(request, response, alloy);
+        match status {
+            Error(ref mut e) => {
+                let error: &mut Show = *e;
+                let _ = self.chain_error(request, response, alloy, error);
+            },
+            _ => {
+                let _ = self.chain_exit(request, response, alloy);
+            }
+        };
 
         status
     }
@@ -50,6 +59,13 @@ pub trait Chain: Send + Clone {
                   _alloy: &mut Alloy) -> Status {
         Continue
     }
+
+    #[doc(hidden)]
+    fn chain_error(&mut self,
+                  _request: &mut Request,
+                  _response: &mut Response,
+                  _alloy: &mut Alloy,
+                  _error: &mut Show) { () }
 
     /// `link` is responsible for adding new `Middleware` to the `chain's` internal
     /// storage of `Middleware`. Different `chains` may implement different behavior
@@ -70,9 +86,11 @@ impl Clone for Box<Chain + Send> {
 
 /// The default `chain` used by `Iron`.
 pub mod stackchain {
+    use std::fmt::Show;
+
     use super::super::request::Request;
     use super::super::response::Response;
-    use super::super::middleware::{Middleware, Continue, Unwind, Status};
+    use super::super::middleware::{Middleware, Continue, Unwind, Error, Status};
     use super::super::alloy::Alloy;
 
     use super::Chain;
@@ -85,21 +103,16 @@ pub mod stackchain {
     ///
     /// If no `Middleware` return `Unwind` to indicate that they handled
     /// the request, then a 404 is automatically returned.
+    #[deriving(Clone)]
     pub struct StackChain {
         /// The storage used by `StackChain` to hold all `Middleware`
         /// that have been `linked` to it.
         stack: Vec<Box<Middleware + Send>>,
-        unwind: Option<uint>
+        status: ChainStatus,
     }
 
-    impl Clone for StackChain {
-        fn clone(&self) -> StackChain {
-            StackChain {
-                stack: self.stack.clone(),
-                unwind: self.unwind.clone()
-            }
-        }
-    }
+    #[deriving(Clone)]
+    enum ChainStatus { Unwound(uint), Errored(uint), Unhandled }
 
     /// `StackChain` is a `Chain`
     impl Chain for StackChain {
@@ -113,12 +126,16 @@ pub mod stackchain {
                 None => ()
             };
 
-            let status = self.chain_enter(request, response, alloy);
-
+            let mut status = self.chain_enter(request, response, alloy);
             match status {
-                Unwind => (),
+                Error(ref mut e) => {
+                    let error: &mut Show = *e;
+                    let _ = self.chain_error(request, response, alloy, error);
+                },
                 Continue => {
-                    // If no middleware returned unwind, then we send a 404.
+                    // If no middleware returned unwind, or errored
+                    // then we send a 404.
+                    //
                     // At least one middleware should return unwind when a
                     // terminal endpoint, such as a router, has been reached.
                     //
@@ -126,9 +143,10 @@ pub mod stackchain {
                     // to change headers.
                     response.status = ::http::status::NotFound;
                 }
-            }
-
-            let _ = self.chain_exit(request, response, alloy);
+                Unwind => {
+                    let _ = self.chain_exit(request, response, alloy);
+                }
+            };
 
             status
         }
@@ -140,19 +158,24 @@ pub mod stackchain {
             // The `exit_stack` will hold all `Middleware` that are passed through
             // in the enter loop. This is so we know to take exactly the same
             // path through `Middleware` in reverse order than we did on the way in.
-            self.unwind = None;
+            self.status = Unhandled;
 
             'enter: for (i, middleware) in self.stack.mut_iter().enumerate() {
                 match middleware.enter(request, response, alloy) {
                     Unwind   => {
-                        self.unwind = Some(i);
+                        self.status = Unwound(i);
                         return Unwind;
+                    },
+                    e @ Error(_) => {
+                        self.status = Errored(i);
+                        return e;
                     }
                     // Mark the middleware for traversal on exit.
                     Continue => ()
                 }
             }
 
+            self.status = Unhandled;
             Continue
         }
 
@@ -160,20 +183,36 @@ pub mod stackchain {
                  request: &mut Request,
                  response: &mut Response,
                  alloy: &mut Alloy) -> Status {
-            match self.unwind {
-                Some(i) => {
-                    'exit: for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
+            match self.status {
+                Unwound(i) => {
+                    for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
                         let _ = middleware.exit(request, response, alloy);
                     }
                 },
-                None => {
-                    'exit: for middleware in self.stack.mut_iter().rev() {
+                Unhandled => {
+                    for middleware in self.stack.mut_iter().rev() {
                         let _ = middleware.exit(request, response, alloy);
                     }
-                }
+                },
+                Errored(_) => fail!("chain_exit called on a StackChain which Errored.")
             }
 
             Continue
+        }
+
+        fn chain_error(&mut self,
+                      request: &mut Request,
+                      response: &mut Response,
+                      alloy: &mut Alloy,
+                      error: &mut Show) {
+            match self.status {
+                Errored(i) => {
+                    for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
+                        let _ = middleware.on_error(request, response, alloy, error);
+                    }
+                },
+                _ => fail!("chain_error called on a chain which did not error.")
+            }
         }
 
         /// Add `Middleware` to the `Chain`.
@@ -185,7 +224,7 @@ pub mod stackchain {
         fn new() -> StackChain {
             StackChain {
                 stack: vec![],
-                unwind: None
+                status: Unhandled
             }
         }
     }
@@ -194,7 +233,7 @@ pub mod stackchain {
         fn from_iter<T: Iterator<Box<Middleware + Send>>>(mut iterator: T) -> StackChain {
             StackChain {
                 stack: iterator.collect(),
-                unwind: None
+                status: Unhandled
             }
         }
     }
@@ -349,7 +388,7 @@ pub mod stackchain {
 
         mod chain_exit {
             use super::{CallCount, Arc, Mutex, Stopper};
-            use super::super::StackChain;
+            use super::super::{StackChain, Unwound};
             use super::super::super::Chain;
             use std::mem::uninitialized;
 
@@ -386,7 +425,7 @@ pub mod stackchain {
                 testchain.link(CallCount {
                     enter: enter.clone(), exit: exit.clone()
                 });
-                testchain.unwind = Some(1);
+                testchain.status = Unwound(1);
                 unsafe {
                     let _  = testchain.chain_exit(
                         uninitialized(),

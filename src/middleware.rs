@@ -1,6 +1,8 @@
 //! Exposes the `Middleware` trait which must be implemented by
 //! all middleware.
 
+use std::fmt::Show;
+
 use super::response::Response;
 use super::request::Request;
 use super::alloy::Alloy;
@@ -12,7 +14,6 @@ use super::chain::Chain;
 ///
 /// Most `Chains` will ignore the returned `Status` from the `exit` method of
 /// `Middleware`.
-#[deriving(Clone, Show)]
 pub enum Status {
     /// `Continue` indicates that this is an intermediate `Middleware` in the stack
     /// and the `Chain` should continue passing requests down the `Chain's`
@@ -21,13 +22,21 @@ pub enum Status {
     /// Most `Middleware` will return `Continue` from both `enter` and `exit`.
     Continue,
 
-    /// `Unwind` indicates that this is a terminal `Middleware` or that something
-    /// went wrong. It can be used to immediately stop passing requests down the
-    /// `Chain's` stack and start calling `exit` of all previous `Middleware`.
+    /// `Unwind` indicates that this is a terminal `Middleware`. It can be used to
+    /// immediately stop passing requests down the `Chain's` stack and start calling
+    /// `exit` of all previous `Middleware`.
     ///
-    /// For instance, an authorization `Middleware` might return `Unwind` if the
+    /// `Middleware` such as a router or controller, which are meant to handle
+    /// requests completely should return `Unwind`.
+    Unwind,
+
+    /// `Error` indicates that something went wrong with a reason. It behaves
+    /// similarly to `Unwind`, except that it instead calls `Middleware's`
+    /// `on_error` handler as opposed to `exit`.
+    ///
+    /// For instance, an authorization `Middleware` might return `Error` if the
     /// `Request` fails an authentication check, and `Continue` otherwise.
-    Unwind
+    Error(Box<Show>)
 }
 
 /// All middleware should implement `Middleware`, which allows it to be `linked`
@@ -40,9 +49,12 @@ pub enum Status {
 /// Internal data should be stored on the `struct` that implements `Middleware`
 /// itself. All `Middleware` are cloned for each client request, so the object
 /// initially linked to the `Iron` instance will be provided as `&mut self` to
-/// enter for every request. Data stored on a `Middleware` instance does _not_ persist
+/// enter for every request.
+///
+/// Data stored on a `Middleware` instance does _not_ persist
 /// between requests and is _not_ shared between different, concurrent, requests.
-/// The same is true for data stored on an `Alloy`.
+/// The same is true for data stored on an `Alloy`. Should you need to persist
+/// data between requests, you should use an `Arc` within your `Middleware`.
 ///
 /// External data should be stored in the `Alloy` passed to both `enter` and
 /// `exit`. `Alloy` is a thin wrapper around `AnyMap` and is effectively a
@@ -60,10 +72,14 @@ pub trait Middleware: Send + Clone {
     /// Returning `Unwind` from this handler will cause the `Chain` to stop
     /// going down its stack and start bubbling back up through `Middleware`
     /// and calling `exit` on them.
+    ///
+    /// Returning `Error` from this handler will also cause "bubbling up" but
+    /// will call `Middleware's` `on_error` handler instead of their `exit`
+    /// handler.
     fn enter(&mut self,
-             _request: &mut Request,
-             _response: &mut Response,
-             _alloy: &mut Alloy) -> Status {
+             _: &mut Request,
+             _: &mut Response,
+             _: &mut Alloy) -> Status {
         Continue
     }
 
@@ -75,11 +91,23 @@ pub trait Middleware: Send + Clone {
     /// While this method must return a `Status`, most `Chains` will ignore
     /// this method's return value.
     fn exit(&mut self,
-            _request: &mut Request,
-            _response: &mut Response,
-            _alloy: &mut Alloy) -> Status {
+            _: &mut Request,
+            _: &mut Response,
+            _: &mut Alloy) -> Status {
         Continue
     }
+
+    /// `on_error` is called for each `Middleware` in a `Chain` that has had its `enter`
+    /// method called for this client request if an `Error` is returned downstream.
+    ///
+    /// If an Error occurs, `Middleware's` `on_error` methods will be called
+    /// as the stack is unwound in FILO order in the same was as `exit` would
+    /// be called on a successful request.
+    fn on_error(&mut self,
+                _: &mut Request,
+                _: &mut Response,
+                _: &mut Alloy,
+                _: &mut Show) { () }
 
     // Helper function to clone the Middleware.
     #[doc(hidden)]
@@ -97,6 +125,11 @@ impl Middleware for Box<Chain + Send> {
 
     fn exit(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
         self.chain_exit(request, response, alloy)
+    }
+
+    fn on_error(&mut self, request: &mut Request, response: &mut Response,
+                alloy: &mut Alloy, error: &mut Show) {
+        self.chain_error(request, response, alloy, error)
     }
 }
 
