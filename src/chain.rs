@@ -100,13 +100,10 @@ pub mod stackchain {
     ///
     /// When it hits `Middleware` which returns `Unwind`, it passes
     /// the `Request` back up through all `Middleware` it has hit so far.
-<<<<<<< HEAD
     ///
     /// If no `Middleware` return `Unwind` to indicate that they handled
     /// the request, then a 404 is automatically returned.
-=======
     #[deriving(Clone)]
->>>>>>> (feat) Added chain_error to Chain and StackChain.
     pub struct StackChain {
         /// The storage used by `StackChain` to hold all `Middleware`
         /// that have been `linked` to it.
@@ -129,10 +126,12 @@ pub mod stackchain {
                 None => ()
             };
 
-            let status = self.chain_enter(request, response, alloy);
-
+            let mut status = self.chain_enter(request, response, alloy);
             match status {
-                Unwind => (),
+                Error(ref mut e) => {
+                    let error: &mut Show = *e;
+                    let _ = self.chain_error(request, response, alloy, error);
+                },
                 Continue => {
                     // If no middleware returned unwind, then we send a 404.
                     // At least one middleware should return unwind when a
@@ -142,9 +141,10 @@ pub mod stackchain {
                     // to change headers.
                     response.status = ::http::status::NotFound;
                 }
-            }
-
-            let _ = self.chain_exit(request, response, alloy);
+                Unwind => {
+                    let _ = self.chain_exit(request, response, alloy);
+                }
+            };
 
             status
         }
@@ -386,7 +386,7 @@ pub mod stackchain {
 
         mod chain_exit {
             use super::{CallCount, Arc, Mutex, Stopper};
-            use super::super::StackChain;
+            use super::super::{StackChain, Unwound};
             use super::super::super::Chain;
             use std::mem::uninitialized;
 
