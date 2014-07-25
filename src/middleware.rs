@@ -22,12 +22,19 @@ pub enum Status {
     /// Most `Middleware` will return `Continue` from both `enter` and `exit`.
     Continue,
 
-    /// `Unwind` indicates that this is a terminal `Middleware` or that something
-    /// went wrong. It can be used to immediately stop passing requests down the
-    /// `Chain's` stack and start calling `exit` of all previous `Middleware`.
-    Unwind,
+    /// `Unwind` indicates that this is a terminal `Middleware`. It can be used to
+    /// immediately stop passing requests down the `Chain's` stack and start calling
+    /// `exit` of all previous `Middleware`.
     ///
-    /// For instance, an authorization `Middleware` might return `Unwind` if the
+    /// `Middleware` such as a router or controller, which are meant to handle
+    /// requests completely should return `Unwind`.
+    Unwind,
+
+    /// `Error` indicates that something went wrong with a reason. It behaves
+    /// similarly to `Unwind`, except that it instead calls `Middleware's`
+    /// `on_error` handler as opposed to `exit`.
+    ///
+    /// For instance, an authorization `Middleware` might return `Error` if the
     /// `Request` fails an authentication check, and `Continue` otherwise.
     Error(Box<Show>)
 }
@@ -66,6 +73,9 @@ pub trait Middleware: Send + Clone {
     /// Returning `Unwind` from this handler will cause the `Chain` to stop
     /// going down its stack and start bubbling back up through `Middleware`
     /// and calling `exit` on them.
+    ///
+    /// Returning `Error` from this handler will also cause "bubbling up" but
+    /// will call `Middleware's`
     fn enter(&mut self,
              _: &mut Request,
              _: &mut Response,
@@ -87,6 +97,9 @@ pub trait Middleware: Send + Clone {
         Continue
     }
 
+    ///
+    /// While this method must return a `Status`, most `Chains` will ignore
+    /// this method's return value.
     fn on_error(&mut self,
                 _: &mut Request,
                 _: &mut Response,
