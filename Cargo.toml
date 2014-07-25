@@ -21,3 +21,7 @@ git = "https://github.com/chris-morgan/rust-http.git"
 
 git = "https://github.com/chris-morgan/anymap.git"
 
+[dependencies.content-type]
+
+git = "https://github.com/reem/rust-http-content-type.git"
+
