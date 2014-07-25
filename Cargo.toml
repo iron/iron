@@ -7,7 +7,6 @@ authors = [
     "Zach Pomerantz <zmp@umich.edu>",
     "Patrick Tran <patrick.tran06@gmail.com>",
     "Michael Reinhard <mcreinhard@gmail.com>"]
-build = "./configure"
 
 [[lib]]
 
@@ -21,4 +20,8 @@ git = "https://github.com/chris-morgan/rust-http.git"
 [dependencies.anymap]
 
 git = "https://github.com/chris-morgan/anymap.git"
+
+[dependencies.content-type]
+
+git = "https://github.com/reem/rust-http-content-type.git"
 

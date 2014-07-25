@@ -8,9 +8,7 @@ use http::status::Status;
 
 pub use Response = http::server::response::ResponseWriter;
 
-use self::mimes::get_generated_content_type;
-
-mod mimes;
+use contenttype::get_content_type;
 
 /// Adds common serving methods to Response.
 pub trait Serve: Writer {
@@ -35,7 +33,7 @@ pub trait Serve: Writer {
 impl<'a> Serve for Response<'a> {
     fn serve_file(&mut self, path: &Path) -> IoResult<()> {
         let mut file = try!(File::open(path));
-        self.headers.content_type = path.extension_str().and_then(get_generated_content_type);
+        self.headers.content_type = path.extension_str().and_then(get_content_type);
         copy(&mut file, self)
     }
 
@@ -48,7 +46,7 @@ impl<'a> Serve for Response<'a> {
 #[test]
 fn matches_content_type () {
     let path = &Path::new("test.txt");
-    let content_type = path.extension_str().and_then(get_generated_content_type).unwrap();
+    let content_type = path.extension_str().and_then(get_content_type).unwrap();
 
     assert_eq!(content_type.type_.as_slice(), "text");
     assert_eq!(content_type.subtype.as_slice(), "plain");

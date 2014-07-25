@@ -51,6 +51,7 @@
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 
+extern crate contenttype;
 extern crate http;
 extern crate anymap;
 #[cfg(test)]
