@@ -133,7 +133,9 @@ pub mod stackchain {
                     let _ = self.chain_error(request, response, alloy, error);
                 },
                 Continue => {
-                    // If no middleware returned unwind, then we send a 404.
+                    // If no middleware returned unwind, or errored
+                    // then we send a 404.
+                    //
                     // At least one middleware should return unwind when a
                     // terminal endpoint, such as a router, has been reached.
                     //

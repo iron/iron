@@ -53,9 +53,8 @@ pub enum Status {
 ///
 /// Data stored on a `Middleware` instance does _not_ persist
 /// between requests and is _not_ shared between different, concurrent, requests.
-/// The same is true for data stored on an `Alloy`.
-///
-/// Should you need to persist data between requests, you should use an `Arc`.
+/// The same is true for data stored on an `Alloy`. Should you need to persist
+/// data between requests, you should use an `Arc` within your `Middleware`.
 ///
 /// External data should be stored in the `Alloy` passed to both `enter` and
 /// `exit`. `Alloy` is a thin wrapper around `AnyMap` and is effectively a
@@ -75,7 +74,8 @@ pub trait Middleware: Send + Clone {
     /// and calling `exit` on them.
     ///
     /// Returning `Error` from this handler will also cause "bubbling up" but
-    /// will call `Middleware's`
+    /// will call `Middleware's` `on_error` handler instead of their `exit`
+    /// handler.
     fn enter(&mut self,
              _: &mut Request,
              _: &mut Response,
@@ -97,9 +97,12 @@ pub trait Middleware: Send + Clone {
         Continue
     }
 
+    /// `on_error` is called for each `Middleware` in a `Chain` that has had its `enter`
+    /// method called for this client request if an `Error` is returned downstream.
     ///
-    /// While this method must return a `Status`, most `Chains` will ignore
-    /// this method's return value.
+    /// If an Error occurs, `Middleware's` `on_error` methods will be called
+    /// as the stack is unwound in FILO order in the same was as `exit` would
+    /// be called on a successful request.
     fn on_error(&mut self,
                 _: &mut Request,
                 _: &mut Response,
