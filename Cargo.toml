@@ -7,7 +7,6 @@ authors = [
     "Zach Pomerantz <zmp@umich.edu>",
     "Patrick Tran <patrick.tran06@gmail.com>",
     "Michael Reinhard <mcreinhard@gmail.com>"]
-build = "./configure"
 
 [[lib]]
 
