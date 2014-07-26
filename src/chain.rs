@@ -116,30 +116,6 @@ pub mod stackchain {
 
     /// `StackChain` is a `Chain`
     impl Chain for StackChain {
-        fn dispatch(&mut self,
-                    request: &mut Request,
-                    response: &mut Response,
-                    opt_alloy: Option<&mut Alloy>) -> Status {
-            let mut alloy = &mut Alloy::new();
-            match opt_alloy {
-                Some(a) => alloy = a,
-                None => ()
-            };
-
-            let mut status = self.chain_enter(request, response, alloy);
-            match status {
-                Error(ref mut e) => {
-                    let error: &mut Show = *e;
-                    let _ = self.chain_error(request, response, alloy, error);
-                },
-                _ => {
-                    let _ = self.chain_exit(request, response, alloy);
-                }
-            };
-
-            status
-        }
-
         fn chain_enter(&mut self,
                  request: &mut Request,
                  response: &mut Response,
