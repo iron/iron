@@ -62,7 +62,7 @@ pub use request::Request;
 pub use response::Response;
 
 pub use iron::{Iron, Server};
-pub use middleware::{Middleware, Status, Continue, Unwind, FromFn};
+pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
 
 pub use chain::Chain;
 pub use chain::stackchain::StackChain;
