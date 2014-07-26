@@ -116,41 +116,6 @@ pub mod stackchain {
 
     /// `StackChain` is a `Chain`
     impl Chain for StackChain {
-        fn dispatch(&mut self,
-                    request: &mut Request,
-                    response: &mut Response,
-                    opt_alloy: Option<&mut Alloy>) -> Status {
-            let mut alloy = &mut Alloy::new();
-            match opt_alloy {
-                Some(a) => alloy = a,
-                None => ()
-            };
-
-            let mut status = self.chain_enter(request, response, alloy);
-            match status {
-                Error(ref mut e) => {
-                    let error: &mut Show = *e;
-                    let _ = self.chain_error(request, response, alloy, error);
-                },
-                Continue => {
-                    // If no middleware returned unwind, or errored
-                    // then we send a 404.
-                    //
-                    // At least one middleware should return unwind when a
-                    // terminal endpoint, such as a router, has been reached.
-                    //
-                    // We don't write to the body as other middleware may want
-                    // to change headers.
-                    response.status = ::http::status::NotFound;
-                }
-                Unwind => {
-                    let _ = self.chain_exit(request, response, alloy);
-                }
-            };
-
-            status
-        }
-
         fn chain_enter(&mut self,
                  request: &mut Request,
                  response: &mut Response,

@@ -50,6 +50,7 @@
 
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
+#[phase(plugin, link)] extern crate log;
 
 extern crate contenttype;
 extern crate http;
@@ -68,7 +69,6 @@ pub use chain::stackchain::StackChain;
 
 pub use alloy::Alloy;
 
-pub mod mixin;
 mod request;
 mod response;
 mod middleware;
