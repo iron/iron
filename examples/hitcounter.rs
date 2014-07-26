@@ -9,7 +9,6 @@ use std::io::net::ip::Ipv4Addr;
 use persistent::Persistent;
 use http::status;
 use iron::{Request, Response, Alloy, Iron, Server, Chain, Status, Continue, FromFn};
-use iron::mixin::Serve;
 
 pub struct HitCounter;
 
@@ -23,7 +22,7 @@ fn hit_counter(_: &mut Request, _: &mut Response, alloy: &mut Alloy) -> Status {
 
 fn serve_hits(_: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
     let mut count = alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
-    let _ = res.serve(status::Ok, format!("{} hits!", *count).as_slice());
+    let _ = res.serve(status::Ok, format!("{} hits!", *count));
     Continue
 }
 
