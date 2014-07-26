@@ -3,8 +3,9 @@
 use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
 
-use http::status::{Status, InternalServerError};
+use http::status::{Status, InternalServerError, NotFound};
 use http::headers::response::HeaderCollection;
+use http::headers::content_type::MediaType;
 
 pub use HttpResponse = http::server::response::ResponseWriter;
 
@@ -26,7 +27,7 @@ pub struct Response<'a, 'b> {
     pub headers: Box<HeaderCollection>,
 
     /// The response status-code.
-    pub status: Status
+    pub status: Option<Status>
 }
 
 impl<'a, 'b> Response<'a, 'b> {
@@ -34,7 +35,7 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn from_http(http_res: &'a mut HttpResponse<'b>) -> Response<'a, 'b> {
         Response {
             headers: http_res.headers.clone(),
-            status: http_res.status.clone(),
+            status: None, // Start with no response code.
             http_res: http_res,
             body: box MemReader::new(vec![]) as Box<Reader>
         }
@@ -42,7 +43,7 @@ impl<'a, 'b> Response<'a, 'b> {
 
     /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
-        self.status = status;
+        self.status = Some(status);
         self.body = box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>;
     }
 
@@ -72,16 +73,21 @@ impl<'a, 'b> Response<'a, 'b> {
     /// `write_back` consumes the `Response`.
     pub fn write_back(mut self) {
         self.http_res.headers = self.headers.clone();
-        self.http_res.status = self.status.clone();
+
+        // Default to a 404 if no response code was set
+        self.http_res.status = self.status.clone().unwrap_or(NotFound);
+
+        // Read the body into the http_res body
         let _ = match self.body.read_to_string() {
             Ok(body) => {
+                let plain_txt: MediaType = get_content_type("txt").unwrap();
                 self.http_res.write_content_auto(
-                    match self.headers.content_type {
-                        Some(ref ctype) => ctype.clone(),
-                        None => get_content_type("txt").unwrap()
-                    }, body)
+                    self.headers.content_type.clone().unwrap_or(plain_txt),
+                    body
+                )
             },
             Err(e) => Err(e)
+        // Catch errors from reading + writing
         }.map_err(|e| {
             error!("Error reading/writing body: {}", e);
             self.http_res.status = InternalServerError;
