@@ -1,14 +1,14 @@
-//! An alias of the rust-http Request struct.
+//! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
-use http::server::request::{AbsolutePath};
+use http::server::request::AbsolutePath;
 use http::headers::request::HeaderCollection;
 use http::method::Method;
 pub use HttpRequest = http::server::request::Request;
 
 /// The `Request` given to all `Middleware`
 pub struct Request {
-    /// The request's requested url.
+    /// The requested url
     pub url: String,
 
     /// The originating address of the request.

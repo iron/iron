@@ -1,4 +1,4 @@
-//! An augmentation of the rust-http Response struct.
+//! Iron's HTTP Response representation and associated methods.
 
 use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
@@ -49,7 +49,7 @@ impl<'a, 'b> Response<'a, 'b> {
 
     /// Serve the file located at `path`.
     ///
-    /// This usually means a request has been handlded, and `Middleware`
+    /// This usually means a request has been handled, and `Middleware`
     /// may want to `Unwind` after a file is served. If the status should be
     /// anything other than `200`, `Middleware` must set it, including in
     /// the case of an `Err`.
@@ -64,13 +64,12 @@ impl<'a, 'b> Response<'a, 'b> {
         Ok(())
     }
 
-    /// Internal. Should not be called by the user.
-    ///
-    /// `write_back` is used to put all the data added to `self`
-    /// back onto an `HttpResponse` so that it is sent back to the
-    /// client.
-    ///
-    /// `write_back` consumes the `Response`.
+    // `write_back` is used to put all the data added to `self`
+    // back onto an `HttpResponse` so that it is sent back to the
+    // client.
+    //
+    // `write_back` consumes the `Response`.
+    #[doc(hidden)]
     pub fn write_back(mut self) {
         self.http_res.headers = self.headers.clone();
 
