@@ -18,7 +18,7 @@ fn main() {
     let format_str =
         "@[red A]URI: {uri}@@, @[blue blink underline]Method: {method}@@, @[yellow standout]Status: {status}@@, @[brightgreen]Time: {response_time}@@";
     fn attrs(req: &Request, _res: &Response) -> Vec<attr::Attr> {
-        match format!("{}", req.request_uri).as_slice() {
+        match format!("{}", req.url).as_slice() {
             "/" => vec![attr::Blink],
             _ => vec![]
         }

@@ -1,5 +1,6 @@
 use iron::{Request, Response};
 use term::{attr, color};
+use http::status::NotFound;
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
@@ -18,7 +19,7 @@ impl Format {
     /// appropriately.
     pub fn default() -> Format {
         fn status_color(_req: &Request, res: &Response) -> Option<color::Color> {
-            match res.status.code() / 100 {
+            match res.status.as_ref().unwrap_or(&NotFound).code() / 100 {
                 1 => Some(color::BLUE), // Information
                 2 => Some(color::GREEN), // Success
                 3 => Some(color::YELLOW), // Redirection
@@ -90,10 +91,10 @@ impl Format {
                                         for word in name.as_slice().split(' ') {
                                             match word {
                                                 "A" => {
-                                                    attrs = attrses.shift().unwrap_or(ConstantAttrs(vec![]));
+                                                    attrs = attrses.remove(0).unwrap_or(ConstantAttrs(vec![]));
                                                 }
                                                 "C" => {
-                                                    color = colors.shift().unwrap_or(ConstantColor(None));
+                                                    color = colors.remove(0).unwrap_or(ConstantColor(None));
                                                 }
                                                 style => match style_from_name(style) {
                                                     Some(Color(c)) => match color {

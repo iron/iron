@@ -5,6 +5,7 @@
 //! Request logging middleware for Iron
 
 extern crate iron;
+extern crate http;
 extern crate time;
 extern crate term;
 
@@ -50,7 +51,7 @@ impl Middleware for Logger {
             match *text {
                 Str(ref string) => string.clone(),
                 Method => format!("{}", req.method),
-                URI => format!("{}", req.request_uri),
+                URI => format!("{}", req.url),
                 Status => format!("{}", res.status),
                 ResponseTime => format!("{} ms", response_time_ms)
             }
