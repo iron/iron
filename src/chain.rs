@@ -132,18 +132,7 @@ pub mod stackchain {
                     let error: &mut Show = *e;
                     let _ = self.chain_error(request, response, alloy, error);
                 },
-                Continue => {
-                    // If no middleware returned unwind, or errored
-                    // then we send a 404.
-                    //
-                    // At least one middleware should return unwind when a
-                    // terminal endpoint, such as a router, has been reached.
-                    //
-                    // We don't write to the body as other middleware may want
-                    // to change headers.
-                    response.status = ::http::status::NotFound;
-                }
-                Unwind => {
+                _ => {
                     let _ = self.chain_exit(request, response, alloy);
                 }
             };
