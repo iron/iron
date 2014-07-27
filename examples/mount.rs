@@ -6,7 +6,6 @@ use std::io::net::ip::Ipv4Addr;
 
 use http::status;
 use iron::{Iron, Request, Response, Alloy, Server, Chain, Status, Continue, Unwind, FromFn};
-use iron::mixin::Serve;
 use mount::Mount;
 
 fn intercept(_req: &mut Request, _res: &mut Response,
