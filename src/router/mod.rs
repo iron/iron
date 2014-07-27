@@ -1,7 +1,7 @@
+use std::fmt::Show;
 use regex::Regex;
 use http::method::Method;
-use iron::{Middleware, Request, Response, Alloy, Status, Continue, Unwind};
-use iron::mixin::GetUrl;
+use iron::{Middleware, Request, Response, Alloy, Status, Continue, Unwind, Error};
 
 pub mod params;
 mod glob;
@@ -73,26 +73,34 @@ impl Router {
 
 impl Middleware for Router {
     fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-        let request_uri = match req.url() {
-            Some(uri) => uri.clone(),
-            // Not an AbsolutePath, not our problem.
-            None => { return Continue; }
-        };
-
         for route in self.routes.mut_iter() {
-            if route.method == req.method && route.matches.is_match(request_uri.as_slice()) {
+            if route.method == req.method && route.matches.is_match(req.url.as_slice()) {
                 alloy.insert::<params::Params>(
                     params::Params::new(
-                        request_uri.as_slice(),
+                        req.url.as_slice(),
                         route.matches.clone(),
                         route.params.clone().move_iter()
                     )
                 );
-                let _ = route.handler.enter(req, res, alloy);
-                let _ = route.handler.exit(req, res, alloy);
-                return Unwind;
+                let mut handler_status = route.handler.enter(req, res, alloy);
+
+                match handler_status {
+                    Error(ref mut e) => {
+                        let error: &mut Show = *e;
+                        let _ = route.handler.on_error(req, res, alloy, error);
+                    },
+                    _ => {
+                        let _ = route.handler.exit(req, res, alloy);
+                    }
+                };
+
+                return match handler_status {
+                    Continue => Unwind,
+                    otherwise => otherwise
+                }
             }
         }
+
         Continue
     }
 }
