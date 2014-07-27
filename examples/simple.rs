@@ -5,6 +5,7 @@ extern crate router;
 use std::io::net::ip::Ipv4Addr;
 use iron::{Server, Iron, Alloy, Request, Response, Chain, Status, Unwind, FromFn};
 use http::method::Get;
+use http::status;
 use router::{Router, Params};
 
 fn main() {
@@ -13,7 +14,7 @@ fn main() {
 
     fn handler(_req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
         let query = alloy.find::<Params>().unwrap().get("query").unwrap();
-        let _ = res.write(query.as_bytes());
+        let _ = res.serve(status::Ok, query);
         Unwind
     }
 
