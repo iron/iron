@@ -4,6 +4,7 @@ use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
 
 use http::status::{Status, InternalServerError, NotFound};
+use OkStatus = http::status::Ok;
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
 
@@ -61,6 +62,7 @@ impl<'a, 'b> Response<'a, 'b> {
         let file = try!(File::open(path));
         self.headers.content_type = path.extension_str().and_then(get_content_type);
         self.body = box file as Box<Reader>;
+        self.status = Some(OkStatus);
         Ok(())
     }
 
