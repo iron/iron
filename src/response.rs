@@ -79,13 +79,18 @@ impl<'a, 'b> Response<'a, 'b> {
         self.http_res.status = self.status.clone().unwrap_or(NotFound);
 
         // Read the body into the http_res body
-        let _ = match self.body.read_to_string() {
+        let _ = match self.body.read_to_end() {
             Ok(body) => {
                 let plain_txt: MediaType = get_content_type("txt").unwrap();
-                self.http_res.write_content_auto(
-                    self.headers.content_type.clone().unwrap_or(plain_txt),
-                    body
-                )
+
+                // Set content length and type
+                self.http_res.headers.content_length =
+                    Some(body.len());
+                self.http_res.headers.content_type =
+                    Some(self.http_res.headers.content_type.clone().unwrap_or(plain_txt));
+
+                // Write the body
+                self.http_res.write(body.as_slice())
             },
             Err(e) => Err(e)
         // Catch errors from reading + writing
