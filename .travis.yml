@@ -1,15 +1,11 @@
+language: c
 env:
-  global:
-    - LD_LIBRARY_PATH: /usr/local/lib
+  - LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/rustlib/x86_64-unknown-linux-gnu/lib/
 install:
-  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz -O - |
-      sudo tar zxf - --strip-components 1 -C /usr/local
-  - curl http://static.rust-lang.org/cargo-dist/cargo-nightly-linux.tar.gz |
-      sudo tar -C /usr -xzf - && sudo /usr/cargo-nightly/install.sh
+  - curl www.rust-lang.org/rustup.sh | sudo bash
 script:
   - cargo build -v
   - cargo test -v
-  - make all
+  - cargo doc -v
 os:
   - linux
-
