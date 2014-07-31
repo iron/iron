@@ -55,6 +55,7 @@ extern crate regex;
 extern crate contenttype;
 extern crate http;
 extern crate anymap;
+extern crate url;
 #[cfg(test)]
 extern crate test;
 

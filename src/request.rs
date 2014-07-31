@@ -1,26 +1,30 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
-use http::server::request::AbsolutePath;
+use http::server::request::{AbsoluteUri, AbsolutePath};
 use http::headers::request::HeaderCollection;
 use http::method::Method;
+use url::Url;
 pub use HttpRequest = http::server::request::Request;
 
 /// The `Request` given to all `Middleware`
 pub struct Request {
-    /// The requested url
-    pub url: String,
+    /// The requested url as a `url::Url`.
+    ///
+    /// See `servo/rust-url`'s documentation for more information.
+    /// Useful methods include `Url::host`, `Url::domain` and `Url::query_pairs`.
+    pub url: Url,
 
     /// The originating address of the request.
     pub remote_addr: Option<SocketAddr>,
 
-    /// The request headers
+    /// The request headers.
     pub headers: Box<HeaderCollection>,
 
-    /// The request body
+    /// The request body.
     pub body: String,
 
-    /// The request method
+    /// The request method.
     pub method: Method,
 }
 
@@ -30,9 +34,30 @@ impl Request {
     /// This constructor consumes the HttpRequest.
     pub fn from_http(req: HttpRequest) -> Option<Request> {
         match req.request_uri {
-            AbsolutePath(path) => {
+            AbsoluteUri(url) => {
                 Some(Request {
-                    url: path,
+                    url: url,
+                    remote_addr: req.remote_addr,
+                    headers: req.headers,
+                    body: req.body,
+                    method: req.method
+                })
+            },
+            AbsolutePath(path) => {
+                // Attempt to prepend the Host header (mandatory in HTTP/1.1)
+                // XXX: HTTPS incompatible, update when switching to Teepee.
+                let url_string = match req.headers.host {
+                    Some(ref host) => format!("http://{}{}", host, path),
+                    None => return None
+                };
+
+                let url = match Url::parse(url_string.as_slice()) {
+                    Ok(url) => url,
+                    Err(_) => return None // Very unlikely.
+                };
+
+                Some(Request {
+                    url: url,
                     remote_addr: req.remote_addr,
                     headers: req.headers,
                     body: req.body,
@@ -43,4 +68,3 @@ impl Request {
         }
     }
 }
-
