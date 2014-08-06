@@ -4,42 +4,33 @@ use std::fmt::Show;
 
 use super::response::Response;
 use super::request::Request;
-use super::alloy::Alloy;
 use super::middleware::{Middleware, Status, Continue, Error};
 
-/// `chains` are the backbone of `Iron`. They coordinate `Middleware`
-/// to ensure they are resolved and called in the right order,
-/// create and distribute `Alloys`, and handle incoming requests.
+/// `Chains` are the backbone of `Iron`. They coordinate `Middleware`
+/// to ensure they are resolved and called in the right order.
 ///
-/// `chains` are internal tools. Unless you want additional
+/// `Chains` are internal tools. Unless you want additional
 /// or unusual behavior such as enhanced debug logging you
-/// probably don't need to mess with `chain` internals.
+/// probably don't need to mess with `Chain` internals.
 ///
-/// That being said, custom `chains` are extremely powerful as they
+/// That being said, custom `Chains` are extremely powerful as they
 /// allow you to completely control the resolution of `Middleware`.
 pub trait Chain: Send + Clone {
-    /// `dispatch` will be called once per `Request`, and may be
-    /// called either with or without an existing `Alloy`. `dispatch` is responsible
+    /// `dispatch` will be called once per `Request` and is responsible
     /// for delegating the request to the correct `Middleware` and in the correct
     /// order. Effectively, 99% of the work done by a `chain` is done here.
     fn dispatch(&mut self,
                 request: &mut Request,
-                response: &mut Response,
-                opt_alloy: Option<&mut Alloy>) -> Status {
-        let mut alloy = &mut Alloy::new();
-        match opt_alloy {
-            Some(a) => alloy = a,
-            None => ()
-        };
+                response: &mut Response) -> Status {
 
-        let mut status = self.chain_enter(request, response, alloy);
+        let mut status = self.chain_enter(request, response);
         match status {
             Error(ref mut e) => {
                 let error: &mut Show = *e;
-                let _ = self.chain_error(request, response, alloy, error);
+                let _ = self.chain_error(request, response, error);
             },
             _ => {
-                let _ = self.chain_exit(request, response, alloy);
+                let _ = self.chain_exit(request, response);
             }
         };
 
@@ -49,14 +40,12 @@ pub trait Chain: Send + Clone {
     #[doc(hidden)]
     fn chain_enter(&mut self,
              request: &mut Request,
-             response: &mut Response,
-             alloy: &mut Alloy) -> Status;
+             response: &mut Response) -> Status;
 
     #[doc(hidden)]
     fn chain_exit(&mut self,
                   _request: &mut Request,
-                  _response: &mut Response,
-                  _alloy: &mut Alloy) -> Status {
+                  _response: &mut Response) -> Status {
         Continue
     }
 
@@ -64,7 +53,6 @@ pub trait Chain: Send + Clone {
     fn chain_error(&mut self,
                   _request: &mut Request,
                   _response: &mut Response,
-                  _alloy: &mut Alloy,
                   _error: &mut Show) { () }
 
     /// `link` is responsible for adding new `Middleware` to the `chain's` internal
@@ -91,7 +79,6 @@ pub mod stackchain {
     use super::super::request::Request;
     use super::super::response::Response;
     use super::super::middleware::{Middleware, Continue, Unwind, Error, Status};
-    use super::super::alloy::Alloy;
 
     use super::Chain;
 
@@ -118,15 +105,14 @@ pub mod stackchain {
     impl Chain for StackChain {
         fn chain_enter(&mut self,
                  request: &mut Request,
-                 response: &mut Response,
-                 alloy: &mut Alloy) -> Status {
+                 response: &mut Response) -> Status {
             // The `exit_stack` will hold all `Middleware` that are passed through
             // in the enter loop. This is so we know to take exactly the same
             // path through `Middleware` in reverse order than we did on the way in.
             self.status = Unhandled;
 
             'enter: for (i, middleware) in self.stack.mut_iter().enumerate() {
-                match middleware.enter(request, response, alloy) {
+                match middleware.enter(request, response) {
                     Unwind   => {
                         self.status = Unwound(i);
                         return Unwind;
@@ -146,17 +132,16 @@ pub mod stackchain {
 
         fn chain_exit(&mut self,
                  request: &mut Request,
-                 response: &mut Response,
-                 alloy: &mut Alloy) -> Status {
+                 response: &mut Response) -> Status {
             match self.status {
                 Unwound(i) => {
                     for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
-                        let _ = middleware.exit(request, response, alloy);
+                        let _ = middleware.exit(request, response);
                     }
                 },
                 Unhandled => {
                     for middleware in self.stack.mut_iter().rev() {
-                        let _ = middleware.exit(request, response, alloy);
+                        let _ = middleware.exit(request, response);
                     }
                 },
                 Errored(_) => fail!("chain_exit called on a StackChain which Errored.")
@@ -168,12 +153,11 @@ pub mod stackchain {
         fn chain_error(&mut self,
                       request: &mut Request,
                       response: &mut Response,
-                      alloy: &mut Alloy,
                       error: &mut Show) {
             match self.status {
                 Errored(i) => {
                     for middleware in self.stack.mut_slice_to(i).mut_iter().rev() {
-                        let _ = middleware.on_error(request, response, alloy, error);
+                        let _ = middleware.on_error(request, response, error);
                     }
                 },
                 _ => fail!("chain_error called on a chain which did not error.")
@@ -208,7 +192,6 @@ pub mod stackchain {
         pub use super::*;
         pub use super::super::super::request::Request;
         pub use super::super::super::response::Response;
-        pub use super::super::super::alloy::Alloy;
         pub use super::super::super::middleware::{Middleware, Status, Continue, Unwind};
         pub use std::sync::{Arc, Mutex};
 
@@ -220,14 +203,14 @@ pub mod stackchain {
 
         impl Middleware for CallCount {
             fn enter(&mut self, _req: &mut Request,
-                     _res: &mut Response, _alloy: &mut Alloy) -> Status {
+                     _res: &mut Response) -> Status {
                 let mut enter = self.enter.lock();
                 *enter += 1;
                 Continue
             }
 
             fn exit(&mut self, _req: &mut Request,
-                    _res: &mut Response, _alloy: &mut Alloy) -> Status {
+                    _res: &mut Response) -> Status {
                 let mut exit = self.exit.lock();
                 *exit += 1;
                 Continue
@@ -239,7 +222,7 @@ pub mod stackchain {
 
         impl Middleware for Stopper {
             fn enter(&mut self, _req: &mut Request,
-                     _res: &mut Response, _alloy: &mut Alloy) -> Status {
+                     _res: &mut Response) -> Status {
                 Unwind // Stop .status from being accessed, which fails.
             }
         }
@@ -248,7 +231,7 @@ pub mod stackchain {
             use super::{CallCount, Arc, Mutex, Stopper};
             use super::super::StackChain;
             use super::super::super::Chain;
-            use std::mem::{uninitialized};
+            use std::mem::uninitialized;
 
             #[test]
             fn calls_middleware_enter() {
@@ -259,7 +242,6 @@ pub mod stackchain {
                 testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -276,7 +258,6 @@ pub mod stackchain {
                 testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -297,7 +278,6 @@ pub mod stackchain {
                 testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.dispatch(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -326,7 +306,6 @@ pub mod stackchain {
                 unsafe {
                     let _ = testchain.chain_enter(
                         uninitialized(),
-                        uninitialized(),
                         uninitialized()
                     );
                 }
@@ -342,7 +321,6 @@ pub mod stackchain {
                 testchain.link(Stopper);
                 unsafe {
                     let _ = testchain.chain_enter(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -369,12 +347,10 @@ pub mod stackchain {
                 unsafe {
                     let _  = testchain.chain_enter(
                         uninitialized(),
-                        uninitialized(),
                         uninitialized()
                     );
 
                     let _  = testchain.chain_exit(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -393,7 +369,6 @@ pub mod stackchain {
                 testchain.status = Unwound(1);
                 unsafe {
                     let _  = testchain.chain_exit(
-                        uninitialized(),
                         uninitialized(),
                         uninitialized()
                     );
@@ -423,7 +398,6 @@ pub mod stackchain {
                         b.iter(|| {
                             black_box(unsafe {
                                 let _ = testchain.$method(
-                                    uninitialized(),
                                     uninitialized(),
                                     uninitialized()
                                 );
