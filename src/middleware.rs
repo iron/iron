@@ -137,7 +137,7 @@ impl Middleware for Box<Chain + Send> {
 ///
 /// For instance, you can FromFn to wrap a simple controller:
 ///
-/// ```
+/// ```ignore
 /// fn hello_world(...) -> Status { res.write(b"Hello World!"); Continue }
 ///
 /// server.chain.link(FromFn::new(hello_world));

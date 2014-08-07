@@ -21,7 +21,7 @@
 //!
 //! Obligatory example:
 //!
-//! ```rust
+//! ```ignore
 //! #[deriving(Clone)]
 //! pub struct ResponseTime { entry: u64 }
 //!
