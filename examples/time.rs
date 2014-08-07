@@ -3,7 +3,7 @@ extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
 use iron::{Iron, Chain, Request, Response,
-           Middleware, Alloy, Server, Status,
+           Middleware, Server, Status,
            Continue, Unwind, FromFn};
 
 use time::precise_time_ns;
@@ -16,19 +16,19 @@ struct ResponseTime {
 impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry: 0u64 } } }
 
 impl Middleware for ResponseTime {
-    fn enter(&mut self, _req: &mut Request, _res: &mut Response, _al: &mut Alloy) -> Status {
+    fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
         self.entry = precise_time_ns();
         Continue
     }
 
-    fn exit(&mut self, _req: &mut Request, _res: &mut Response, _al: &mut Alloy) -> Status {
+    fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
         let delta = precise_time_ns() - self.entry;
         println!("Request took: {} ms", (delta as f64) / 100000.0);
         Continue
     }
 }
 
-fn stop(_req: &mut Request, _: &mut Response, _: &mut Alloy) -> Status { Unwind }
+fn stop(_req: &mut Request, _: &mut Response) -> Status { Unwind }
 
 fn main() {
     let mut server: Server = Iron::new();

@@ -5,7 +5,6 @@ use std::fmt::Show;
 
 use super::response::Response;
 use super::request::Request;
-use super::alloy::Alloy;
 use super::chain::Chain;
 
 /// The Status returned by `Middleware's` `enter` and `exit` methods. This indicates
@@ -53,15 +52,15 @@ pub enum Status {
 ///
 /// Data stored on a `Middleware` instance does _not_ persist
 /// between requests and is _not_ shared between different, concurrent, requests.
-/// The same is true for data stored on an `Alloy`. Should you need to persist
+/// The same is true for data stored on `Request::alloy`. Should you need to persist
 /// data between requests, you should use an `Arc` within your `Middleware`.
 ///
-/// External data should be stored in the `Alloy` passed to both `enter` and
-/// `exit`. `Alloy` is a thin wrapper around `AnyMap` and is effectively a
+/// External data should be stored in `Request::alloy`.
+/// `Alloy` is a thin wrapper around `AnyMap` and is effectively a
 /// a key value store from a type to an instance of that type. This means
 /// that each `Middleware` can have a unique type that it stores in the `Alloy`.
 /// This can either be an instance of that `Middleware` or some other type. Since
-/// the same `Alloy` is passed to all further `Middleware` in the `Chain`, this
+/// the same `Request` is passed to all further `Middleware` in the `Chain`, this
 /// scheme allows you to expose data or functionality to future `Middleware`.
 pub trait Middleware: Send + Clone {
     /// `enter` is called for each `Middleware` in a `Chain` as a client request
@@ -78,8 +77,7 @@ pub trait Middleware: Send + Clone {
     /// handler.
     fn enter(&mut self,
              _: &mut Request,
-             _: &mut Response,
-             _: &mut Alloy) -> Status {
+             _: &mut Response) -> Status {
         Continue
     }
 
@@ -92,8 +90,7 @@ pub trait Middleware: Send + Clone {
     /// this method's return value.
     fn exit(&mut self,
             _: &mut Request,
-            _: &mut Response,
-            _: &mut Alloy) -> Status {
+            _: &mut Response) -> Status {
         Continue
     }
 
@@ -106,7 +103,6 @@ pub trait Middleware: Send + Clone {
     fn on_error(&mut self,
                 _: &mut Request,
                 _: &mut Response,
-                _: &mut Alloy,
                 _: &mut Show) { () }
 
     // Helper function to clone the Middleware.
@@ -119,17 +115,16 @@ impl Clone for Box<Middleware + Send> {
 }
 
 impl Middleware for Box<Chain + Send> {
-    fn enter(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
-        self.chain_enter(request, response, alloy)
+    fn enter(&mut self, request: &mut Request, response: &mut Response) -> Status {
+        self.chain_enter(request, response)
     }
 
-    fn exit(&mut self, request: &mut Request, response: &mut Response, alloy: &mut Alloy) -> Status {
-        self.chain_exit(request, response, alloy)
+    fn exit(&mut self, request: &mut Request, response: &mut Response) -> Status {
+        self.chain_exit(request, response)
     }
 
-    fn on_error(&mut self, request: &mut Request, response: &mut Response,
-                alloy: &mut Alloy, error: &mut Show) {
-        self.chain_error(request, response, alloy, error)
+    fn on_error(&mut self, request: &mut Request, response: &mut Response, error: &mut Show) {
+        self.chain_error(request, response, error)
     }
 }
 
@@ -144,12 +139,12 @@ impl Middleware for Box<Chain + Send> {
 /// ```
 ///
 pub struct FromFn {
-    func: fn(&mut Request, &mut Response, &mut Alloy) -> Status
+    func: fn(&mut Request, &mut Response) -> Status
 }
 
 impl FromFn {
     /// Constructs a new FromFn given a fn of the correct signature.
-    pub fn new(func: fn(&mut Request, &mut Response, &mut Alloy) -> Status) -> FromFn {
+    pub fn new(func: fn(&mut Request, &mut Response) -> Status) -> FromFn {
         FromFn {
             func: func
         }
@@ -165,8 +160,8 @@ impl Clone for FromFn {
 }
 
 impl Middleware for FromFn {
-    fn enter(&mut self, res: &mut Request, req: &mut Response, alloy: &mut Alloy) -> Status {
-        (self.func)(res, req, alloy)
+    fn enter(&mut self, req: &mut Request, res: &mut Response) -> Status {
+        (self.func)(req, res)
     }
 }
 

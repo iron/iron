@@ -7,6 +7,8 @@ use http::method::Method;
 use url::Url;
 pub use HttpRequest = http::server::request::Request;
 
+use super::alloy::Alloy;
+
 /// The `Request` given to all `Middleware`
 pub struct Request {
     /// The requested url as a `url::Url`.
@@ -26,6 +28,9 @@ pub struct Request {
 
     /// The request method.
     pub method: Method,
+
+    /// Data storage for extensions to the request object.
+    pub alloy: Alloy
 }
 
 impl Request {
@@ -61,7 +66,8 @@ impl Request {
                     remote_addr: req.remote_addr,
                     headers: req.headers,
                     body: req.body,
-                    method: req.method
+                    method: req.method,
+                    alloy: Alloy::new()
                 })
             },
             _ => None
