@@ -45,7 +45,8 @@ impl Request {
                     remote_addr: req.remote_addr,
                     headers: req.headers,
                     body: req.body,
-                    method: req.method
+                    method: req.method,
+                    alloy: Alloy::new()
                 })
             },
             AbsolutePath(path) => {
