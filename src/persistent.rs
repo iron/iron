@@ -1,4 +1,4 @@
-use iron::{Request, Response, Middleware, Alloy, Status, Continue};
+use iron::{Request, Response, Middleware, Status, Continue};
 use std::sync::{Arc, RWLock};
 
 /// A `Middleware` that allows for sharing a single piece of data between
@@ -24,9 +24,8 @@ impl<D: Send + Share, P> Clone for Persistent<D, P> {
 }
 
 impl<D: Send + Share, P> Middleware for Persistent<D, P> {
-    fn enter(&mut self, _: &mut Request,
-             _: &mut Response, alloy: &mut Alloy) -> Status {
-        alloy.insert::<Persistent<D, P>>(self.clone());
+    fn enter(&mut self, req: &mut Request, _: &mut Response) -> Status {
+        req.alloy.insert::<Persistent<D, P>>(self.clone());
         Continue
     }
 }

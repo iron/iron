@@ -1,4 +1,4 @@
-use iron::{Middleware, Request, Response, Alloy, Status};
+use iron::{Middleware, Request, Response, Status};
 use std::sync::Arc;
 
 /// `Middleware` implementing this trait can be linked using `Shared` so that
@@ -8,12 +8,12 @@ pub trait ShareableMiddleware {
     /// `shared_enter` is an immutable version of `enter` from the `Middleware`
     /// trait - it receives an & reference to self rather than an &mut
     /// reference.
-    fn shared_enter(&self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status;
+    fn shared_enter(&self, req: &mut Request, res: &mut Response) -> Status;
 
     /// `shared_exit` is an immutable version of `exit` from the `Middleware`
     /// trait - it receives an & reference to self rather than an &mut
     /// reference.
-    fn shared_exit(&self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status;
+    fn shared_exit(&self, req: &mut Request, res: &mut Response) -> Status;
 }
 
 /// `Shared` is used to wrap `ShareableMiddleware` into `Middleware` so they
@@ -42,12 +42,12 @@ impl Clone for Shared {
 }
 
 impl Middleware for Shared {
-    fn enter(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-        self.middleware.shared_enter(req, res, alloy)
+    fn enter(&mut self, req: &mut Request, res: &mut Response) -> Status {
+        self.middleware.shared_enter(req, res)
     }
 
-    fn exit(&mut self, req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-        self.middleware.shared_exit(req, res, alloy)
+    fn exit(&mut self, req: &mut Request, res: &mut Response) -> Status {
+        self.middleware.shared_exit(req, res)
     }
 }
 
