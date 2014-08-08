@@ -10,6 +10,8 @@
 extern crate http;
 extern crate iron;
 extern crate regex;
+extern crate url;
+extern crate collections;
 
 pub use mount::{Mount, OriginalUrl};
 
