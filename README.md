@@ -17,17 +17,18 @@ fn main() {
         Get,
         "/:class/:id".to_string(),
         vec!["class".to_string(), "id".to_string()],
-        echo_to_term);
+        FromFn::new(echo_to_term));
 
     let mut server: Server = Iron::new();
     server.chain.link(router); // Add middleware to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn echo_to_term(_: &mut Request, res: &mut Response, alloy: &mut Alloy) {
-    let query = alloy.find::<Params>().unwrap();
+fn echo_to_term(req: &mut Request, _: &mut Response) -> Status {
+    let query = req.alloy.find::<Params>().unwrap();
     println!("Class: {}\t id: {}",
              query.get("class").unwrap(), query.get("id").unwrap());
+    Unwind
 }
 ```
 
