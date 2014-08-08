@@ -23,20 +23,21 @@
 //!
 //! ```ignore
 //! #[deriving(Clone)]
-//! pub struct ResponseTime { entry: u64 }
+//! struct ResponseTime {
+//!     entry_time: u64
+//! }
 //!
-//! impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry: 0u64 } } }
+//! impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
 //!
-//! // This Trait defines middleware.
-//! impl MiddleWare for ResponseTime {
-//!     fn enter(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-//!         self.entry = precise_time_ns();
-//!         Continue // Continue to other middleware in the stack
+//! impl Middleware for ResponseTime {
+//!     fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
+//!         self.entry_time = precise_time_ns();
+//!         Continue
 //!     }
 //!
-//!     fn exit(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-//!         let delta = precise_time_ns() - self.entry;
-//!         println!("Request took {} ms.", (delta as f64) / 100000.0)
+//!     fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
+//!         let delta = precise_time_ns() - self.entry_time;
+//!         println!("Request took: {} ms", (delta as f64) / 100000.0);
 //!         Continue
 //!     }
 //! }
@@ -45,8 +46,6 @@
 //! server.chain.link(ResponseTime::new());
 //! // ...
 //! ```
-//!
-
 
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;

@@ -1,26 +1,27 @@
 Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)](https://travis-ci.org/iron/iron)
 ====
 
-> Express-inspired, rapid, scalable, concurrent and safe server development
+> Express-inspired, rapid, scalable, concurrent and safe server development.
 
 ## Simple ResponseTimer Middleware
 
 ```rust
 #[deriving(Clone)]
-pub struct ResponseTime { entry: u64 }
+struct ResponseTime {
+    entry_time: u64
+}
 
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry: 0u64 } } }
+impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
 
-// This Trait defines middleware.
-impl MiddleWare for ResponseTime {
-    fn enter(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-        self.entry = precise_time_ns();
-        Continue // Continue to other middleware in the stack
+impl Middleware for ResponseTime {
+    fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
+        self.entry_time = precise_time_ns();
+        Continue
     }
 
-    fn exit(&mut self, _: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
-        let delta = precise_time_ns() - self.entry;
-        println!("Request took {} ms.", (delta as f64) / 100000.0)
+    fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
+        let delta = precise_time_ns() - self.entry_time;
+        println!("Request took: {} ms", (delta as f64) / 100000.0);
         Continue
     }
 }
@@ -51,13 +52,13 @@ Middleware is painless to build, and the [core bundle](https://github.com/iron/c
 already includes:
 - [Routing](https://github.com/iron/router)
 - [Mounting](https://github.com/iron/mount)
-- [Static file-serving](https://github.com/iron/static-file)
-- [Body parsing](https://github.com/iron/body-parser)
-- [Url encoding](https://github.com/iron/urlencoded)
+- [Static File Serving](https://github.com/iron/static-file)
+- [JSON Body Parsing](https://github.com/iron/body-parser)
+- [URL Encoded Data Parsing](https://github.com/iron/urlencoded)
 - [Logging](https://github.com/iron/logger)
 - [Cookies](https://github.com/iron/cookie)
 - [Sessions](https://github.com/iron/session)
-- [Persistent storage](https://github.com/iron/persistent)
+- [Persistent Storage](https://github.com/iron/persistent)
 
 This allows for insanely flexible and powerful setups and allows nearly all
 of Iron’s features to be swappable - you can even change the middleware
@@ -78,15 +79,21 @@ Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `ta
 ## [Documentation](http://docs.ironframework.io/)
 
 Along with the [online documentation](http://docs.ironframework.io/),
-you can build a local copy with `make doc`.
+you can build a local copy with `cargo doc`.
 
 ### Building Middleware
 
-`impl Middleware` to create your own, or pass a function with the correct signature to `FromFn::new`.
+Implement the `Middleware` trait to create your own, or pass a function with the following signature to `FromFn::new`:
+
+```rust
+fn handler(req: &mut Request, res: &mut Response) -> Status;
+```
 
 ## [More Examples](/examples)
 
-[See more examples.](/examples)
+Check out the [examples](/examples) directory!
+
+You can compile all of the examples with `cargo test`. The binaries will be placed in `target/test/`.
 
 ## Get Help
 

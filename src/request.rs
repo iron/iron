@@ -9,11 +9,15 @@ pub use HttpRequest = http::server::request::Request;
 
 use super::alloy::Alloy;
 
-/// The `Request` given to all `Middleware`
+/// The `Request` given to all `Middleware`.
+///
+/// Stores all the properties of the client's request plus
+/// an `Alloy` for data communication between middleware.
+///
 pub struct Request {
     /// The requested url as a `url::Url`.
     ///
-    /// See `servo/rust-url`'s documentation for more information.
+    /// See `servo/rust-url`'s documentation for more information.  
     /// Useful methods include `Url::host`, `Url::domain` and `Url::query_pairs`.
     pub url: Url,
 
@@ -29,7 +33,7 @@ pub struct Request {
     /// The request method.
     pub method: Method,
 
-    /// Data storage for extensions to the request object.
+    /// Storage for data passed between middleware.
     pub alloy: Alloy
 }
 

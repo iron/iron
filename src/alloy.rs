@@ -4,28 +4,26 @@
 
 use anymap::AnyMap;
 
-/// `Alloy` wraps an AnyMap, a map allowing storage keyed by type
-/// to allow for persistent data across `Middleware`.
+/// `Alloy` wraps an `AnyMap` - a map keyed by types that facilitates
+/// persistent data access across `Middleware`.
 ///
-/// `Middleware` can be inserted into an `Alloy` and retrieved later. Data needing
-/// exposure across `Middleware` and persistence (for example, a body parser's parsed data)
-/// should be stored and retrieved later from the `Alloy`.
+/// Each `Request` has an `Alloy` attached to it that persists for the life
+/// of the request. Middleware can use `Request::alloy` to pass data to other middleware,
+/// or store data for use in their own `exit` function.
 ///
-/// Only one instance of any type can be stored in the `Alloy` at a time.
-/// Best practice is to store targeted data. For example, for a body parser,
-/// rather than store the `Middleware`, store a `Parsed` type:
+/// Best practice is to store targeted data. For example, a body parser
+/// should store a `Parsed` type, rather than itself:
 ///
 /// ```ignore
-/// impl<Rq, Rs> Middleware for BodyParser {
-///     fn enter(req: &mut Rq, res: &mut Rs, alloy: &mut Alloy) -> Status {
+/// impl Middleware for BodyParser {
+///     fn enter(req: &mut Request, res: &mut Response) -> Status {
 ///         let parsed: Parsed = ...; // Parse the body
-///         alloy.insert::<Parsed>(Parsed);
+///         req.alloy.insert::<Parsed>(parsed);
+///         Continue
 ///     }
 /// }
 /// ```
 ///
-/// In most cases, the `Middleware` itself does not need to be exposed,
-/// and should not be stored on the `Alloy`.
 pub struct Alloy {
     map: AnyMap
 }
