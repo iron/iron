@@ -65,8 +65,8 @@ pub enum Status {
 pub trait Middleware: Send + Clone {
     /// `enter` is called for each `Middleware` in a `Chain` as a client request
     /// comes down the stack. `Middleware` have their `enter` methods called in the order
-    /// in which they were added to the stack, that is, FIFO. `Middleware` should expose
-    /// data through `Alloy` and store any data that will persist through the request here.
+    /// in which they were added to the stack, that is, FIFO. If `Middleware` need to pass data
+    /// between them they should do so using `Request::alloy`.
     ///
     /// Returning `Unwind` from this handler will cause the `Chain` to stop
     /// going down its stack and start bubbling back up through `Middleware`
@@ -128,12 +128,16 @@ impl Middleware for Box<Chain + Send> {
     }
 }
 
-/// A temporary wrapper struct for allowing fn's to be used as Middleware
+/// Wrapper struct which allows bare functions to be used as `Middleware`.
 ///
-/// For instance, you can FromFn to wrap a simple controller:
+/// You can use `FromFn` to wrap any function which accepts a `&mut Request`
+/// and a `&mut Response` and returns a `Status`. For example:
 ///
 /// ```ignore
-/// fn hello_world(...) -> Status { res.write(b"Hello World!"); Continue }
+/// fn hello_world(&mut Request, &mut Response) -> Status {
+///     res.serve(http::status::Ok, b"Hello World!");
+///     Continue
+/// }
 ///
 /// server.chain.link(FromFn::new(hello_world));
 /// ```
