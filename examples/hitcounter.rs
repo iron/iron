@@ -8,20 +8,19 @@ extern crate persistent;
 use std::io::net::ip::Ipv4Addr;
 use persistent::Persistent;
 use http::status;
-use iron::{Request, Response, Alloy, Iron, Server, Chain, Status, Continue, FromFn};
+use iron::{Request, Response, Iron, Server, Chain, Status, Continue, FromFn};
 
 pub struct HitCounter;
 
-fn hit_counter(_: &mut Request, _: &mut Response, alloy: &mut Alloy) -> Status {
-    // Bug in the compiler
-    let mut count = alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
+fn hit_counter(req: &mut Request, _: &mut Response) -> Status {
+    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
     *count += 1;
     println!("{} hits!", *count);
     Continue
 }
 
-fn serve_hits(_: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-    let mut count = alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
+fn serve_hits(req: &mut Request, res: &mut Response) -> Status {
+    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
     let _ = res.serve(status::Ok, format!("{} hits!", *count));
     Continue
 }
