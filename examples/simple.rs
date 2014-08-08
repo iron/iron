@@ -12,8 +12,8 @@ fn main() {
     let mut server: Server = Iron::new();
     let mut router = Router::new();
 
-    fn handler(_req: &mut Request, res: &mut Response, alloy: &mut Alloy) -> Status {
-        let query = alloy.find::<Params>().unwrap().get("query").unwrap();
+    fn handler(req: &mut Request, res: &mut Response) -> Status {
+        let query = req.alloy.find::<Params>().unwrap().get("query").unwrap();
         let _ = res.serve(status::Ok, query);
         Unwind
     }
