@@ -9,7 +9,7 @@ extern crate http;
 extern crate time;
 extern crate term;
 
-use iron::{Middleware, Alloy, Request, Response, Status, Continue};
+use iron::{Middleware, Request, Response, Status, Continue};
 use time::precise_time_ns;
 use term::{Terminal, WriterWrapper, stdout};
 
@@ -39,11 +39,11 @@ impl Logger {
 }
 
 impl Middleware for Logger {
-    fn enter(&mut self, _req: &mut Request, _res: &mut Response, _alloy: &mut Alloy) -> Status {
+    fn enter(&mut self, _: &mut Request, _: &mut Response) -> Status {
         self.entry_time = precise_time_ns();
         Continue
     }
-    fn exit(&mut self, req: &mut Request, res: &mut Response, _al: &mut Alloy) -> Status {
+    fn exit(&mut self, req: &mut Request, res: &mut Response) -> Status {
         let response_time_ms = (precise_time_ns() - self.entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or(Format::default());
 
