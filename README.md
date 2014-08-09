@@ -14,8 +14,8 @@ fn main() {
 
 pub struct HitCounter;
 
-fn counter(_: &mut Request, _: &mut Response, alloy: &mut Alloy) -> Status {
-    let mut count = alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
+fn counter(req: &mut Request, _: &mut Response) -> Status {
+    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
     *count += 1;
     println!("{} hits!", *count);
     Continue
