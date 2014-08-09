@@ -15,7 +15,7 @@ pub struct Persistent<Data, Phantom> {
     pub data: Arc<RWLock<Data>>
 }
 
-impl<D: Send + Share, P> Clone for Persistent<D, P> {
+impl<D: Send + Sync, P> Clone for Persistent<D, P> {
     fn clone(&self) -> Persistent<D, P> {
         Persistent {
             data: self.data.clone()
@@ -23,14 +23,14 @@ impl<D: Send + Share, P> Clone for Persistent<D, P> {
     }
 }
 
-impl<D: Send + Share, P> Middleware for Persistent<D, P> {
+impl<D: Send + Sync, P> Middleware for Persistent<D, P> {
     fn enter(&mut self, req: &mut Request, _: &mut Response) -> Status {
         req.alloy.insert::<Persistent<D, P>>(self.clone());
         Continue
     }
 }
 
-impl<D: Send + Share, P> Persistent<D, P> {
+impl<D: Send + Sync, P> Persistent<D, P> {
     /// Creates a new instance of `Persistent` containing the passed-in data.
     pub fn new(data: D) -> Persistent<D, P> {
         Persistent { data: Arc::new(RWLock::new(data)) }

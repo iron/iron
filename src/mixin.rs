@@ -5,11 +5,11 @@ use shared::{ShareableMiddleware, Shared};
 /// for convenient additions of `ShareableMiddleware` as `Middleware`.
 pub trait SharedLink {
     /// Attach a `ShareableMiddleware` as a `Middleware`.
-    fn link_shared<S: ShareableMiddleware + Send + Share>(&mut self, S);
+    fn link_shared<S: ShareableMiddleware + Send + Sync>(&mut self, S);
 }
 
 impl<C: Chain> SharedLink for C {
-    fn link_shared<S: ShareableMiddleware + Send + Share>(&mut self, s: S) {
+    fn link_shared<S: ShareableMiddleware + Send + Sync>(&mut self, s: S) {
         self.link(Shared::new(s))
     }
 }
