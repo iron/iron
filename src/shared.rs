@@ -20,15 +20,15 @@ pub trait ShareableMiddleware {
 /// can be linked onto a `Chain` while still avoiding unnecessary copies.
 pub struct Shared {
     /// The wrapped `ShareableMiddleware`
-    pub middleware: Arc<Box<ShareableMiddleware + Send + Share>>
+    pub middleware: Arc<Box<ShareableMiddleware + Send + Sync>>
 }
 
 impl Shared {
     /// Creates a new instance of `Shared` containing the provided
     /// `ShareableMiddleware` and allowing it to be used as `Middleware`.
-    pub fn new<S: ShareableMiddleware + Send + Share>(s: S) -> Shared {
+    pub fn new<S: ShareableMiddleware + Send + Sync>(s: S) -> Shared {
         Shared {
-            middleware: Arc::new(box s as Box<ShareableMiddleware + Send + Share>)
+            middleware: Arc::new(box s as Box<ShareableMiddleware + Send + Sync>)
         }
     }
 }
