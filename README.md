@@ -14,7 +14,7 @@ fn main() {
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
-fn intercept(_: &mut Request, _: &mut Response, _: &mut Alloy) -> Status {
+fn intercept(_: &mut Request, _: &mut Response) -> Status {
     // intercept will block all further middleware from running
     Unwind
 }
