@@ -93,6 +93,6 @@ impl<C: Chain> http::Server for IronListener<C> {
         let _ = self.chain.borrow_mut().dispatch(&mut req, &mut res);
 
         // Write the response back to http_res
-        res.write_back();
+        res.write_back(http_res);
     }
 }
