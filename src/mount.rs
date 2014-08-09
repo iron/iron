@@ -21,11 +21,14 @@ pub struct Mount<M> {
 impl<M: Middleware + Send> Mount<M> {
     /// Creates a new instance of `Mount` mounting the given instance of Iron
     /// on the given path.
-    pub fn new(route: &[&str], middleware: M) -> Mount<M> {
+    pub fn new(route: &str, middleware: M) -> Mount<M> {
         Mount {
             route: route.to_string(),
             middleware: middleware,
-            matches: route.iter().map(|s| s.to_string()).collect()
+            matches: Path::new(route)
+                        .str_components()
+                        .map(|s| s.unwrap().to_string())
+                        .collect()
         }
     }
 }
@@ -34,7 +37,16 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
     fn enter(&mut self,
              req: &mut Request,
              res: &mut Response) -> Status {
-        if !req.url.path().unwrap().starts_with(self.matches.as_slice()) {
+        // Unwrapping url.path() is safe because the request is HTTP.
+        // XXX: If a url_path() -> &[String] method is added to Request, use that.
+        macro_rules! url_path(
+            ($req:ident) => (
+                $req.url.path().unwrap()
+            )
+        )
+
+        // Check for a route match.
+        if !url_path!(req).starts_with(self.matches.as_slice()) {
             return Continue;
         }
 
@@ -45,16 +57,14 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
             None => req.alloy.insert(OriginalUrl(req.url.clone()))
         }
 
-        if req.url.path().is_some() {
-            *req.url.path_mut().unwrap() = req.url.path().unwrap()
-                                               .slice_from(self.matches.len())
-                                               .to_vec();
-        }
+        // Remove the prefix from the request's path before passing it to the mounted middleware.
+        // This unwrap is safe because url.path() is guaranteed to not be None.
+        *req.url.path_mut().unwrap() = url_path!(req).slice_from(self.matches.len()).to_vec();
 
         let terminator = self.middleware.enter(req, res);
         let _ = self.middleware.exit(req, res);
 
-        // And repair the damage here, for future middleware
+        // Reverse the URL munging, for future middleware.
         let &OriginalUrl(ref original) = req.alloy.find::<OriginalUrl>().unwrap();
         req.url = original.clone();
 

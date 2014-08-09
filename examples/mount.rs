@@ -20,7 +20,7 @@ fn send_hello(_: &mut Request, res: &mut Response) -> Status {
 
 fn main() {
     let mut server: Server = Iron::new();
-    server.chain.link(Mount::new(&["blocked"], FromFn::new(intercept)));
+    server.chain.link(Mount::new("/blocked/", FromFn::new(intercept)));
     server.chain.link(FromFn::new(send_hello));
     server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
