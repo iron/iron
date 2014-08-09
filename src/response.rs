@@ -13,9 +13,7 @@ pub use HttpResponse = http::server::response::ResponseWriter;
 use contenttype::get_content_type;
 
 /// The response representation given to `Middleware`
-pub struct Response<'a, 'b> {
-    http_res: &'a mut HttpResponse<'b>,
-
+pub struct Response {
     /// The body of the response.
     ///
     /// This is a Reader for generality, most data should
@@ -31,13 +29,12 @@ pub struct Response<'a, 'b> {
     pub status: Option<Status>
 }
 
-impl<'a, 'b> Response<'a, 'b> {
+impl Response {
     /// Construct a Response from an HttpResponse reference
-    pub fn from_http(http_res: &'a mut HttpResponse<'b>) -> Response<'a, 'b> {
+    pub fn from_http(http_res: &mut HttpResponse) -> Response {
         Response {
             headers: http_res.headers.clone(),
             status: None, // Start with no response code.
-            http_res: http_res,
             body: box MemReader::new(vec![]) as Box<Reader>
         }
     }
@@ -72,11 +69,11 @@ impl<'a, 'b> Response<'a, 'b> {
     //
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
-    pub fn write_back(mut self) {
-        self.http_res.headers = self.headers.clone();
+    pub fn write_back(mut self, http_res: &mut HttpResponse) {
+        http_res.headers = self.headers.clone();
 
         // Default to a 404 if no response code was set
-        self.http_res.status = self.status.clone().unwrap_or(NotFound);
+        http_res.status = self.status.clone().unwrap_or(NotFound);
 
         // Read the body into the http_res body
         let _ = match self.body.read_to_end() {
@@ -84,20 +81,20 @@ impl<'a, 'b> Response<'a, 'b> {
                 let plain_txt: MediaType = get_content_type("txt").unwrap();
 
                 // Set content length and type
-                self.http_res.headers.content_length =
+                http_res.headers.content_length =
                     Some(body.len());
-                self.http_res.headers.content_type =
-                    Some(self.http_res.headers.content_type.clone().unwrap_or(plain_txt));
+                http_res.headers.content_type =
+                    Some(http_res.headers.content_type.clone().unwrap_or(plain_txt));
 
                 // Write the body
-                self.http_res.write(body.as_slice())
+                http_res.write(body.as_slice())
             },
             Err(e) => Err(e)
         // Catch errors from reading + writing
         }.map_err(|e| {
             error!("Error reading/writing body: {}", e);
-            self.http_res.status = InternalServerError;
-            let _ = self.http_res.write(b"Internal Server Error")
+            http_res.status = InternalServerError;
+            let _ = http_res.write(b"Internal Server Error")
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
     }
