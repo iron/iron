@@ -23,7 +23,7 @@ pub struct Response {
     /// be sent using either `serve` or `serve_file`.
     ///
     /// Arbitrary Readers can be sent by assigning to body.
-    pub body: Box<Reader>,
+    pub body: Option<Box<Reader>>,
 
     /// The headers of the response.
     pub headers: Box<HeaderCollection>,
@@ -42,7 +42,7 @@ impl Response {
         Response {
             headers: http_res.headers.clone(),
             status: None, // Start with no response code.
-            body: box MemReader::new(vec![]) as Box<Reader>,
+            body: None, // Start with no body.
             extensions: AnyMap::new()
         }
     }
@@ -50,7 +50,7 @@ impl Response {
     /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
         self.status = Some(status);
-        self.body = box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>;
+        self.body = Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>);
     }
 
     /// Serve the file located at `path`.
@@ -66,7 +66,7 @@ impl Response {
     pub fn serve_file(&mut self, path: &Path) -> IoResult<()> {
         let file = try!(File::open(path));
         self.headers.content_type = path.extension_str().and_then(get_content_type);
-        self.body = box file as Box<Reader>;
+        self.body = Some(box file as Box<Reader>);
         self.status = Some(OkStatus);
         Ok(())
     }
@@ -77,25 +77,26 @@ impl Response {
     //
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
-    pub fn write_back(mut self, http_res: &mut HttpResponse) {
+    pub fn write_back(self, http_res: &mut HttpResponse) {
         http_res.headers = self.headers.clone();
 
         // Default to a 404 if no response code was set
         http_res.status = self.status.clone().unwrap_or(NotFound);
 
         // Read the body into the http_res body
-        let _ = match self.body.read_to_end() {
-            Ok(body) => {
+        let mut body = self.body.unwrap_or_else(|| box MemReader::new(vec![]) as Box<Reader>);
+        let _ = match body.read_to_end() {
+            Ok(body_content) => {
                 let plain_txt: MediaType = get_content_type("txt").unwrap();
 
                 // Set content length and type
                 http_res.headers.content_length =
-                    Some(body.len());
+                    Some(body_content.len());
                 http_res.headers.content_type =
                     Some(http_res.headers.content_type.clone().unwrap_or(plain_txt));
 
                 // Write the body
-                http_res.write(body.as_slice())
+                http_res.write(body_content.as_slice())
             },
             Err(e) => Err(e)
         // Catch errors from reading + writing
@@ -103,6 +104,7 @@ impl Response {
             error!("Error reading/writing body: {}", e);
             http_res.status = InternalServerError;
             let _ = http_res.write(b"Internal Server Error")
+                // Something is really, really wrong.
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
     }
