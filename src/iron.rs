@@ -86,7 +86,15 @@ impl<C: Chain> http::Server for IronListener<C> {
 
     fn handle_request(&self, http_req: HttpRequest, http_res: &mut HttpResponse) {
         // Create wrapper Request and Response
-        let mut req = Request::from_http(http_req).unwrap();
+        let mut req = match Request::from_http(http_req) {
+            Ok(req) => req,
+            Err(e) => {
+                error!("Error getting request: {}", e);
+                http_res.status = ::http::status::InternalServerError;
+                let _ = http_res.write(b"Internal Server Error");
+                return;
+            }
+        };
         let mut res = Response::from_http(http_res);
 
         // Dispatch the request

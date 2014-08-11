@@ -41,10 +41,10 @@ impl Request {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest) -> Option<Request> {
+    pub fn from_http(req: HttpRequest) -> Result<Request, String> {
         match req.request_uri {
             AbsoluteUri(url) => {
-                Some(Request {
+                Ok(Request {
                     url: url,
                     remote_addr: req.remote_addr,
                     headers: req.headers,
@@ -58,15 +58,15 @@ impl Request {
                 // XXX: HTTPS incompatible, update when switching to Teepee.
                 let url_string = match req.headers.host {
                     Some(ref host) => format!("http://{}{}", host, path),
-                    None => return None
+                    None => return Err("No host specified in request".to_string())
                 };
 
                 let url = match Url::parse(url_string.as_slice()) {
                     Ok(url) => url,
-                    Err(_) => return None // Very unlikely.
+                    Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
                 };
 
-                Some(Request {
+                Ok(Request {
                     url: url,
                     remote_addr: req.remote_addr,
                     headers: req.headers,
@@ -75,7 +75,7 @@ impl Request {
                     alloy: Alloy::new()
                 })
             },
-            _ => None
+            _ => Err("Unsupported request URI".to_string())
         }
     }
 }
