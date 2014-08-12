@@ -3,7 +3,7 @@ extern crate http;
 extern crate router;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Server, Iron, Alloy, Request, Response, Chain, Status, Unwind, FromFn};
+use iron::{Server, Iron, Request, Response, Chain, Status, Unwind, FromFn};
 use http::method::Get;
 use http::status;
 use router::{Router, Params};
