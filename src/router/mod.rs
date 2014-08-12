@@ -47,11 +47,11 @@ impl Router {
     /// `/users/:userid/:friend` and store `userid` and `friend` in
     /// the exposed Params object:
     ///
-    /// ```rust
+    /// ```ignore
     /// router.route(
     ///     ::http::method::Get,
     ///     "/users/:userid/:friend".to_string(),
-    ///     controller
+    ///     controller);
     /// ```
     ///
     /// The controller provided to route can be any `Middleware`, which allows
