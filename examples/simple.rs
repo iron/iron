@@ -2,6 +2,9 @@ extern crate iron;
 extern crate http;
 extern crate router;
 
+// To build, $ cargo test
+// To use, go to http://127.0.0.1:3000/test
+
 use std::io::net::ip::Ipv4Addr;
 use iron::{Server, Iron, Request, Response, Chain, Status, Unwind, FromFn};
 use http::method::Get;
