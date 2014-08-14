@@ -54,7 +54,8 @@ extern crate regex;
 extern crate contenttype;
 extern crate http;
 extern crate anymap;
-extern crate url;
+// Rename the URL crate to avoid clashes with the `url` module.
+extern crate rust_url = "url";
 #[cfg(test)]
 extern crate test;
 
@@ -69,9 +70,12 @@ pub use chain::stackchain::StackChain;
 
 pub use alloy::Alloy;
 
+pub use url::Url;
+
 mod request;
 mod response;
 mod middleware;
 mod alloy;
 mod chain;
 mod iron;
+mod url;

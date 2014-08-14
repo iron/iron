@@ -15,10 +15,7 @@ use super::alloy::Alloy;
 /// an `Alloy` for data communication between middleware.
 ///
 pub struct Request {
-    /// The requested url as a `url::Url`.
-    ///
-    /// See `servo/rust-url`'s documentation for more information.  
-    /// Useful methods include `Url::host`, `Url::domain` and `Url::query_pairs`.
+    /// The requested URL.
     pub url: Url,
 
     /// The originating address of the request.
@@ -44,6 +41,11 @@ impl Request {
     pub fn from_http(req: HttpRequest) -> Result<Request, String> {
         match req.request_uri {
             AbsoluteUri(url) => {
+                let url = match Url::from_generic_url(url) {
+                    Ok(url) => url,
+                    Err(e) => return Err(e)
+                };
+
                 Ok(Request {
                     url: url,
                     remote_addr: req.remote_addr,
