@@ -3,10 +3,13 @@
 use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
 
+use anymap::AnyMap;
 use http::status::{Status, InternalServerError, NotFound};
 use OkStatus = http::status::Ok;
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
+
+use plugin::Extensible;
 
 pub use HttpResponse = http::server::response::ResponseWriter;
 
@@ -26,7 +29,11 @@ pub struct Response {
     pub headers: Box<HeaderCollection>,
 
     /// The response status-code.
-    pub status: Option<Status>
+    pub status: Option<Status>,
+
+    /// An AnyMap to be used as an extensible storage for data
+    /// associated with this Response.
+    pub extensions: AnyMap
 }
 
 impl Response {
@@ -35,7 +42,8 @@ impl Response {
         Response {
             headers: http_res.headers.clone(),
             status: None, // Start with no response code.
-            body: box MemReader::new(vec![]) as Box<Reader>
+            body: box MemReader::new(vec![]) as Box<Reader>,
+            extensions: AnyMap::new()
         }
     }
 
@@ -97,6 +105,16 @@ impl Response {
             let _ = http_res.write(b"Internal Server Error")
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
+    }
+}
+
+impl Extensible for Response {
+    fn extensions(&self) -> &AnyMap {
+        &self.extensions
+    }
+
+    fn extensions_mut(&mut self) -> &mut AnyMap {
+        &mut self.extensions
     }
 }
 

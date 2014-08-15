@@ -28,3 +28,8 @@ git = "https://github.com/reem/rust-http-content-type.git"
 [dependencies.url]
 
 git = "https://github.com/servo/rust-url.git"
+
+[dependencies.plugin]
+
+git = "https://github.com/reem/rust-plugin.git"
+

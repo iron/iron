@@ -1,19 +1,22 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
+
 use http::server::request::{AbsoluteUri, AbsolutePath};
 use http::headers::request::HeaderCollection;
 use http::method::Method;
+
+use anymap::AnyMap;
 use url::Url;
+use plugin::Extensible;
+
 pub use HttpRequest = http::server::request::Request;
 
-use super::alloy::Alloy;
 
 /// The `Request` given to all `Middleware`.
 ///
 /// Stores all the properties of the client's request plus
-/// an `Alloy` for data communication between middleware.
-///
+/// an `AnyMap` for data communication between middleware.
 pub struct Request {
     /// The requested URL.
     pub url: Url,
@@ -30,8 +33,8 @@ pub struct Request {
     /// The request method.
     pub method: Method,
 
-    /// Storage for data passed between middleware.
-    pub alloy: Alloy
+    /// Extensible storage for data passed between middleware.
+    pub extensions: AnyMap
 }
 
 impl Request {
@@ -52,7 +55,7 @@ impl Request {
                     headers: req.headers,
                     body: req.body,
                     method: req.method,
-                    alloy: Alloy::new()
+                    extensions: AnyMap::new()
                 })
             },
             AbsolutePath(path) => {
@@ -74,10 +77,21 @@ impl Request {
                     headers: req.headers,
                     body: req.body,
                     method: req.method,
-                    alloy: Alloy::new()
+                    extensions: AnyMap::new()
                 })
             },
             _ => Err("Unsupported request URI".to_string())
         }
     }
 }
+
+impl Extensible for Request {
+    fn extensions(&self) -> &AnyMap {
+        &self.extensions
+    }
+
+    fn extensions_mut(&mut self) -> &mut AnyMap {
+        &mut self.extensions
+    }
+}
+

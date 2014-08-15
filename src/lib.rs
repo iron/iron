@@ -51,6 +51,7 @@ extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 #[phase(plugin, link)] extern crate log;
 
+extern crate plugin;
 extern crate contenttype;
 extern crate http;
 extern crate anymap;
@@ -68,14 +69,18 @@ pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
 pub use chain::Chain;
 pub use chain::stackchain::StackChain;
 
-pub use alloy::Alloy;
+pub use anymap::AnyMap;
+
+#[deprecated = "Alloy is deprecated - use AnyMap instead."]
+pub use Alloy = anymap::AnyMap;
 
 pub use url::Url;
+
+pub use plugin::PluginFor;
 
 mod request;
 mod response;
 mod middleware;
-mod alloy;
 mod chain;
 mod iron;
 mod url;

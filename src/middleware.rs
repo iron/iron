@@ -52,13 +52,12 @@ pub enum Status {
 ///
 /// Data stored on a `Middleware` instance does _not_ persist
 /// between requests and is _not_ shared between different, concurrent, requests.
-/// The same is true for data stored on `Request::alloy`. Should you need to persist
+/// The same is true for data stored on `Request::extensions`. Should you need to persist
 /// data between requests, you should use an `Arc` within your `Middleware`.
 ///
-/// External data should be stored in `Request::alloy`.
-/// `Alloy` is a thin wrapper around `AnyMap` and is effectively a
+/// External data should be stored in `Request::extensions`,
 /// a key value store from a type to an instance of that type. This means
-/// that each `Middleware` can have a unique type that it stores in the `Alloy`.
+/// that each `Middleware` can have a unique type that it stores in the `AnyMap`.
 /// This can either be an instance of that `Middleware` or some other type. Since
 /// the same `Request` is passed to all further `Middleware` in the `Chain`, this
 /// scheme allows you to expose data or functionality to future `Middleware`.
@@ -66,7 +65,7 @@ pub trait Middleware: Send + Clone {
     /// `enter` is called for each `Middleware` in a `Chain` as a client request
     /// comes down the stack. `Middleware` have their `enter` methods called in the order
     /// in which they were added to the stack, that is, FIFO. If `Middleware` need to pass data
-    /// between them they should do so using `Request::alloy`.
+    /// between them they should do so using `Request::extensions`.
     ///
     /// Returning `Unwind` from this handler will cause the `Chain` to stop
     /// going down its stack and start bubbling back up through `Middleware`
