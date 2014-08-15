@@ -76,7 +76,7 @@ pub use Alloy = anymap::AnyMap;
 
 pub use url::Url;
 
-pub use plugin::PluginFor;
+pub use plugin::{PluginFor, Extensible};
 
 mod request;
 mod response;
