@@ -3,6 +3,8 @@
 use rust_url;
 use rust_url::{Host, RelativeSchemeData,};
 use rust_url::{whatwg_scheme_type_mapper, RelativeScheme};
+use rust_url::format::{PathFormatter, UserInfoFormatter};
+use std::fmt::{Show, Formatter, FormatError};
 
 /// HTTP/HTTPS URL type for Iron.
 #[deriving(PartialEq, Eq, Clone)]
@@ -113,6 +115,50 @@ impl Url {
     }
 }
 
+impl Show for Url {
+    fn fmt<'a>(&self, formatter: &mut Formatter) -> Result<(), FormatError> {
+        // Write the scheme.
+        try!(self.scheme.fmt(formatter));
+        try!("://".fmt(formatter));
+
+        // Write the user info.
+        try!(UserInfoFormatter {
+            username: self.username.as_ref().map(|s| s.as_slice()).unwrap_or(""),
+            password: self.password.as_ref().map(|s| s.as_slice())
+        }.fmt(formatter));
+
+        // Write the host.
+        try!(self.host.fmt(formatter));
+
+        // Write the port.
+        try!(":".fmt(formatter));
+        try!(self.port.fmt(formatter));
+
+        // Write the path.
+        try!(PathFormatter { path: self.path.as_slice() }.fmt(formatter));
+
+        // Write the query.
+        match self.query {
+            Some(ref query) => {
+                try!("?".fmt(formatter));
+                try!(query.fmt(formatter));
+            },
+            None => ()
+        }
+
+        // Write the fragment.
+        match self.fragment {
+            Some(ref fragment) => {
+                try!("#".fmt(formatter));
+                try!(fragment.fmt(formatter));
+            },
+            None => ()
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Url;
@@ -138,5 +184,11 @@ mod test {
     fn test_empty_password() {
         assert!(Url::parse("http://michael@example.com").unwrap().password.is_none());
         assert!(Url::parse("http://:@example.com").unwrap().password.is_none());
+    }
+
+    #[test]
+    fn test_formatting() {
+        assert_eq!(Url::parse("http://michael@example.com/path/?q=wow").unwrap().to_string(),
+                    "http://michael@example.com:80/path/?q=wow".to_string());
     }
 }
