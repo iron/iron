@@ -10,14 +10,12 @@
 
 extern crate http;
 extern crate iron;
-extern crate regex;
-#[phase(plugin, link)] extern crate log;
-#[phase(plugin)] extern crate regex_macros;
+extern crate recognizer = "route-recognizer";
 
 #[cfg(test)] extern crate test;
 
 pub use router::Router;
-pub use router::params::Params;
+pub use recognizer::Params;
 
 mod router;
 
