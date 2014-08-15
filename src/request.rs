@@ -7,9 +7,9 @@ use http::headers::request::HeaderCollection;
 use http::method::Method;
 
 use anymap::AnyMap;
-
-
 use url::Url;
+use plugin::Extensible;
+
 pub use HttpRequest = http::server::request::Request;
 
 
@@ -77,10 +77,21 @@ impl Request {
                     headers: req.headers,
                     body: req.body,
                     method: req.method,
-                    alloy: Alloy::new()
+                    extensions: AnyMap::new()
                 })
             },
             _ => Err("Unsupported request URI".to_string())
         }
     }
 }
+
+impl Extensible for Request {
+    fn extensions(&self) -> &AnyMap {
+        &self.extensions
+    }
+
+    fn extensions_mut(&mut self) -> &mut AnyMap {
+        &mut self.extensions
+    }
+}
+
