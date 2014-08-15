@@ -68,14 +68,16 @@ pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
 pub use chain::Chain;
 pub use chain::stackchain::StackChain;
 
-pub use alloy::Alloy;
+pub use anymap::AnyMap;
+
+#[deprecated = "Alloy is deprecated - use AnyMap instead."]
+pub use Alloy = anymap::AnyMap;
 
 pub use url::Url;
 
 mod request;
 mod response;
 mod middleware;
-mod alloy;
 mod chain;
 mod iron;
 mod url;
