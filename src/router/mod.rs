@@ -92,7 +92,7 @@ impl Middleware for Router {
             None => return Continue
         };
 
-        req.alloy.insert(matched.params);
+        req.extensions.insert(matched.params);
         let mut handler = matched.handler.clone_box();
         let mut handler_status = handler.enter(req, res);
 
