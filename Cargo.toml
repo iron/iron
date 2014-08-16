@@ -17,3 +17,7 @@ git = "https://github.com/iron/iron.git"
 
 git = "https://github.com/chris-morgan/rust-http.git"
 
+[dependencies.route-recognizer]
+
+git = "https://github.com/conduit-rust/route-recognizer.rs.git"
+
