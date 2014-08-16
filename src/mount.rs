@@ -1,5 +1,5 @@
 use iron::{Middleware, Request, Response, Status, Continue, Url};
-use collections::slice::ImmutableEqVector;
+use collections::slice::ImmutablePartialEqSlice;
 
 /// Exposes the original, unmodified path to be stored in an Alloy.
 pub struct OriginalUrl(pub Url);
@@ -42,10 +42,10 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
         }
 
         // We have a match, so fire off the child middleware.
-        // Insert the unmodified path into the alloy.
-        match req.alloy.find::<OriginalUrl>() {
+        // Insert the unmodified path into the extensions.
+        match req.extensions.find::<OriginalUrl>() {
             Some(_) => (),
-            None => req.alloy.insert(OriginalUrl(req.url.clone()))
+            None => req.extensions.insert(OriginalUrl(req.url.clone()))
         }
 
         // Remove the prefix from the request's path before passing it to the mounted middleware.
@@ -59,8 +59,12 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
         let _ = self.middleware.exit(req, res);
 
         // Reverse the URL munging, for future middleware.
-        let &OriginalUrl(ref original) = req.alloy.find::<OriginalUrl>().unwrap();
-        req.url = original.clone();
+        req.url = match req.extensions.find::<OriginalUrl>().unwrap() {
+            &OriginalUrl(ref original) => original.clone(),
+        };
+
+        // Remove the object from the extensions map to prevent leakage.
+        req.extensions.remove::<OriginalUrl>();
 
         // We dispatched the request, so return the terminator.
         terminator
