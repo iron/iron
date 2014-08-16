@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/iron/iron.png?label=ready&title=Ready)](https://waffle.io/iron/iron)
 Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)](https://travis-ci.org/iron/iron)
 ====
 
