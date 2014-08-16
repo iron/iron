@@ -15,7 +15,7 @@ fn main() {
     let mut router = Router::new();
 
     fn handler(req: &mut Request, res: &mut Response) -> Status {
-        let ref query = req.alloy.find::<Params>().unwrap().find("query").unwrap();
+        let ref query = req.extensions.find::<Params>().unwrap().find("query").unwrap();
         let _ = res.serve(status::Ok, query.as_slice());
         Unwind
     }
