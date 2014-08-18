@@ -25,7 +25,7 @@ impl<D: Send + Sync, P> Clone for Persistent<D, P> {
 
 impl<D: Send + Sync, P> Middleware for Persistent<D, P> {
     fn enter(&mut self, req: &mut Request, _: &mut Response) -> Status {
-        req.alloy.insert::<Persistent<D, P>>(self.clone());
+        req.extensions.insert::<Persistent<D, P>>(self.clone());
         Continue
     }
 }
@@ -36,4 +36,3 @@ impl<D: Send + Sync, P> Persistent<D, P> {
         Persistent { data: Arc::new(RWLock::new(data)) }
     }
 }
-
