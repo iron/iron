@@ -37,7 +37,7 @@
 //!
 //!     fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
 //!         let delta = precise_time_ns() - self.entry_time;
-//!         println!("Request took: {} ms", (delta as f64) / 100000.0);
+//!         println!("Request took: {} ms", (delta as f64) / 1000000.0);
 //!         Continue
 //!     }
 //! }
