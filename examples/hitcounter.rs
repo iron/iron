@@ -13,14 +13,14 @@ use iron::{Request, Response, Iron, Server, Chain, Status, Continue, FromFn};
 pub struct HitCounter;
 
 fn hit_counter(req: &mut Request, _: &mut Response) -> Status {
-    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
+    let mut count = req.extensions.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
     *count += 1;
     println!("{} hits!", *count);
     Continue
 }
 
 fn serve_hits(req: &mut Request, res: &mut Response) -> Status {
-    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
+    let mut count = req.extensions.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
     let _ = res.serve(status::Ok, format!("{} hits!", *count));
     Continue
 }
@@ -33,4 +33,3 @@ fn main() {
     server.chain.link(FromFn::new(serve_hits));
     server.listen(Ipv4Addr(127, 0, 0, 1), 3001);
 }
-
