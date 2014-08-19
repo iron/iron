@@ -189,7 +189,7 @@ pub mod stackchain {
 
     #[cfg(test)]
     mod test {
-        pub use super::*;
+        pub use super::StackChain;
         pub use super::super::super::request::Request;
         pub use super::super::super::response::Response;
         pub use super::super::super::middleware::{Middleware, Status, Continue, Unwind};
