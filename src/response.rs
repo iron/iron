@@ -9,8 +9,6 @@ use OkStatus = http::status::Ok;
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
 
-use plugin::Extensible;
-
 pub use HttpResponse = http::server::response::ResponseWriter;
 
 use contenttype::get_content_type;
@@ -107,16 +105,6 @@ impl Response {
                 // Something is really, really wrong.
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
-    }
-}
-
-impl Extensible for Response {
-    fn extensions(&self) -> &AnyMap {
-        &self.extensions
-    }
-
-    fn extensions_mut(&mut self) -> &mut AnyMap {
-        &mut self.extensions
     }
 }
 

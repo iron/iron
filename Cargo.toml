@@ -8,7 +8,7 @@ authors = [
     "Patrick Tran <patrick.tran06@gmail.com>",
     "Michael Reinhard <mcreinhard@gmail.com>"]
 
-[[lib]]
+[lib]
 
 name = "iron"
 path = "src/lib.rs"
