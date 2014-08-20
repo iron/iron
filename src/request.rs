@@ -9,7 +9,7 @@ use http::method::Method;
 use anymap::AnyMap;
 use url::Url;
 
-pub use HttpRequest = http::server::request::Request;
+pub use http::server::request::Request as HttpRequest;
 
 
 /// The `Request` given to all `Middleware`.

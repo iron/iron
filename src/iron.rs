@@ -4,7 +4,7 @@
 use std::io::net::ip::{SocketAddr, IpAddr};
 use std::cell::RefCell;
 
-use http = http::server;
+use http::server as http;
 use super::chain::Chain;
 use super::chain::stackchain::StackChain;
 

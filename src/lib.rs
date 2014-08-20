@@ -71,7 +71,7 @@ pub use chain::stackchain::StackChain;
 pub use anymap::AnyMap;
 
 #[deprecated = "Alloy is deprecated - use AnyMap instead."]
-pub use Alloy = anymap::AnyMap;
+pub use anymap::AnyMap as Alloy;
 
 pub use url::Url;
 

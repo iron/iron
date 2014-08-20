@@ -5,11 +5,11 @@ use std::path::BytesContainer;
 
 use anymap::AnyMap;
 use http::status::{Status, InternalServerError, NotFound};
-use OkStatus = http::status::Ok;
+use http::status::Ok as OkStatus;
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
 
-pub use HttpResponse = http::server::response::ResponseWriter;
+pub use http::server::response::ResponseWriter as HttpResponse;
 
 use contenttype::get_content_type;
 
