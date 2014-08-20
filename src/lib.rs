@@ -53,7 +53,9 @@ extern crate regex;
 
 extern crate contenttype;
 extern crate http;
-extern crate anymap;
+extern crate typemap;
+extern crate plugin;
+
 // Rename the URL crate to avoid clashes with the `url` module.
 extern crate rust_url = "url";
 #[cfg(test)]
@@ -68,12 +70,12 @@ pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
 pub use chain::Chain;
 pub use chain::stackchain::StackChain;
 
-pub use anymap::AnyMap;
-
-#[deprecated = "Alloy is deprecated - use AnyMap instead."]
-pub use anymap::AnyMap as Alloy;
-
 pub use url::Url;
+
+pub use typemap::TypeMap;
+
+// Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
+pub use plugin::GetCached as Plugin;
 
 mod request;
 mod response;
