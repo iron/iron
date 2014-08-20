@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use http::method::Method;
 use http::method;
 use iron::{Middleware, Request, Response, Status, Continue, Unwind, Error};
-use Recognizer = recognizer::Router;
+use recognizer::Router as Recognizer;
 use recognizer::Match;
 
 /// `Router` provides an interface for creating complex routes as middleware

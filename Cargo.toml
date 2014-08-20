@@ -4,7 +4,7 @@ name = "router"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.1.0"
 
-[[lib]]
+[lib]
 
 name = "router"
 path = "src/lib.rs"
