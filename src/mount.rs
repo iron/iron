@@ -1,8 +1,9 @@
-use iron::{Middleware, Request, Response, Status, Continue, Url};
-use collections::slice::ImmutablePartialEqSlice;
+use iron::{Middleware, Request, Response, Url, Status, Continue};
+use typemap::Assoc;
 
-/// Exposes the original, unmodified path to be stored in an Alloy.
-pub struct OriginalUrl(pub Url);
+/// Exposes the original, unmodified path to be stored in `Request::extensions`.
+pub struct OriginalUrl;
+impl Assoc<Url> for OriginalUrl {}
 
 /// `Mount` is a simple mounting middleware.
 ///
@@ -42,10 +43,11 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
         }
 
         // We have a match, so fire off the child middleware.
-        // Insert the unmodified path into the extensions.
-        match req.extensions.find::<OriginalUrl>() {
-            Some(_) => (),
-            None => req.extensions.insert(OriginalUrl(req.url.clone()))
+        // If another mount middleware hasn't already, insert the unmodified url
+        // into the extensions as the "original url".
+        let is_outer_mount = !req.extensions.contains::<OriginalUrl, Url>();
+        if is_outer_mount {
+            req.extensions.insert::<OriginalUrl, Url>(req.url.clone());
         }
 
         // Remove the prefix from the request's path before passing it to the mounted middleware.
@@ -59,12 +61,16 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
         let _ = self.middleware.exit(req, res);
 
         // Reverse the URL munging, for future middleware.
-        req.url = match req.extensions.find::<OriginalUrl>().unwrap() {
-            &OriginalUrl(ref original) => original.clone(),
+        req.url = match req.extensions.find::<OriginalUrl, Url>() {
+            Some(original) => original.clone(),
+            None => fail!("OriginalUrl unexpectedly removed from req.extensions.")
         };
 
-        // Remove the object from the extensions map to prevent leakage.
-        req.extensions.remove::<OriginalUrl>();
+        // If this middleware is the outermost mount middleware,
+        // remove the original url from the extensions map to prevent leakage.
+        if is_outer_mount {
+            req.extensions.remove::<OriginalUrl, Url>();
+        }
 
         // We dispatched the request, so return the terminator.
         terminator
