@@ -6,7 +6,8 @@ use http::server::request::{AbsoluteUri, AbsolutePath};
 use http::headers::request::HeaderCollection;
 use http::method::Method;
 
-use anymap::AnyMap;
+use typemap::TypeMap;
+use plugin::Extensible;
 use url::Url;
 
 pub use http::server::request::Request as HttpRequest;
@@ -15,7 +16,7 @@ pub use http::server::request::Request as HttpRequest;
 /// The `Request` given to all `Middleware`.
 ///
 /// Stores all the properties of the client's request plus
-/// an `AnyMap` for data communication between middleware.
+/// an `TypeMap` for data communication between middleware.
 pub struct Request {
     /// The requested URL.
     pub url: Url,
@@ -33,7 +34,7 @@ pub struct Request {
     pub method: Method,
 
     /// Extensible storage for data passed between middleware.
-    pub extensions: AnyMap
+    pub extensions: TypeMap
 }
 
 impl Request {
@@ -54,7 +55,7 @@ impl Request {
                     headers: req.headers,
                     body: req.body,
                     method: req.method,
-                    extensions: AnyMap::new()
+                    extensions: TypeMap::new()
                 })
             },
             AbsolutePath(path) => {
@@ -76,11 +77,22 @@ impl Request {
                     headers: req.headers,
                     body: req.body,
                     method: req.method,
-                    extensions: AnyMap::new()
+                    extensions: TypeMap::new()
                 })
             },
             _ => Err("Unsupported request URI".to_string())
         }
+    }
+}
+
+// Allow plugins to attach to requests.
+impl Extensible for Request {
+    fn extensions(&self) -> &TypeMap {
+        &self.extensions
+    }
+
+    fn extensions_mut(&mut self) -> &mut TypeMap {
+        &mut self.extensions
     }
 }
 

@@ -3,7 +3,8 @@
 use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
 
-use anymap::AnyMap;
+use typemap::TypeMap;
+use plugin::Extensible;
 use http::status::{Status, InternalServerError, NotFound};
 use http::status::Ok as OkStatus;
 use http::headers::response::HeaderCollection;
@@ -29,9 +30,9 @@ pub struct Response {
     /// The response status-code.
     pub status: Option<Status>,
 
-    /// An AnyMap to be used as an extensible storage for data
+    /// A TypeMap to be used as an extensible storage for data
     /// associated with this Response.
-    pub extensions: AnyMap
+    pub extensions: TypeMap
 }
 
 impl Response {
@@ -41,7 +42,7 @@ impl Response {
             headers: http_res.headers.clone(),
             status: None, // Start with no response code.
             body: None, // Start with no body.
-            extensions: AnyMap::new()
+            extensions: TypeMap::new()
         }
     }
 
@@ -105,6 +106,17 @@ impl Response {
                 // Something is really, really wrong.
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
+    }
+}
+
+// Allow plugins to attach to responses.
+impl Extensible for Response {
+    fn extensions(&self) -> &TypeMap {
+        &self.extensions
+    }
+
+    fn extensions_mut(&mut self) -> &mut TypeMap {
+        &mut self.extensions
     }
 }
 

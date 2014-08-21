@@ -17,9 +17,9 @@ path = "src/lib.rs"
 
 git = "https://github.com/chris-morgan/rust-http.git"
 
-[dependencies.anymap]
+[dependencies.typemap]
 
-git = "https://github.com/chris-morgan/anymap.git"
+git = "https://github.com/reem/rust-typemap.git"
 
 [dependencies.content-type]
 
@@ -32,4 +32,3 @@ git = "https://github.com/servo/rust-url.git"
 [dependencies.plugin]
 
 git = "https://github.com/reem/rust-plugin.git"
-
