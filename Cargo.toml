@@ -4,7 +4,7 @@ name = "mount"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.1.0"
 
-[[lib]]
+[lib]
 
 name = "mount"
 path = "src/lib.rs"
@@ -13,7 +13,7 @@ path = "src/lib.rs"
 
 git = "https://github.com/iron/iron.git"
 
-[dependencies.url]
+[dependencies.typemap]
 
-git = "https://github.com/servo/rust-url.git"
+git = "https://github.com/reem/rust-typemap.git"
 

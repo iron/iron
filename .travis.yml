@@ -6,6 +6,6 @@ install:
 script:
   - cargo build -v
   - cargo test -v
-  - cargo doc -v
+  - cargo doc -v --no-deps
 os:
   - linux
