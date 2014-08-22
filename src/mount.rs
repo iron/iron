@@ -51,11 +51,10 @@ impl<M: Middleware + Send> Middleware for Mount<M> {
         }
 
         // Remove the prefix from the request's path before passing it to the mounted middleware.
-        // Preserve the rust-url invariant that the path list is non-empty ("" corresponds to /).
-        req.url.path = match req.url.path.as_slice().slice_from(self.matches.len()) {
-            [] => vec!["".to_string()],
-            list => list.to_vec()
-        };
+        // If the prefix is entirely removed and no trailing slash was present, the new path
+        // will be the empty list. For the purposes of redirection, conveying that the path
+        // did not include a trailing slash is more important than providing a non-empty list.
+        req.url.path = req.url.path.as_slice().slice_from(self.matches.len()).to_vec();
 
         let terminator = self.middleware.enter(req, res);
         let _ = self.middleware.exit(req, res);
