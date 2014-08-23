@@ -36,10 +36,10 @@ pub struct Response {
 }
 
 impl Response {
-    /// Construct a Response from an HttpResponse reference
-    pub fn from_http(http_res: &mut HttpResponse) -> Response {
+    /// Construct a blank Response
+    pub fn new() -> Response {
         Response {
-            headers: http_res.headers.clone(),
+            headers: box HeaderCollection::new(),
             status: None, // Start with no response code.
             body: None, // Start with no body.
             extensions: TypeMap::new()
