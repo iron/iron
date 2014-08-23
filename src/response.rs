@@ -86,7 +86,11 @@ impl Response {
         let mut body = self.body.unwrap_or_else(|| box MemReader::new(vec![]) as Box<Reader>);
         let _ = match body.read_to_end() {
             Ok(body_content) => {
-                let plain_txt: MediaType = get_content_type("txt").unwrap();
+                let plain_txt = MediaType {
+                    type_: "text".to_string(),
+                    subtype: "plain".to_string(),
+                    parameters: vec![]
+                };
 
                 // Set content length and type
                 http_res.headers.content_length =
