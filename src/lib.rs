@@ -3,7 +3,7 @@
 #![comment = "Rapid Web Development in Rust"]
 #![license = "MIT"]
 
-//#![deny(missing_doc)]
+#![deny(missing_doc)]
 #![deny(warnings)]
 
 #![feature(macro_rules, phase, globs)]
@@ -71,10 +71,8 @@ pub use iron::Iron;
 // Extensions
 pub use typemap::TypeMap;
 
-// Status codes.
+// Status codes and Methods.
 pub use http::status;
-
-// Methods
 pub use http::method;
 
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
