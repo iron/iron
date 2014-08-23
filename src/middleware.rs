@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use error::Error;
 
-use super::{Request, Response, IronResult};
+use super::{Request, Response, IronResult, status};
 
 /// `Handler`s are responsible for handling requests by creating Responses from Requests.
 ///
@@ -199,8 +199,7 @@ impl Handler for ChainBuilder {
 
         match helpers::run_afters(req, res, err, self.afters.as_slice()) {
             Ok(res) => (res, Ok(())),
-            // FIXME: Make 500
-            Err(err) => (Response::new(), Err(err))
+            Err(err) => (Response::status(status::InternalServerError), Err(err))
         }
     }
 }
@@ -211,8 +210,7 @@ impl Handler for fn(&mut Request) -> IronResult<Response> {
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        // FIXME: Make Response a 500
-        (Response::new(), Err(err))
+        (Response::status(status::InternalServerError), Err(err))
     }
 }
 
@@ -224,8 +222,7 @@ impl Handler for Nop {
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        // FIXME: Make Response a 500
-        (Response::new(), Err(err))
+        (Response::status(status::InternalServerError), Err(err))
     }
 }
 
