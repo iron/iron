@@ -1,44 +1,47 @@
 #![feature(phase)]
 
+#[phase(plugin, link)] extern crate log;
 extern crate iron;
 extern crate http;
 extern crate time;
-#[phase(plugin, link)] extern crate log;
 
 use std::io::net::ip::Ipv4Addr;
-use std::fmt::Show;
-use iron::{Iron, Chain, Request, Response,
-           Middleware, Server, Status,
-           Error, FromFn};
-use http::status;
+use iron::{Iron, Handler, BeforeMiddleware, Error,
+           Request, Response, ChainBuilder, Chain,
+           IronResult};
+use iron::status;
 
-#[deriving(Clone)]
 struct ErrorHandler;
+struct ErrorProducer;
 
-impl ErrorHandler { fn new() -> ErrorHandler { ErrorHandler } }
+impl Handler for ErrorHandler {
+    fn call(&self, _: &mut Request) -> IronResult<Response> {
+        Ok(Response::new())
+    }
 
-impl Middleware for ErrorHandler {
-    fn on_error(&mut self,
-                _: &mut Request,
-                res: &mut Response,
-                _: &mut Show) {
-        error!("Error when handling request.");
+    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        error!("Error when handling request: {}.", err);
+        let mut res = Response::new();
         res.serve(status::InternalServerError, "Internal Server Error.");
+        (res, Err(err))
     }
 
 }
 
-fn error(_: &mut Request, _: &mut Response) -> Status {
-    Error(box "Error!".to_string() as Box<Show>)
+impl BeforeMiddleware for ErrorProducer {
+    fn before(&self, _: &mut Request) -> IronResult<()> {
+        Err(box "Error".to_string() as Box<Error>)
+    }
 }
 
 fn main() {
-    let mut server: Server = Iron::new();
+    // Handler is attached here.
+    let mut chain = ChainBuilder::new(ErrorHandler);
 
-    server.chain.link(ErrorHandler::new());
-    server.chain.link(FromFn::new(error));
+    // Link our error maker.
+    chain.link_before(ErrorProducer);
 
-    // Start the server on localhost:3000
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    println!("On 3k.");
 }
 
