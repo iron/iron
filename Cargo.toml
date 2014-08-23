@@ -4,7 +4,7 @@ name = "persistent"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.1.0"
 
-[[lib]]
+[lib]
 
 name = "persistent"
 path = "src/lib.rs"
@@ -12,4 +12,3 @@ path = "src/lib.rs"
 [dependencies.iron]
 
 git = "https://github.com/iron/iron.git"
-
