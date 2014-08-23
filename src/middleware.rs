@@ -3,9 +3,24 @@ use error::Error;
 
 use super::{Request, Response, IronResult};
 
+/// `Handler`s are responsible for handling requests by creating Responses from Requests.
+///
+/// By default, bare functions and variants of Chain implement `Handler`.
+///
+/// `Handler`s are allowed to return errors, and if they do, their `catch` method is called and the
+/// error is propagated to `AfterMiddleware`.
 pub trait Handler: Send + Sync {
+    /// Produce a `Response` from a Request, with the possibility of error.
+    ///
+    /// If this returns an Err, `catch` is called with the error.
     fn call(&self, &mut Request) -> IronResult<Response>;
 
+    /// If `Handler`'s call method produces an Err, then this method is called
+    /// to produce a `Response` and possibly handle the error.
+    ///
+    /// If the passed-in error is not handled, it should be returned as the second
+    /// item in the returned tuple. If it is handled, then `Ok(())` can be returned
+    /// instead to indicate that all is good with the Response.
     fn catch(&self, &mut Request, Box<Error>) -> (Response, IronResult<()>);
 }
 
