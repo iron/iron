@@ -78,8 +78,11 @@ pub use http::method;
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
 
+// Errors
+pub use error::{Error, ErrorRefExt};
+
 // Return type of many methods
-pub type IronResult<T> = Result<T, Box<error::Error>>;
+pub type IronResult<T> = Result<T, Box<Error>>;
 
 // Internal modules
 mod request;
