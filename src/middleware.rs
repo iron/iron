@@ -207,7 +207,7 @@ impl Handler for ChainBuilder {
 
 impl Handler for fn(&mut Request) -> IronResult<Response> {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
-        self.call(req)
+        (*self)(req)
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
