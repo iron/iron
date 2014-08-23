@@ -44,3 +44,46 @@ pub trait AroundMiddleware: Handler {
     fn with_handler(&mut self, handler: Box<Handler + Send + Sync>);
 }
 
+pub trait Chain: Handler {
+    fn new<H: Handler>(H) -> Self;
+
+    fn link<B, A>(&mut self, (B, A)) where A: AfterMiddleware, B: BeforeMiddleware;
+
+    fn link_before<B>(&mut self, B) where B: BeforeMiddleware;
+
+    fn link_after<A>(&mut self, A) where A: AfterMiddleware;
+}
+
+pub struct DefaultChain {
+    befores: Vec<Box<BeforeMiddleware + Send + Sync>>,
+    afters: Vec<Box<AfterMiddleware + Send + Sync>>,
+    handler: Box<Handler + Send + Sync>
+}
+
+impl Chain for DefaultChain {
+    fn new<H: Handler>(handler: H) -> DefaultChain {
+        DefaultChain {
+            befores: vec![],
+            afters: vec![],
+            handler: box handler as Box<Handler + Send + Sync>
+        }
+    }
+
+    fn link<B, A>(&mut self, link: (B, A))
+    where A: AfterMiddleware, B: BeforeMiddleware {
+        let (before, after) = link;
+        self.befores.push(box before as Box<BeforeMiddleware + Send + Sync>);
+        self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+    }
+
+    fn link_before<B>(&mut self, before: B)
+    where B: BeforeMiddleware {
+        self.befores.push(box before as Box<BeforeMiddleware + Send + Sync>);
+    }
+
+    fn link_after<A>(&mut self, after: A)
+    where A: AfterMiddleware {
+        self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+    }
+}
+
