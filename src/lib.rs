@@ -8,6 +8,7 @@
 //! framework.
 
 extern crate iron;
+extern crate typemap;
 
 pub use persistent::Persistent;
 pub use shared::Shared;
@@ -16,4 +17,3 @@ pub use mixin::SharedLink;
 mod persistent;
 mod shared;
 mod mixin;
-

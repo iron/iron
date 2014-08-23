@@ -1,4 +1,5 @@
 use iron::{Request, Response, Middleware, Status, Continue};
+use typemap::Assoc;
 use std::sync::{Arc, RWLock};
 
 /// A `Middleware` that allows for sharing a single piece of data between
@@ -23,9 +24,9 @@ impl<D: Send + Sync, P> Clone for Persistent<D, P> {
     }
 }
 
-impl<D: Send + Sync, P> Middleware for Persistent<D, P> {
+impl<D: Send + Sync, P: 'static + Assoc<Arc<RWLock<D>>>> Middleware for Persistent<D, P> {
     fn enter(&mut self, req: &mut Request, _: &mut Response) -> Status {
-        req.extensions.insert::<Persistent<D, P>>(self.clone());
+        req.extensions.insert::<P, Arc<RWLock<D>>>(self.data.clone());
         Continue
     }
 }

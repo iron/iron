@@ -3,24 +3,28 @@
 
 extern crate iron;
 extern crate http;
+extern crate typemap;
 extern crate persistent;
 
 use std::io::net::ip::Ipv4Addr;
+use std::sync::{Arc, RWLock};
 use persistent::Persistent;
+use typemap::Assoc;
 use http::status;
 use iron::{Request, Response, Iron, Server, Chain, Status, Continue, FromFn};
 
 pub struct HitCounter;
+impl Assoc<Arc<RWLock<uint>>> for HitCounter {}
 
 fn hit_counter(req: &mut Request, _: &mut Response) -> Status {
-    let mut count = req.extensions.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
+    let mut count = req.extensions.find::<HitCounter, Arc<RWLock<uint>>>().unwrap().write();
     *count += 1;
     println!("{} hits!", *count);
     Continue
 }
 
 fn serve_hits(req: &mut Request, res: &mut Response) -> Status {
-    let mut count = req.extensions.find::<Persistent<uint, HitCounter>>().unwrap().data.read();
+    let mut count = req.extensions.find::<HitCounter, Arc<RWLock<uint>>>().unwrap().read();
     let _ = res.serve(status::Ok, format!("{} hits!", *count));
     Continue
 }
