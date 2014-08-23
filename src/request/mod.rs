@@ -49,7 +49,7 @@ impl Show for Request {
         try!(writeln!(f, "    remote_addr: {}", self.remote_addr));
         try!(writeln!(f, "    body: {}", self.body));
 
-        try!(writeln!(f, "}}"));
+        try!(write!(f, "}}"));
         Ok(())
     }
 }
