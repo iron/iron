@@ -1,10 +1,8 @@
 use std::sync::Arc;
 use error::Error;
 
-use super::request::Request;
-use super::response::Response;
-
-use super::IronResult;
+use super::{Request, Response, IronResult};
+use self::helpers;
 
 pub trait Handler: Send + Sync {
     fn call(&self, &mut Request) -> IronResult<Response>;
@@ -84,6 +82,102 @@ impl Chain for DefaultChain {
     fn link_after<A>(&mut self, after: A)
     where A: AfterMiddleware {
         self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+    }
+}
+
+impl Handler for DefaultChain {
+    fn call(&self, req: &mut Request) -> IronResult<Response> {
+        let before_result = helpers::run_befores(req, self.befores.as_slice(), None);
+
+        let (res, err) = match before_result {
+            Ok(()) => match self.handler.call(req) {
+                Ok(res) => (res, None),
+                Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+            },
+            Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+        };
+
+        helpers::run_afters(req, res, err, self.afters.as_slice())
+    }
+
+    fn catch(&self, req: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        let before_result = helpers::run_befores(req, self.befores.as_slice(), Some(err));
+
+        let (res, err) = match before_result {
+            Ok(()) => match self.handler.call(req) {
+                Ok(res) => (res, None),
+                Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+            },
+            Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+        };
+
+        match helpers::run_afters(req, res, err, self.afters.as_slice()) {
+            Ok(res) => (res, Ok(())),
+            Err(err) => (Response, Err(err))
+        }
+    }
+}
+
+mod helpers {
+    use super::super::Request;
+    use super::super::Response;
+    use super::super::IronResult;
+
+    pub fn run_befores(req: &mut Request, befores: &[Box<BeforeMiddleware>], err: Option<Box<Error>>) -> IronResult<()> {
+        match err {
+            Some(mut e) => {
+                for (i, before) in befores.iter().enumerate() {
+                    match before.catch(req, e) {
+                        Ok(_) => return run_befores(req, befores, None),
+                        Err(new) => e = new
+                    }
+                }
+                Err(e)
+            },
+
+            None => {
+                for (i, before) in befores.iter().enumerate() {
+                    match before.before(req) {
+                        Ok(_) => (),
+                        Err(err) => return run_befores(req, befores.slice_from(i), Some(err))
+                    }
+                }
+                Ok(())
+            }
+        }
+    }
+
+    pub fn run_afters(req: &mut Request, mut res: Response, err: Option<Box<Error>>,
+                  afters: &[Box<AfterMiddleware>]) -> IronResult<Response> {
+        match err {
+            Some(mut e) => {
+                for (i, after) in afters.iter().enumerate() {
+                    match after.catch(req, &mut res, e) {
+                        Ok(_) => return run_afters(req, res, None, afters),
+                        Err(new) => e = new
+                    }
+                }
+                Err(e)
+            },
+
+            None => {
+                for (i, after) in afters.iter().enumerate() {
+                    match after.after(req, &mut res) {
+                        Ok(_) => (),
+                        Err(err) => return run_afters(req, res, Some(err), afters.slice_from(i))
+                    }
+                }
+                Ok(res)
+            }
+        }
+    }
+
+    pub fn run_handler_catch(req: &mut Request, err: Box<Error>,
+                         handler: &Box<Handler>) -> (Response, Option<Box<Error>>) {
+        match handler.catch(req, err) {
+            (res, Ok(())) => (res, None),
+            (res, Err(e)) => (res, Some(e))
+        }
     }
 }
 
