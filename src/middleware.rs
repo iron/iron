@@ -40,15 +40,15 @@ pub trait Chain: Handler {
     fn link_after<A>(&mut self, A) where A: AfterMiddleware;
 }
 
-pub struct DefaultChain {
+pub struct ChainBuilder {
     befores: Vec<Box<BeforeMiddleware + Send + Sync>>,
     afters: Vec<Box<AfterMiddleware + Send + Sync>>,
     handler: Box<Handler + Send + Sync>
 }
 
-impl Chain for DefaultChain {
-    fn new<H: Handler>(handler: H) -> DefaultChain {
-        DefaultChain {
+impl Chain for ChainBuilder {
+    fn new<H: Handler>(handler: H) -> ChainBuilder {
+        ChainBuilder {
             befores: vec![],
             afters: vec![],
             handler: box handler as Box<Handler + Send + Sync>
@@ -73,7 +73,7 @@ impl Chain for DefaultChain {
     }
 }
 
-impl Handler for DefaultChain {
+impl Handler for ChainBuilder {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
         let before_result = helpers::run_befores(req, self.befores.as_slice(), None);
 

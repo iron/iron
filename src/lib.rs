@@ -63,10 +63,10 @@ pub use response::Response;
 
 // Middleware system
 pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain, DefaultChain};
+                     Handler, Chain, ChainBuilder};
 
 // Server
-pub use iron::{Iron, Server};
+pub use iron::Iron;
 
 // Extensions
 pub use typemap::TypeMap;

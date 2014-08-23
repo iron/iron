@@ -5,13 +5,10 @@ use std::io::net::ip::{SocketAddr, IpAddr};
 use std::sync::Arc;
 
 use http::server as http;
-use super::{Request, Chain, DefaultChain, Handler};
+use super::{Request, Handler};
 
 use super::response::HttpResponse;
 use super::request::HttpRequest;
-
-/// The "default server", using a `StackChain`.
-pub type Server = Iron<DefaultChain>;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -24,31 +21,31 @@ pub type Server = Iron<DefaultChain>;
 /// `Iron` contains the `Chain` which holds the `Middleware` necessary to run a server.
 /// `Iron` is the main interface to adding `Middleware`, and has `Chain` as a
 /// public field (for the sake of extensibility).
-pub struct Iron<C> {
+pub struct Iron<H> {
     /// Add `Middleware` to the `Iron's` `chain` so that requests
     /// are passed through those `Middleware`.
     /// `Middleware` is added to the chain with with `chain.link`.
-    pub chain: C,
+    pub handler: H,
 }
 
 // The struct which actually listens and serves requests.
-struct IronListener<C> {
-    chain: Arc<C>,
+struct IronListener<H> {
+    handler: Arc<H>,
     ip: IpAddr,
     port: u16
 }
 
-impl<C: Send + Sync> Clone for IronListener<C> {
-    fn clone(&self) -> IronListener<C> {
+impl<H: Send + Sync> Clone for IronListener<H> {
+    fn clone(&self) -> IronListener<H> {
         IronListener {
-            chain: self.chain.clone(),
+            handler: self.handler.clone(),
             ip: self.ip.clone(),
             port: self.port.clone()
         }
     }
 }
 
-impl<C: Handler> Iron<C> {
+impl<H: Handler> Iron<H> {
     /// Kick off the server process.
     ///
     /// Call this once to begin listening for requests on the server.
@@ -59,29 +56,22 @@ impl<C: Handler> Iron<C> {
         use http::server::Server;
 
         IronListener {
-            chain: Arc::new(self.chain),
+            handler: Arc::new(self.handler),
             ip: ip,
             port: port
         }.serve_forever();
     }
-}
 
-impl<C: Chain> Iron<C> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server.
-    ///
-    /// Custom chains can be used by explicitly specifying the type as
-    /// in: `let customServer: Iron<CustomChain> = Iron::new();`
     #[inline]
-    pub fn new<H: Handler>(handler: H) -> Iron<C> {
-        Iron {
-            chain: Chain::new(handler),
-        }
+    pub fn around(handler: H) -> Iron<H> {
+        Iron { handler: handler }
     }
 }
 
-impl<C: Handler> http::Server for IronListener<C> {
+impl<H: Handler> http::Server for IronListener<H> {
     fn get_config(&self) -> http::Config {
         http::Config {
             bind_address: SocketAddr {
@@ -104,7 +94,7 @@ impl<C: Handler> http::Server for IronListener<C> {
         };
 
         // Dispatch the request
-        let res = self.chain.call(&mut req);
+        let res = self.handler.call(&mut req);
 
         match res {
                     // Write the response back to http_res
