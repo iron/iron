@@ -77,7 +77,16 @@ pub trait AfterMiddleware: Send + Sync {
     }
 }
 
+/// AroundMiddleware are used to wrap and replace the `Handler` in a Chain.
+///
+/// AroundMiddleware must themselves be `Handler`s, and can integrate an existing
+/// `Handler` through the around method, which is called once on insertion
+/// into a Chain.
 pub trait AroundMiddleware: Handler {
+    /// Incorporate another `Handler` into this AroundMiddleware.
+    ///
+    /// Usually this means wrapping the handler and editing the `Request` on the
+    /// way in and the `Response` on the way out.
     fn around(&mut self, handler: Box<Handler + Send + Sync>);
 }
 
