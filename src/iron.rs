@@ -61,7 +61,7 @@ impl<H: Handler> Iron<H> {
     ///
     /// This will create a new `Iron`, the base unit of the server, using the
     /// passed in Handler.
-    pub fn around(handler: H) -> Iron<H> {
+    pub fn new(handler: H) -> Iron<H> {
         Iron { handler: handler }
     }
 }
