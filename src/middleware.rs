@@ -2,7 +2,6 @@ use std::sync::Arc;
 use error::Error;
 
 use super::{Request, Response, IronResult};
-use self::helpers;
 
 pub trait Handler: Send + Sync {
     fn call(&self, &mut Request) -> IronResult<Response>;
@@ -102,7 +101,8 @@ impl Handler for DefaultChain {
 
         match helpers::run_afters(req, res, err, self.afters.as_slice()) {
             Ok(res) => (res, Ok(())),
-            Err(err) => (Response, Err(err))
+            // FIXME: Make 500
+            Err(err) => (Response::new(), Err(err))
         }
     }
 }
@@ -114,7 +114,7 @@ impl Handler for fn(&mut Request) -> IronResult<Response> {
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
         // FIXME: Make Response a 500
-        (Response, Err(err))
+        (Response::new(), Err(err))
     }
 }
 
@@ -139,9 +139,9 @@ impl Handler for Arc<Box<Handler + Send + Sync>> {
 }
 
 mod helpers {
-    use super::super::Request;
-    use super::super::Response;
-    use super::super::IronResult;
+    use super::super::{Request, Response, IronResult};
+    use super::{AfterMiddleware, BeforeMiddleware, Handler};
+    use error::Error;
 
     pub fn run_befores(req: &mut Request, befores: &[Box<BeforeMiddleware>], err: Option<Box<Error>>) -> IronResult<()> {
         match err {

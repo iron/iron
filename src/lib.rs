@@ -3,12 +3,8 @@
 #![comment = "Rapid Web Development in Rust"]
 #![license = "MIT"]
 
-#![deny(missing_doc)]
-#![deny(unused_result)]
-#![deny(unnecessary_qualification)]
-#![deny(non_camel_case_types)]
-#![deny(unused_variable)]
-#![deny(unnecessary_typecast)]
+//#![deny(missing_doc)]
+#![deny(warnings)]
 
 #![feature(macro_rules, phase, globs)]
 //! The main crate for the Iron library.
@@ -47,39 +43,49 @@
 //! // ...
 //! ```
 
+// Stdlib dependencies
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 #[phase(plugin, link)] extern crate log;
+#[cfg(test)] extern crate test;
 
+// Third party packages
 extern crate contenttype;
 extern crate http;
 extern crate typemap;
 extern crate plugin;
-
-// Rename the URL crate to avoid clashes with the `url` module.
+extern crate error;
 extern crate rust_url = "url";
-#[cfg(test)]
-extern crate test;
 
-pub use request::Request;
+// Request + Response
+pub use request::{Request, Url};
 pub use response::Response;
 
+// Middleware system
+pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
+                     Handler, Chain, DefaultChain};
+
+// Server
 pub use iron::{Iron, Server};
-pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
 
-pub use chain::Chain;
-pub use chain::stackchain::StackChain;
-
-pub use url::Url;
-
+// Extensions
 pub use typemap::TypeMap;
+
+// Status codes.
+pub use http::status;
+
+// Methods
+pub use http::method;
 
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
 
+// Return type of many methods
+pub type IronResult<T> = Result<T, Box<error::Error>>;
+
+// Internal modules
 mod request;
 mod response;
-mod middleware;
-mod chain;
 mod iron;
-mod url;
+mod middleware;
+
