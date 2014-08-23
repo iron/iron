@@ -27,7 +27,7 @@ pub trait AfterMiddleware: Send + Sync {
 }
 
 pub trait AroundMiddleware: Handler {
-    fn with_handler(&mut self, handler: Box<Handler + Send + Sync>);
+    fn around(&mut self, handler: Box<Handler + Send + Sync>);
 }
 
 pub trait Chain: Handler {
@@ -38,6 +38,8 @@ pub trait Chain: Handler {
     fn link_before<B>(&mut self, B) where B: BeforeMiddleware;
 
     fn link_after<A>(&mut self, A) where A: AfterMiddleware;
+
+    fn around<A>(&mut self, A) where A: AroundMiddleware;
 }
 
 pub struct ChainBuilder {
@@ -62,14 +64,20 @@ impl Chain for ChainBuilder {
         self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
     }
 
-    fn link_before<B>(&mut self, before: B)
-    where B: BeforeMiddleware {
+    fn link_before<B>(&mut self, before: B) where B: BeforeMiddleware {
         self.befores.push(box before as Box<BeforeMiddleware + Send + Sync>);
     }
 
-    fn link_after<A>(&mut self, after: A)
-    where A: AfterMiddleware {
+    fn link_after<A>(&mut self, after: A) where A: AfterMiddleware {
         self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+    }
+
+    fn around<A>(&mut self, mut around: A) where A: AroundMiddleware {
+        use std::mem;
+
+        let old = mem::replace(&mut self.handler, box Nop as Box<Handler + Send + Sync>);
+        around.around(old);
+        self.handler = box around as Box<Handler + Send + Sync>;
     }
 }
 
@@ -110,6 +118,19 @@ impl Handler for ChainBuilder {
 impl Handler for fn(&mut Request) -> IronResult<Response> {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
         self.call(req)
+    }
+
+    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        // FIXME: Make Response a 500
+        (Response::new(), Err(err))
+    }
+}
+
+pub struct Nop;
+
+impl Handler for Nop {
+    fn call(&self, _: &mut Request) -> IronResult<Response> {
+        Ok(Response::new())
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
