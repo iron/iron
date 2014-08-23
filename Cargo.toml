@@ -32,3 +32,8 @@ git = "https://github.com/servo/rust-url.git"
 [dependencies.plugin]
 
 git = "https://github.com/reem/rust-plugin.git"
+
+[dependencies.error]
+
+git = "https://github.com/reem/rust-error.git"
+
