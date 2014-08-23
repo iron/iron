@@ -20,7 +20,6 @@ impl Handler for ErrorHandler {
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        error!("Error when handling request: {}.", err);
         let mut res = Response::new();
         res.serve(status::InternalServerError, "Internal Server Error.");
         (res, Err(err))
