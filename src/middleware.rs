@@ -90,22 +90,52 @@ pub trait AroundMiddleware: Handler {
     fn around(&mut self, handler: Box<Handler + Send + Sync>);
 }
 
+/// Chain's hold `BeforeMiddleware`, a `Handler`, and `AfterMiddleware` and are responsible
+/// for correctly dispatching a `Request` through them.
+///
+/// Chain's are handlers, and most of their work is done in the call method of their
+/// `Handler` implementation.
 pub trait Chain: Handler {
+    /// Create a new Chain from a `Handler`.
     fn new<H: Handler>(H) -> Self;
 
+    /// Link both a before and after middleware to the chain at once.
+    ///
+    /// Middleware that have a Before and After piece should have a constructor
+    /// which returns both as a tuple, so it can be passed directly to link.
     fn link<B, A>(&mut self, (B, A)) where A: AfterMiddleware, B: BeforeMiddleware;
 
+    /// Link a `BeforeMiddleware` to the Chain.
     fn link_before<B>(&mut self, B) where B: BeforeMiddleware;
 
+    /// Link a `AfterMiddleware` to the Chain.
     fn link_after<A>(&mut self, A) where A: AfterMiddleware;
 
+    /// Wrap the Chain's `Handler` using an AroundMiddleware.
     fn around<A>(&mut self, A) where A: AroundMiddleware;
 }
 
+/// The default Chain used in Iron.
+///
+/// For almost all intents and purposes, this is synonymous with the
+/// Chain trait and is the canonical implementation. However, Chain
+/// is left as a trait for future interoperability with other
+/// frameworks.
 pub struct ChainBuilder {
     befores: Vec<Box<BeforeMiddleware + Send + Sync>>,
     afters: Vec<Box<AfterMiddleware + Send + Sync>>,
     handler: Box<Handler + Send + Sync>
+}
+
+impl ChainBuilder {
+    /// Construct a new ChainBuilder from a `Handler`.
+    pub fn new<H: Handler>(handler: H) -> ChainBuilder {
+        ChainBuilder {
+            befores: vec![],
+            afters: vec![],
+            handler: box handler as Box<Handler + Send + Sync>
+        }
+    }
 }
 
 impl Chain for ChainBuilder {
