@@ -24,9 +24,27 @@ pub trait Handler: Send + Sync {
     fn catch(&self, &mut Request, Box<Error>) -> (Response, IronResult<()>);
 }
 
+/// `BeforeMiddleware` are fired before a `Handler` is called inside of a Chain.
+///
+/// `BeforeMiddleware` are responsible for doing request pre-processing that requires
+/// the ability to change control-flow, such as authorization middleware, or for editing
+/// the request by modifying the headers.
+///
+/// `BeforeMiddleware` only have access to the Request, if you need to modify or read a Response,
+/// you will need `AfterMiddleware`.
 pub trait BeforeMiddleware: Send + Sync {
+    /// Do whatever work this middleware should do with a `Request` object.
+    ///
+    /// An error here is propagated by the containing Chain to, first, this Middleware's
+    /// `catch` method, then every subsequent `BeforeMiddleware`'s `catch` methods until one returns
+    /// Ok(()) or the Chain's `Handler` is reached, at which point the `Handler`'s `catch` method is
+    /// called to produce an error Response.
     fn before(&self, &mut Request) -> IronResult<()>;
 
+    /// Try to `catch` an error thrown by this Middleware or a previous `BeforeMiddleware`.
+    ///
+    /// Should only return Ok(()) if the error has been completely handled and a Chain
+    /// can proceed as normal.
     fn catch(&self, _: &mut Request, err: Box<Error>) -> IronResult<()> {
         Err(err)
     }
