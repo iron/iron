@@ -10,17 +10,6 @@ pub trait Handler: Send + Sync {
     fn catch(&self, &mut Request, Box<Error>) -> (Response, IronResult<()>);
 }
 
-impl Handler for fn(&mut Request) -> IronResult<Response> {
-    fn call(&self, req: &mut Request) -> IronResult<Response> {
-        self.call(req)
-    }
-
-    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        // FIXME: Make Response a 500
-        (Response, Err(err))
-    }
-}
-
 pub trait BeforeMiddleware: Send + Sync {
     fn before(&self, &mut Request) -> IronResult<()>;
 
@@ -115,6 +104,37 @@ impl Handler for DefaultChain {
             Ok(res) => (res, Ok(())),
             Err(err) => (Response, Err(err))
         }
+    }
+}
+
+impl Handler for fn(&mut Request) -> IronResult<Response> {
+    fn call(&self, req: &mut Request) -> IronResult<Response> {
+        self.call(req)
+    }
+
+    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        // FIXME: Make Response a 500
+        (Response, Err(err))
+    }
+}
+
+impl Handler for Box<Handler + Send + Sync> {
+    fn call(&self, req: &mut Request) -> IronResult<Response> {
+        self.call(req)
+    }
+
+    fn catch(&self, req: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        self.catch(req, err)
+    }
+}
+
+impl Handler for Arc<Box<Handler + Send + Sync>> {
+    fn call(&self, req: &mut Request) -> IronResult<Response> {
+        self.call(req)
+    }
+
+    fn catch(&self, req: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        self.catch(req, err)
     }
 }
 
