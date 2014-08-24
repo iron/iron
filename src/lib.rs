@@ -16,7 +16,7 @@
 //!
 //! Obligatory Hello World:
 //!
-//! ```{rust, ignore}
+//! ```ignore
 //! fn hello_world(req: &mut Request) -> IronResult<Response> {
 //!   Response::with(status::Ok, "Hello World!")
 //! }
