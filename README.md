@@ -1,37 +1,33 @@
 Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)](https://travis-ci.org/iron/iron)
 ====
 
-> Express-inspired, rapid, scalable, concurrent and safe server development.
+> Middleware-Oriented, Concurrency Focused Web Development in Rust.
 
-## Simple ResponseTimer Middleware
+## Ex
 
 ```rust
-#[deriving(Clone)]
-struct ResponseTime {
-    entry_time: u64
-}
+struct ResponseTime;
+
+impl Assoc<uint> for ResponseTime;
 
 impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
 
-impl Middleware for ResponseTime {
-    fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-        self.entry_time = precise_time_ns();
-        Continue
-    }
-
-    fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-        let delta = precise_time_ns() - self.entry_time;
-        println!("Request took: {} ms", (delta as f64) / 1000000.0);
-        Continue
+impl BeforeMiddleware for ResponseTime {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        req.extensions.insert::<ResponseTime, uint>(precise_time_ns());
     }
 }
 
-// ...
-server.chain.link(ResponseTime::new());
-// ...
+impl AfterMiddleware for ResponseTime {
+    fn after(&self, req: &mut Request, _: &mut Response) -> IronResult<()> {
+        let delta = precise_time_ns() - req.extensions.find::<ResponseTime, uint>()
+        println!("Request took: {} ms", (delta as f64) / 1000000.0);
+    }
+}
 ```
 
-Iron is a high level web framework built in and for Rust.</br>
+Iron is a high level web framework built in and for Rust
+
 Iron does not come bundled with any middleware - instead, Iron is a robust and efficient framework for plugging in middleware.
 
 **Iron focuses on providing a clean API for creating middleware and integrating
