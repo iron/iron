@@ -98,7 +98,7 @@ impl<H: Handler> http::Server for IronListener<H> {
                 // There is no Response, so create one.
                 error!("Error handling:\n{}\nError was: {}", req, e);
                 http_res.status = status::InternalServerError;
-                let _ = http_res.write(b"Internal Servr Error");
+                let _ = http_res.write(b"Internal Server Error");
             }
         }
     }
