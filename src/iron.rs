@@ -31,7 +31,7 @@ struct IronListener<H> {
 impl<H: Send + Sync> Clone for IronListener<H> {
     fn clone(&self) -> IronListener<H> {
         IronListener {
-            // Just increment a reference count.
+            // Just increment the Arc's reference count.
             handler: self.handler.clone(),
             ip: self.ip.clone(),
             port: self.port.clone()

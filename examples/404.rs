@@ -8,13 +8,11 @@ use iron::{Iron, Request, Response, IronResult};
 use iron::status;
 
 fn fourzerofour(_: &mut Request) -> IronResult<Response> {
-    let mut res = Response::new();
-    res.status = Some(status::NotFound);
-    Ok(res)
+    Ok(Response::status(status::NotFound))
 }
 
 fn main() {
     Iron::new(fourzerofour).listen(Ipv4Addr(127, 0, 0, 1), 3000);
-    println!("On 3k");
+    println!("On 3000");
 }
 

@@ -20,9 +20,7 @@ impl Handler for ErrorHandler {
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        let mut res = Response::new();
-        res.serve(status::InternalServerError, "Internal Server Error.");
-        (res, Err(err))
+        (Response::with(status::InternalServerError, "Internal Server Error."), Err(err))
     }
 
 }
@@ -41,6 +39,6 @@ fn main() {
     chain.link_before(ErrorProducer);
 
     Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
-    println!("On 3k.");
+    println!("On 3000");
 }
 
