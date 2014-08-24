@@ -11,36 +11,17 @@
 //!
 //! Iron is a high level web framework built in and for Rust.
 //!
-//! Iron does not come bundled with any middleware - instead, Iron
-//! provides a robust and efficient framework for creating and
-//! plugging in middleware.
+//! Iron provides a robust and efficient framework
+//! for creating and plugging in middleware.
 //!
-//! Obligatory example:
+//! Obligatory Hello World:
 //!
-//! ```ignore
-//! #[deriving(Clone)]
-//! struct ResponseTime {
-//!     entry_time: u64
+//! ```{rust, ignore}
+//! fn hello_world(req: &mut Request) -> IronResult<Response> {
+//!   Response::with(status::Ok, "Hello World!")
 //! }
 //!
-//! impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
-//!
-//! impl Middleware for ResponseTime {
-//!     fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-//!         self.entry_time = precise_time_ns();
-//!         Continue
-//!     }
-//!
-//!     fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-//!         let delta = precise_time_ns() - self.entry_time;
-//!         println!("Request took: {} ms", (delta as f64) / 1000000.0);
-//!         Continue
-//!     }
-//! }
-//!
-//! // ...
-//! server.chain.link(ResponseTime::new());
-//! // ...
+//! Iron::new(hello_world).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 //! ```
 
 // Stdlib dependencies
