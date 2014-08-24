@@ -16,7 +16,7 @@ use super::request::HttpRequest;
 /// `Iron` contains the `Handler` which takes a `Request` and produces a
 /// `Response`.
 pub struct Iron<H> {
-    /// Iron contains a Handler, which it uses to create responses for client
+    /// Iron contains a `Handler`, which it uses to create responses for client
     /// requests.
     pub handler: H,
 }
@@ -60,7 +60,7 @@ impl<H: Handler> Iron<H> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server, using the
-    /// passed in Handler.
+    /// passed in `Handler`.
     pub fn new(handler: H) -> Iron<H> {
         Iron { handler: handler }
     }
@@ -77,7 +77,7 @@ impl<H: Handler> http::Server for IronListener<H> {
     }
 
     fn handle_request(&self, http_req: HttpRequest, http_res: &mut HttpResponse) {
-        // Create wrapper Request
+        // Create `Request` wrapper.
         let mut req = match Request::from_http(http_req) {
             Ok(req) => req,
             Err(e) => {
