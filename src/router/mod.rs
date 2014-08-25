@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use http::method::Method;
 use http::method;
 use iron::{Middleware, Request, Response, Status, Continue, Unwind, Error};
+use typemap::Assoc;
 use recognizer::Router as Recognizer;
-use recognizer::Match;
+use recognizer::{Match, Params};
 
 /// `Router` provides an interface for creating complex routes as middleware
 /// for the Iron framework.
@@ -21,7 +22,7 @@ impl Router {
     ///
     /// `route` supports glob patterns: `*` for a single wildcard segment and
     /// `:param` for matching storing that segment of the request url in the `Params`
-    /// object, which is stored on the request Alloy.
+    /// object, which is stored in the request `extensions`.
     ///
     /// For instance, to route `Get` requests on any route matching
     /// `/users/:userid/:friend` and store `userid` and `friend` in
@@ -84,6 +85,8 @@ impl Router {
     }
 }
 
+impl Assoc<Params> for Router {}
+
 impl Middleware for Router {
     fn enter(&mut self, req: &mut Request, res: &mut Response) -> Status {
         let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
@@ -92,7 +95,7 @@ impl Middleware for Router {
             None => return Continue
         };
 
-        req.extensions.insert(matched.params);
+        req.extensions.insert::<Router, Params>(matched.params);
         let mut handler = matched.handler.clone_box();
         let mut handler_status = handler.enter(req, res);
 
@@ -112,4 +115,3 @@ impl Middleware for Router {
         }
     }
 }
-

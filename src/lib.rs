@@ -11,6 +11,7 @@
 extern crate http;
 extern crate iron;
 extern crate recognizer = "route-recognizer";
+extern crate typemap;
 
 #[cfg(test)] extern crate test;
 
@@ -18,4 +19,3 @@ pub use router::Router;
 pub use recognizer::Params;
 
 mod router;
-

@@ -21,3 +21,6 @@ git = "https://github.com/chris-morgan/rust-http.git"
 
 git = "https://github.com/conduit-rust/route-recognizer.rs.git"
 
+[dependencies.typemap]
+
+git = "https://github.com/reem/rust-typemap.git"
