@@ -3,25 +3,25 @@ Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)]
 
 > Middleware-Oriented, Concurrency Focused Web Development in Rust.
 
-## Ex
+## Response Timer Example
 
 ```rust
 struct ResponseTime;
 
-impl Assoc<uint> for ResponseTime;
-
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
+impl Assoc<u64> for ResponseTime {}
 
 impl BeforeMiddleware for ResponseTime {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<ResponseTime, uint>(precise_time_ns());
+        req.extensions.insert::<ResponseTime, u64>(precise_time_ns());
+        Ok(())
     }
 }
 
 impl AfterMiddleware for ResponseTime {
     fn after(&self, req: &mut Request, _: &mut Response) -> IronResult<()> {
-        let delta = precise_time_ns() - req.extensions.find::<ResponseTime, uint>()
+        let delta = precise_time_ns() - *req.extensions.find::<ResponseTime, u64>().unwrap();
         println!("Request took: {} ms", (delta as f64) / 1000000.0);
+        Ok(())
     }
 }
 ```

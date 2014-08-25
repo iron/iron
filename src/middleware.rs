@@ -144,14 +144,17 @@ pub trait AfterMiddleware: Send + Sync {
 /// AroundMiddleware are used to wrap and replace the `Handler` in a Chain.
 ///
 /// AroundMiddleware must themselves be `Handler`s, and can integrate an existing
-/// `Handler` through the around method, which is called once on insertion
+/// `Handler` through the `with_handler` method, which is called once on insertion
 /// into a Chain.
 pub trait AroundMiddleware: Handler {
-    /// Incorporate another `Handler` into this AroundMiddleware.
+    /// Incorporate another `Handler` into this `AroundMiddleware`.
     ///
     /// Usually this means wrapping the handler and editing the `Request` on the
     /// way in and the `Response` on the way out.
-    fn around(&mut self, handler: Box<Handler + Send + Sync>);
+    ///
+    /// This is called only once, when an `AroundMiddleware` is added to a `Chain`
+    /// using `Chain::around`, it is passed the `Chain`'s current `Handler`.
+    fn with_handler(&mut self, handler: Box<Handler + Send + Sync>);
 }
 
 /// Chain's hold `BeforeMiddleware`, a `Handler`, and `AfterMiddleware` and are responsible
@@ -232,7 +235,7 @@ impl Chain for ChainBuilder {
         use std::mem;
 
         let old = mem::replace(&mut self.handler, box Nop as Box<Handler + Send + Sync>);
-        around.around(old);
+        around.with_handler(old);
         self.handler = box around as Box<Handler + Send + Sync>;
     }
 }
