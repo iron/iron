@@ -16,6 +16,7 @@ pub struct Router {
 }
 
 #[deriving(Show)]
+/// The error thrown by router if there is no matching route.
 pub struct NoRoute;
 
 impl Error for NoRoute {
