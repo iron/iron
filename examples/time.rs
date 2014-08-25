@@ -1,45 +1,39 @@
-///! Middleware to record the server's response time.
 extern crate iron;
+extern crate typemap;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Chain, Request, Response,
-           Middleware, Server, Status,
-           Continue, Unwind, FromFn};
 
+use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult, Iron, ChainBuilder, Chain};
+use typemap::Assoc;
 use time::precise_time_ns;
 
-#[deriving(Clone)]
-struct ResponseTime {
-    entry_time: u64
+struct ResponseTime;
+
+impl Assoc<u64> for ResponseTime {}
+
+impl BeforeMiddleware for ResponseTime {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        req.extensions.insert::<ResponseTime, u64>(precise_time_ns());
+        Ok(())
+    }
 }
 
-impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
-
-impl Middleware for ResponseTime {
-    fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-        self.entry_time = precise_time_ns();
-        Continue
-    }
-
-    fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-        let delta = precise_time_ns() - self.entry_time;
+impl AfterMiddleware for ResponseTime {
+    fn after(&self, req: &mut Request, _: &mut Response) -> IronResult<()> {
+        let delta = precise_time_ns() - *req.extensions.find::<ResponseTime, u64>().unwrap();
         println!("Request took: {} ms", (delta as f64) / 1000000.0);
-        Continue
+        Ok(())
     }
 }
 
-fn no_op(_req: &mut Request, _: &mut Response) -> Status { Unwind }
+fn hello_world(_: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(iron::status::Ok, "Hello World"))
+}
 
 fn main() {
-    let mut server: Server = Iron::new();
-
-    // This adds the ResponseTime middleware so that
-    // all requests and responses are passed through it.
-    server.chain.link(ResponseTime::new());
-    server.chain.link(FromFn::new(no_op));
-
-    // Start the server on localhost:3000
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    let mut chain = ChainBuilder::new(hello_world);
+    chain.link_before(ResponseTime);
+    chain.link_after(ResponseTime);
+    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
-

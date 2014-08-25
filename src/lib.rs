@@ -4,82 +4,70 @@
 #![license = "MIT"]
 
 #![deny(missing_doc)]
-#![deny(unused_result)]
-#![deny(unnecessary_qualification)]
-#![deny(non_camel_case_types)]
-#![deny(unused_variable)]
-#![deny(unnecessary_typecast)]
+#![deny(warnings)]
 
 #![feature(macro_rules, phase, globs)]
 //! The main crate for the Iron library.
 //!
 //! Iron is a high level web framework built in and for Rust.
 //!
-//! Iron does not come bundled with any middleware - instead, Iron
-//! provides a robust and efficient framework for creating and
-//! plugging in middleware.
+//! Iron provides a robust and efficient framework
+//! for creating and plugging in middleware.
 //!
-//! Obligatory example:
+//! Obligatory Hello World:
 //!
 //! ```ignore
-//! #[deriving(Clone)]
-//! struct ResponseTime {
-//!     entry_time: u64
+//! fn hello_world(req: &mut Request) -> IronResult<Response> {
+//!   Response::with(status::Ok, "Hello World!")
 //! }
 //!
-//! impl ResponseTime { fn new() -> ResponseTime { ResponseTime { entry_time: 0u64 } } }
-//!
-//! impl Middleware for ResponseTime {
-//!     fn enter(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-//!         self.entry_time = precise_time_ns();
-//!         Continue
-//!     }
-//!
-//!     fn exit(&mut self, _req: &mut Request, _res: &mut Response) -> Status {
-//!         let delta = precise_time_ns() - self.entry_time;
-//!         println!("Request took: {} ms", (delta as f64) / 1000000.0);
-//!         Continue
-//!     }
-//! }
-//!
-//! // ...
-//! server.chain.link(ResponseTime::new());
-//! // ...
+//! Iron::new(hello_world).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 //! ```
 
+// Stdlib dependencies
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 #[phase(plugin, link)] extern crate log;
+#[cfg(test)] extern crate test;
 
+// Third party packages
 extern crate contenttype;
 extern crate http;
 extern crate typemap;
 extern crate plugin;
-
-// Rename the URL crate to avoid clashes with the `url` module.
+extern crate error;
 extern crate rust_url = "url";
-#[cfg(test)]
-extern crate test;
 
-pub use request::Request;
+// Request + Response
+pub use request::{Request, Url};
 pub use response::Response;
 
-pub use iron::{Iron, Server};
-pub use middleware::{Middleware, Status, Continue, Unwind, Error, FromFn};
+// Middleware system
+pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
+                     Handler, Chain, ChainBuilder};
 
-pub use chain::Chain;
-pub use chain::stackchain::StackChain;
+// Server
+pub use iron::Iron;
 
-pub use url::Url;
-
+// Extensions
 pub use typemap::TypeMap;
+
+// Status codes and Methods.
+pub use http::status;
+pub use http::method;
 
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
 
+// Errors
+pub use error::{Error, ErrorRefExt};
+
+// Return type of many methods
+pub type IronResult<T> = Result<T, Box<Error>>;
+
+// Internal modules
 mod request;
 mod response;
-mod middleware;
-mod chain;
 mod iron;
-mod url;
+mod middleware;
+

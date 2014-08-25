@@ -1,7 +1,7 @@
 [package]
 
 name = "iron"
-version = "0.0.0"
+version = "0.0.1"
 authors = [
     "Jonathan Reem <jonathan.reem@gmail.com>",
     "Zach Pomerantz <zmp@umich.edu>",
@@ -32,3 +32,8 @@ git = "https://github.com/servo/rust-url.git"
 [dependencies.plugin]
 
 git = "https://github.com/reem/rust-plugin.git"
+
+[dependencies.error]
+
+git = "https://github.com/reem/rust-error.git"
+

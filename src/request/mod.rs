@@ -1,6 +1,7 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
+use std::fmt::{Show, Formatter, FormatError};
 
 use http::server::request::{AbsoluteUri, AbsolutePath};
 use http::headers::request::HeaderCollection;
@@ -8,10 +9,12 @@ use http::method::Method;
 
 use typemap::TypeMap;
 use plugin::Extensible;
-use url::Url;
 
 pub use http::server::request::Request as HttpRequest;
 
+pub use self::url::Url;
+
+mod url;
 
 /// The `Request` given to all `Middleware`.
 ///
@@ -35,6 +38,20 @@ pub struct Request {
 
     /// Extensible storage for data passed between middleware.
     pub extensions: TypeMap
+}
+
+impl Show for Request {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FormatError> {
+        try!(writeln!(f, "Request {{"));
+
+        try!(writeln!(f, "    url: {}", self.url));
+        try!(writeln!(f, "    method: {}", self.method));
+        try!(writeln!(f, "    remote_addr: {}", self.remote_addr));
+        try!(writeln!(f, "    body: {}", self.body));
+
+        try!(write!(f, "}}"));
+        Ok(())
+    }
 }
 
 impl Request {
