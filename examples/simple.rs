@@ -6,23 +6,19 @@ extern crate router;
 // To use, go to http://127.0.0.1:3000/test
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Server, Iron, Request, Response, Chain, Status, Unwind, FromFn};
-use http::status;
+use iron::{Iron, Request, Response, IronResult};
+use iron::status;
 use router::{Router, Params};
 
 fn main() {
-    let mut server: Server = Iron::new();
     let mut router = Router::new();
+    router.get("/", handler);
+    router.get("/:query", handler);
 
-    fn handler(req: &mut Request, res: &mut Response) -> Status {
-        let ref query = req.extensions.find::<Router, Params>().unwrap().find("query").unwrap();
-        let _ = res.serve(status::Ok, query.as_slice());
-        Unwind
+    Iron::new(router).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+
+    fn handler(req: &mut Request) -> IronResult<Response> {
+        let ref query = req.extensions.find::<Router, Params>().unwrap().find("query").unwrap_or("/");
+        Ok(Response::with(status::Ok, *query))
     }
-
-    // Setup our route.
-    router.get("/:query", FromFn::new(handler));
-
-    server.chain.link(router);
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
