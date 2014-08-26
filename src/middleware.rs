@@ -84,7 +84,9 @@ pub trait Handler: Send + Sync {
     /// item in the returned tuple. If it is handled, then `Ok(())` can be returned
     /// instead to indicate that all is good with the Response and the error has
     /// been dealt with.
-    fn catch(&self, &mut Request, Box<Error>) -> (Response, IronResult<()>);
+    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+        (Response::status(status::InternalServerError), Err(err))
+    }
 }
 
 /// `BeforeMiddleware` are fired before a `Handler` is called inside of a Chain.
