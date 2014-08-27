@@ -20,8 +20,20 @@ pub struct Persistent<P, D> {
     data: Arc<RWLock<D>>
 }
 
+impl<P, D: Send + Sync> Clone for Persistent<P, D> {
+    fn clone(&self) -> Persistent<P, D> {
+        Persistent { data: self.data.clone() }
+    }
+}
+
 pub struct Config<P, C> {
     data: Arc<C>
+}
+
+impl<P, C: Send + Sync> Clone for Config<P, C> {
+    fn clone(&self) -> Config<P, C> {
+        Config { data: self.data.clone() }
+    }
 }
 
 impl<P, D> Assoc<Arc<RWLock<D>>> for Persistent<P, D> where P: Assoc<D> {}
@@ -70,6 +82,20 @@ impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Config<P, D> {
     fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
         res.extensions.insert::<Config<P, D>, Arc<D>>(self.data.clone());
         Ok(())
+    }
+}
+
+impl<D: Send + Sync, P: Assoc<D>> Persistent<P, D> {
+    pub fn new(start: D) -> (Persistent<P, D>, Persistent<P, D>) {
+        let x = Arc::new(RWLock::new(start));
+        (Persistent { data: x.clone() }, Persistent { data: x })
+    }
+}
+
+impl<C: Send + Sync, P: Assoc<C>> Config<P, C> {
+    pub fn new(start: C) -> (Config<P, C>, Config<P, C>) {
+        let x = Arc::new(start);
+        (Config { data: x.clone() }, Config { data: x })
     }
 }
 
