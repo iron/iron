@@ -21,7 +21,7 @@ fn serve_hits(req: &mut Request) -> IronResult<Response> {
 
 fn main() {
     let mut chain = ChainBuilder::new(serve_hits);
-    chain.link(Write::<HitCounter, uint>::new(0u));
+    chain.link(Write::<HitCounter, uint>::both(0u));
     Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 
