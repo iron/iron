@@ -119,24 +119,24 @@ impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Write<P, D> {
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> State<P, D> {
+impl<P, D> State<P, D> where D: Send + Sync, P: Assoc<D> {
     pub fn new(start: D) -> (State<P, D>, State<P, D>) {
-        let x = Arc::new(RWLock::new(start));
-        (State { data: x.clone() }, State { data: x })
+        let x = State { data: Arc::new(RWLock::new(start)) };
+        (x.clone(), x)
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> Read<P, D> {
+impl<P, D> Read<P, D> where D: Send + Sync, P: Assoc<D> {
     pub fn new(start: D) -> (Read<P, D>, Read<P, D>) {
-        let x = Arc::new(start);
-        (Read { data: x.clone() }, Read { data: x })
+        let x = Read { data: Arc::new(start) };
+        (x.clone(), x)
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> Write<P, D> {
+impl<P, D> Write<P, D> where D: Send + Sync, P: Assoc<D> {
     pub fn new(start: D) -> (Write<P, D>, Write<P, D>) {
-        let x = Arc::new(Mutex::new(start));
-        (Write { data: x.clone() }, Write { data: x })
+        let x = Write { data: Arc::new(Mutex::new(start)) };
+        (x.clone(), x)
     }
 }
 
