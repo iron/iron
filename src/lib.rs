@@ -1,6 +1,6 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128", html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256", html_root_url = "http://ironframework.io/core/persistent")]
 #![license = "MIT"]
-//#![deny(missing_doc)]
+#![deny(missing_doc)]
 #![deny(warnings)]
 #![feature(default_type_params)]
 
@@ -16,14 +16,53 @@ use std::sync::{Arc, RWLock, Mutex};
 use typemap::Assoc;
 use plugin::{PluginFor, Phantom};
 
+/// Middleware for data that persists between requests with read and write capabilities.
+///
+/// The data is stored behind a `RWLock`, so multiple read locks
+/// can be taken out concurrently.
+///
+/// If most threads need to take out a write lock, you may want to
+/// consider `Write`, which stores the data behind a `Mutex`, which
+/// has a faster locking speed.
+///
+/// `State` can be linked as `BeforeMiddleware` to add data to the `Request`
+/// extensions and it can be linked as an `AfterMiddleware` to add data to
+/// the `Response` extensions.
+///
+/// `State` also implements `PluginFor`, so the data stored within can be
+/// accessed through `request.get::<State<P, D>>()` as an `Arc<RWLock<D>>`.
 pub struct State<P, D> {
     data: Arc<RWLock<D>>
 }
 
+/// Middleware for data that persists between Requests with read-only capabilities.
+///
+/// The data is stored behind an Arc, so multiple threads can have
+/// concurrent, non-blocking access.
+///
+/// `Read` can be linked as `BeforeMiddleware` to add data to the `Request`
+/// extensions and it can be linked as an `AfterMiddleware` to add data to
+/// the `Response` extensions.
+///
+/// `Read` also implements `PluginFor`, so the data stored within can be
+/// accessed through `request.get::<Read<P, D>>()` as an `Arc<D>`.
 pub struct Read<P, D> {
     data: Arc<D>
 }
 
+/// Middleware for data that persists between Requests for data which mostly
+/// needs to be written instead of read.
+///
+/// The data is stored behind a `Mutex`, so only one request at a time can
+/// access the data. This is more performant than `State` in the case where
+/// most uses of the data require a write lock.
+///
+/// `Write` can be linked as `BeforeMiddleware` to add data to the `Request`
+/// extensions and it can be linked as an `AfterMiddleware` to add data to
+/// the `Response` extensions.
+///
+/// `Write` also implements `PluginFor`, so the data stored within can be
+/// accessed through `request.get::<Write<P, D>>()` as an `Arc<Mutex<D>>`.
 pub struct Write<P, D> {
     data: Arc<Mutex<D>>
 }
@@ -120,23 +159,56 @@ impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Write<P, D> {
 }
 
 impl<P, D> State<P, D> where D: Send + Sync, P: Assoc<D> {
-    pub fn new(start: D) -> (State<P, D>, State<P, D>) {
+    /// Construct a new pair of `State` that can be passed directly to `Chain::link`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn both(start: D) -> (State<P, D>, State<P, D>) {
         let x = State { data: Arc::new(RWLock::new(start)) };
         (x.clone(), x)
+    }
+
+    /// Construct a new `State` that can be passed directly to
+    /// `Chain::link_before` or `Chain::link_after`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn one(start: D) -> State<P, D> {
+        State { data: Arc::new(RWLock::new(start)) }
     }
 }
 
 impl<P, D> Read<P, D> where D: Send + Sync, P: Assoc<D> {
-    pub fn new(start: D) -> (Read<P, D>, Read<P, D>) {
+    /// Construct a new pair of `Read` that can be passed directly to `Chain::link`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn both(start: D) -> (Read<P, D>, Read<P, D>) {
         let x = Read { data: Arc::new(start) };
         (x.clone(), x)
+    }
+
+    /// Construct a new `Read` that can be passed directly to
+    /// `Chain::link_before` or `Chain::link_after`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn one(start: D) -> Read<P, D> {
+        Read { data: Arc::new(start) }
     }
 }
 
 impl<P, D> Write<P, D> where D: Send + Sync, P: Assoc<D> {
-    pub fn new(start: D) -> (Write<P, D>, Write<P, D>) {
+    /// Construct a new pair of `Write` that can be passed directly to `Chain::link`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn both(start: D) -> (Write<P, D>, Write<P, D>) {
         let x = Write { data: Arc::new(Mutex::new(start)) };
         (x.clone(), x)
+    }
+
+    /// Construct a new `Write` that can be passed directly to
+    /// `Chain::link_before` or `Chain::link_after`.
+    ///
+    /// The data is initialized with the passed-in value.
+    pub fn one(start: D) -> Write<P, D> {
+        Write { data: Arc::new(Mutex::new(start)) }
     }
 }
 
