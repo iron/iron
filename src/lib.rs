@@ -12,90 +12,131 @@ extern crate typemap;
 extern crate plugin;
 
 use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
-use std::sync::{Arc, RWLock};
+use std::sync::{Arc, RWLock, Mutex};
 use typemap::Assoc;
 use plugin::{PluginFor, Phantom};
 
-pub struct Persistent<P, D> {
+pub struct State<P, D> {
     data: Arc<RWLock<D>>
 }
 
-impl<P, D: Send + Sync> Clone for Persistent<P, D> {
-    fn clone(&self) -> Persistent<P, D> {
-        Persistent { data: self.data.clone() }
+pub struct Read<P, D> {
+    data: Arc<D>
+}
+
+pub struct Write<P, D> {
+    data: Arc<Mutex<D>>
+}
+
+impl<P, D: Send + Sync> Clone for Read<P, D> {
+    fn clone(&self) -> Read<P, D> {
+        Read { data: self.data.clone() }
     }
 }
 
-pub struct Config<P, C> {
-    data: Arc<C>
-}
-
-impl<P, C: Send + Sync> Clone for Config<P, C> {
-    fn clone(&self) -> Config<P, C> {
-        Config { data: self.data.clone() }
+impl<P, D: Send + Sync> Clone for State<P, D> {
+    fn clone(&self) -> State<P, D> {
+        State { data: self.data.clone() }
     }
 }
 
-impl<P, D> Assoc<Arc<RWLock<D>>> for Persistent<P, D> where P: Assoc<D> {}
-impl<P, C> Assoc<Arc<C>> for Config<P, C> where P: Assoc<C> {}
+impl<P, D: Send + Sync> Clone for Write<P, D> {
+    fn clone(&self) -> Write<P, D> {
+        Write { data: self.data.clone() }
+    }
+}
 
-impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for Persistent<P, D>
+impl<P, D> Assoc<Arc<RWLock<D>>> for State<P, D> where P: Assoc<D> {}
+impl<P, D> Assoc<Arc<D>> for Read<P, D> where P: Assoc<D> {}
+impl<P, D> Assoc<Arc<Mutex<D>>> for Write<P, D> where P: Assoc<D> {}
+
+impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for State<P, D>
     where D: Send + Sync,
           P: Assoc<D> {
-    fn eval(req: &Request, _: Phantom<Persistent<P, D>>) -> Option<Arc<RWLock<D>>> {
-        req.extensions.find::<Persistent<P, D>, Arc<RWLock<D>>>()
+    fn eval(req: &Request, _: Phantom<State<P, D>>) -> Option<Arc<RWLock<D>>> {
+        req.extensions.find::<State<P, D>, Arc<RWLock<D>>>()
             .map(|x| x.clone())
     }
 }
 
-impl<P, C> PluginFor<Request, Arc<C>> for Config<P, C>
-    where C: Send + Sync,
-          P: Assoc<C> {
-    fn eval(req: &Request, _: Phantom<Config<P, C>>) -> Option<Arc<C>> {
-        req.extensions.find::<Config<P, C>, Arc<C>>()
+impl<P, D> PluginFor<Request, Arc<D>> for Read<P, D>
+    where D: Send + Sync,
+          P: Assoc<D> {
+    fn eval(req: &Request, _: Phantom<Read<P, D>>) -> Option<Arc<D>> {
+        req.extensions.find::<Read<P, D>, Arc<D>>()
             .map(|x| x.clone())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Persistent<P, D> {
+impl<P, D> PluginFor<Request, Arc<Mutex<D>>> for Write<P, D>
+    where D: Send + Sync,
+          P: Assoc<D> {
+    fn eval(req: &Request, _: Phantom<Write<P, D>>) -> Option<Arc<Mutex<D>>> {
+        req.extensions.find::<Write<P, D>, Arc<Mutex<D>>>()
+            .map(|x| x.clone())
+    }
+}
+
+impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for State<P, D> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<Persistent<P, D>, Arc<RWLock<D>>>(self.data.clone());
+        req.extensions.insert::<State<P, D>, Arc<RWLock<D>>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Persistent<P, D> {
+impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for State<P, D> {
     fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
-        res.extensions.insert::<Persistent<P, D>, Arc<RWLock<D>>>(self.data.clone());
+        res.extensions.insert::<State<P, D>, Arc<RWLock<D>>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Config<P, D> {
+impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Read<P, D> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<Config<P, D>, Arc<D>>(self.data.clone());
+        req.extensions.insert::<Read<P, D>, Arc<D>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Config<P, D> {
+impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Read<P, D> {
     fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
-        res.extensions.insert::<Config<P, D>, Arc<D>>(self.data.clone());
+        res.extensions.insert::<Read<P, D>, Arc<D>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> Persistent<P, D> {
-    pub fn new(start: D) -> (Persistent<P, D>, Persistent<P, D>) {
+impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Write<P, D> {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        req.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
+        Ok(())
+    }
+}
+
+impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Write<P, D> {
+    fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
+        res.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
+        Ok(())
+    }
+}
+
+impl<D: Send + Sync, P: Assoc<D>> State<P, D> {
+    pub fn new(start: D) -> (State<P, D>, State<P, D>) {
         let x = Arc::new(RWLock::new(start));
-        (Persistent { data: x.clone() }, Persistent { data: x })
+        (State { data: x.clone() }, State { data: x })
     }
 }
 
-impl<C: Send + Sync, P: Assoc<C>> Config<P, C> {
-    pub fn new(start: C) -> (Config<P, C>, Config<P, C>) {
+impl<D: Send + Sync, P: Assoc<D>> Read<P, D> {
+    pub fn new(start: D) -> (Read<P, D>, Read<P, D>) {
         let x = Arc::new(start);
-        (Config { data: x.clone() }, Config { data: x })
+        (Read { data: x.clone() }, Read { data: x })
+    }
+}
+
+impl<D: Send + Sync, P: Assoc<D>> Write<P, D> {
+    pub fn new(start: D) -> (Write<P, D>, Write<P, D>) {
+        let x = Arc::new(Mutex::new(start));
+        (Write { data: x.clone() }, Write { data: x })
     }
 }
 
