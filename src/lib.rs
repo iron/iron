@@ -2,16 +2,19 @@
 #![license = "MIT"]
 //#![deny(missing_doc)]
 #![deny(warnings)]
+#![feature(default_type_params)]
 
 //! A set of middleware for sharing data between requests in the Iron
 //! framework.
 
 extern crate iron;
 extern crate typemap;
+extern crate plugin;
 
 use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
 use std::sync::{Arc, RWLock};
 use typemap::Assoc;
+use plugin::{PluginFor, Phantom};
 
 pub struct Persistent<P, D> {
     data: Arc<RWLock<D>>
@@ -23,6 +26,24 @@ pub struct Config<P, C> {
 
 impl<P, D> Assoc<Arc<RWLock<D>>> for Persistent<P, D> where P: Assoc<D> {}
 impl<P, C> Assoc<Arc<C>> for Config<P, C> where P: Assoc<C> {}
+
+impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for Persistent<P, D>
+    where D: Send + Sync,
+          P: Assoc<D> {
+    fn eval(req: &Request, _: Phantom<Persistent<P, D>>) -> Option<Arc<RWLock<D>>> {
+        req.extensions.find::<Persistent<P, D>, Arc<RWLock<D>>>()
+            .map(|x| x.clone())
+    }
+}
+
+impl<P, C> PluginFor<Request, Arc<C>> for Config<P, C>
+    where C: Send + Sync,
+          P: Assoc<C> {
+    fn eval(req: &Request, _: Phantom<Config<P, C>>) -> Option<Arc<C>> {
+        req.extensions.find::<Config<P, C>, Arc<C>>()
+            .map(|x| x.clone())
+    }
+}
 
 impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Persistent<P, D> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
