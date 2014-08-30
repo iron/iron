@@ -106,14 +106,14 @@ impl Handler for Router {
         let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
             Some(matched) => matched,
             // No match.
-            None => return Err(box NoRoute as Box<Error>)
+            None => return Err(box NoRoute as Box<Error + Send>)
         };
 
         req.extensions.insert::<Router, Params>(matched.params);
         matched.handler.call(req)
     }
 
-    fn catch(&self, req: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+    fn catch(&self, req: &mut Request, err: Box<Error + Send>) -> (Response, IronResult<()>) {
         match self.error {
             Some(ref error_handler) => error_handler.catch(req, err),
             // Error that is not caught by anything!
