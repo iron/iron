@@ -19,7 +19,7 @@ impl Handler for ErrorHandler {
         Ok(Response::new())
     }
 
-    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+    fn catch(&self, _: &mut Request, err: Box<Error + Send>) -> (Response, IronResult<()>) {
         (Response::with(status::InternalServerError, "Internal Server Error."), Err(err))
     }
 
@@ -27,7 +27,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box "Error".to_string() as Box<Error>)
+        Err(box "Error".to_string() as Box<Error + Send>)
     }
 }
 

@@ -22,7 +22,7 @@ pub struct Response {
     /// be sent using either `serve` or `serve_file`.
     ///
     /// Arbitrary Readers can be sent by assigning to body.
-    pub body: Option<Box<Reader>>,
+    pub body: Option<Box<Reader + Send>>,
 
     /// The headers of the response.
     pub headers: Box<HeaderCollection>,
@@ -60,7 +60,7 @@ impl Response {
     /// Create a new response with the specified body and status.
     pub fn with<B: BytesContainer>(status: status::Status, body: B) -> Response {
         Response {
-            body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>),
+            body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
             headers: box HeaderCollection::new(),
             status: Some(status),
             extensions: TypeMap::new()
@@ -70,7 +70,7 @@ impl Response {
     /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
         self.status = Some(status);
-        self.body = Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader>);
+        self.body = Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>);
     }
 
     /// Serve the file located at `path`.
@@ -86,7 +86,7 @@ impl Response {
     pub fn serve_file(&mut self, path: &Path) -> IoResult<()> {
         let file = try!(File::open(path));
         self.headers.content_type = path.extension_str().and_then(get_content_type);
-        self.body = Some(box file as Box<Reader>);
+        self.body = Some(box file as Box<Reader + Send>);
         self.status = Some(status::Ok);
         Ok(())
     }
@@ -104,7 +104,7 @@ impl Response {
         http_res.status = self.status.clone().unwrap_or(status::NotFound);
 
         // Read the body into the http_res body
-        let mut body = self.body.unwrap_or_else(|| box MemReader::new(vec![]) as Box<Reader>);
+        let mut body = self.body.unwrap_or_else(|| box MemReader::new(vec![]) as Box<Reader + Send>);
         let _ = match body.read_to_end() {
             Ok(body_content) => {
                 let plain_txt = MediaType {
