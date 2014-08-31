@@ -4,7 +4,7 @@ name = "logger"
 authors = ["Michael Reinhard <mcreinhard@gmail.com>"]
 version = "0.1.0"
 
-[[lib]]
+[lib]
 
 name = "logger"
 path = "src/lib.rs"
