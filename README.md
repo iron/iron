@@ -6,17 +6,19 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 ## Example
 
 ```rust
-fn main() {
-    let mut server: Server = Iron::new();
-    // Mount intercept on "/blocked"
-    server.chain.link(Mount::new("/blocked", FromFn::New(intercept)));
-    server.chain.link(other_middleware);
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
+fn send_hello(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(status::Ok, "Hello!"))
 }
 
-fn intercept(_: &mut Request, _: &mut Response) -> Status {
-    // intercept will block all further middleware from running
-    Unwind
+fn intercept(req: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(status::Ok, "Blocked!"))
+}
+
+fn main() {
+    let mut mount = Mount::new();
+    mount.mount("/blocked/", intercept).mount("/", send_hello);
+
+    Iron::new(mount).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 ```
 
@@ -24,7 +26,7 @@ fn intercept(_: &mut Request, _: &mut Response) -> Status {
 
 mount is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- Mount middleware on a sub-path, hiding the old path from that middleware.
+- Mount a handler on a sub-path, hiding the old path from that handler.
 
 ## Installation
 
@@ -41,7 +43,7 @@ Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 ## [Documentation](http://docs.ironframework.io/mount)
 
 Along with the [online documentation](http://docs.ironframework.io/mount),
-you can build a local copy with `make doc`.
+you can build a local copy with `cargo doc`.
 
 ## [Examples](/examples)
 

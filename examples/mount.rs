@@ -1,27 +1,26 @@
 extern crate iron;
-extern crate http;
 extern crate mount;
 
 use std::io::net::ip::Ipv4Addr;
 
-use http::status;
-use iron::{Iron, Request, Response, Server, Chain, Status, Continue, Unwind, FromFn};
+use iron::status;
+use iron::{Iron, Request, Response, IronResult};
 use mount::Mount;
 
-fn intercept(_: &mut Request, res: &mut Response) -> Status {
-    let _ = res.serve(status::Ok, "Blocked!");
-    Unwind
+fn send_hello(req: &mut Request) -> IronResult<Response> {
+    println!("Running send_hello handler, URL path: {}", req.url.path);
+    Ok(Response::with(status::Ok, "Hello!"))
 }
 
-fn send_hello(_: &mut Request, res: &mut Response) -> Status {
-    let _ = res.serve(status::Ok, "Hello!");
-    Continue
+fn intercept(req: &mut Request) -> IronResult<Response> {
+    println!("Running intercept handler, URL path: {}", req.url.path);
+    Ok(Response::with(status::Ok, "Blocked!"))
 }
 
 fn main() {
-    let mut server: Server = Iron::new();
-    server.chain.link(Mount::new("/blocked/", FromFn::new(intercept)));
-    server.chain.link(FromFn::new(send_hello));
-    server.listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    let mut mount = Mount::new();
+    mount.mount("/blocked/", intercept).mount("/", send_hello);
+
+    Iron::new(mount).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
 

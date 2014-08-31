@@ -17,3 +17,6 @@ git = "https://github.com/iron/iron.git"
 
 git = "https://github.com/reem/rust-typemap.git"
 
+[dependencies.trie]
+
+git = "https://github.com/michaelsproul/rust-generic-trie.git"
