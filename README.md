@@ -72,9 +72,9 @@ git = "https://github.com/iron/iron.git"
 
 Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://docs.ironframework.io/)
+## [Documentation](http://ironframework.io/doc/iron)
 
-Along with the [online documentation](http://docs.ironframework.io/),
+Along with the [online documentation](http://ironframework.io/doc/iron),
 you can build a local copy with `cargo doc`.
 
 ### Building Middleware
