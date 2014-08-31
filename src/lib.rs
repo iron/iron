@@ -31,7 +31,7 @@ extern crate regex;
 #[cfg(test)] extern crate test;
 
 // Third party packages
-extern crate contenttype;
+extern crate content_type;
 extern crate http;
 extern crate typemap;
 extern crate plugin;

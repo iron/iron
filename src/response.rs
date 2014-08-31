@@ -12,7 +12,7 @@ use http::headers::content_type::MediaType;
 
 pub use http::server::response::ResponseWriter as HttpResponse;
 
-use contenttype::get_content_type;
+use content_type::get_content_type;
 
 /// The response representation given to `Middleware`
 pub struct Response {
