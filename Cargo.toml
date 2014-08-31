@@ -16,4 +16,3 @@ git = "https://github.com/iron/iron.git"
 [dependencies.http]
 
 git = "https://github.com/chris-morgan/rust-http.git"
-

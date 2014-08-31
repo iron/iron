@@ -8,8 +8,10 @@ extern crate iron;
 extern crate http;
 extern crate time;
 extern crate term;
+extern crate typemap;
 
-use iron::{Middleware, Request, Response, Status, Continue};
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response};
+use typemap::Assoc;
 use time::precise_time_ns;
 use term::{Terminal, WriterWrapper, stdout};
 
@@ -21,30 +23,36 @@ use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime,
 pub mod format;
 
 /// `Middleware` for logging request and response info to the terminal.
-#[deriving(Clone)]
 pub struct Logger {
-    entry_time: u64,
     format: Option<Format>
 }
 
+pub struct LoggerBeforeMiddleware;
+
 impl Logger {
-    /// Create a new `Logger` with the specified `format`. If a `None` is passed in, uses the default format:
+    /// Create a pair of `Logger` middlewares with the specified `format`. If a `None` is passed in, uses the default format:
     ///
-    /// ```
+    /// ```ignore
     /// {method} {uri} -> {status} ({response_time} ms)
     /// ```
-    pub fn new(format: Option<Format>) -> Logger {
-        Logger { entry_time: 0u64, format: format }
+    pub fn middlewares(format: Option<Format>) -> (LoggerBeforeMiddleware, Logger) {
+        (LoggerBeforeMiddleware, Logger { format: format })
     }
 }
 
-impl Middleware for Logger {
-    fn enter(&mut self, _: &mut Request, _: &mut Response) -> Status {
-        self.entry_time = precise_time_ns();
-        Continue
+impl Assoc<u64> for Logger {}
+
+impl BeforeMiddleware for LoggerBeforeMiddleware {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        req.extensions.insert::<Logger, u64>(precise_time_ns());
+        Ok(())
     }
-    fn exit(&mut self, req: &mut Request, res: &mut Response) -> Status {
-        let response_time_ms = (precise_time_ns() - self.entry_time) as f64 / 1000000.0;
+}
+
+impl AfterMiddleware for Logger {
+    fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+        let entry_time = *req.extensions.find::<Logger, u64>().unwrap();
+        let response_time_ms = (precise_time_ns() - entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or(Format::default());
 
         let render = |text: &FormatText| {
@@ -94,6 +102,6 @@ impl Middleware for Logger {
             }
             None => { println!("Logger could not open terminal"); }
         }
-        Continue
+        Ok(())
     }
 }
