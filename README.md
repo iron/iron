@@ -77,14 +77,6 @@ Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `ta
 Along with the [online documentation](http://ironframework.io/doc/iron),
 you can build a local copy with `cargo doc`.
 
-### Building Middleware
-
-Implement the `Middleware` trait to create your own, or pass a function with the following signature to `FromFn::new`:
-
-```rust
-fn handler(req: &mut Request, res: &mut Response) -> Status;
-```
-
 ## [More Examples](/examples)
 
 Check out the [examples](/examples) directory!
