@@ -35,6 +35,17 @@ impl Logger {
     /// ```ignore
     /// {method} {uri} -> {status} ({response_time} ms)
     /// ```
+    ///
+    /// While the returned value can be passed straight to `Chain::link`, consider making the logger `BeforeMiddleware`
+    /// the first in your chain and the logger `AfterMiddleware` the last by doing something like this:
+    ///
+    /// ```ignore
+    /// let mut chain = ChainBuilder::new(handler);
+    /// let (logger_before, logger_after) = Logger::middlewares(None);
+    /// chain.link_before(logger_before);
+    /// // link other middlewares here...
+    /// chain.link_after(logger_after);
+    /// ```
     pub fn middlewares(format: Option<Format>) -> (LoggerBeforeMiddleware, Logger) {
         (LoggerBeforeMiddleware, Logger { format: format })
     }
