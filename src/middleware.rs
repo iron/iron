@@ -317,6 +317,18 @@ impl Handler for Arc<Box<Handler + Send + Sync>> {
     }
 }
 
+impl BeforeMiddleware for fn(&mut Request) -> IronResult<()> {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        (*self)(req)
+    }
+}
+
+impl AfterMiddleware for fn(&mut Request, &mut Response) -> IronResult<()> {
+    fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+        (*self)(req, res)
+    }
+}
+
 mod helpers {
     use super::super::{Request, Response, IronResult};
     use super::{AfterMiddleware, BeforeMiddleware, Handler};
