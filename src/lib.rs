@@ -4,6 +4,8 @@
 
 //! Request logging middleware for Iron
 
+#[deny(warnings)]
+
 extern crate iron;
 extern crate http;
 extern crate time;
