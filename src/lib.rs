@@ -41,28 +41,29 @@ impl Logger {
     ///
     /// ```ignore
     /// let mut chain = ChainBuilder::new(handler);
-    /// let (logger_before, logger_after) = Logger::middlewares(None);
+    /// let (logger_before, logger_after) = Logger::new(None);
     /// chain.link_before(logger_before);
     /// // link other middlewares here...
     /// chain.link_after(logger_after);
     /// ```
-    pub fn middlewares(format: Option<Format>) -> (LoggerBeforeMiddleware, Logger) {
+    pub fn new(format: Option<Format>) -> (LoggerBeforeMiddleware, Logger) {
         (LoggerBeforeMiddleware, Logger { format: format })
     }
 }
 
-impl Assoc<u64> for Logger {}
+struct StartTime;
+impl Assoc<u64> for StartTime {}
 
 impl BeforeMiddleware for LoggerBeforeMiddleware {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<Logger, u64>(precise_time_ns());
+        req.extensions.insert::<StartTime, u64>(precise_time_ns());
         Ok(())
     }
 }
 
 impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
-        let entry_time = *req.extensions.find::<Logger, u64>().unwrap();
+        let entry_time = *req.extensions.find::<StartTime, u64>().unwrap();
         let response_time_ms = (precise_time_ns() - entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or(Format::default());
 

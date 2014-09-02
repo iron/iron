@@ -11,14 +11,19 @@ use logger::Logger;
 // Logger has a default formatting of the strings printed
 // to console.
 fn main() {
-    let mut chain = ChainBuilder::new(no_op);
-    let (logger_before, logger_after) = Logger::middlewares(None);
+    let (logger_before, logger_after) = Logger::new(None);
+
+    let mut chain = ChainBuilder::new(no_op_handler);
+
+    // Link logger_before as your first before middleware.
     chain.link_before(logger_before);
-    // You could chain.link these both at once, but you probably want to make
-    // these the first and last middlewares in your chain.
+
+    // Link logger_after as your *last* after middleware.
     chain.link_after(logger_after);
+
     Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
-    fn no_op(_: &mut Request) -> IronResult<Response> {
-        Ok(Response::with(iron::status::Ok, ""))
-    }
+}
+
+fn no_op_handler(_: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(iron::status::Ok, ""))
 }

@@ -23,10 +23,11 @@ fn main() {
             _ => vec![]
         }
     }
-    let mut chain = ChainBuilder::new(no_op);
-    chain.link(Logger::middlewares(Format::from_format_string(format_str, &mut vec![], &mut vec![FunctionAttrs(attrs)])));
+    let mut chain = ChainBuilder::new(no_op_handler);
+    chain.link(Logger::new(Format::from_format_string(format_str, &mut vec![], &mut vec![FunctionAttrs(attrs)])));
     Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
-    fn no_op(_: &mut Request) -> IronResult<Response> {
-        Ok(Response::with(iron::status::Ok, ""))
-    }
+}
+
+fn no_op_handler(_: &mut Request) -> IronResult<Response> {
+    Ok(Response::with(iron::status::Ok, ""))
 }
