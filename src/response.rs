@@ -67,28 +67,23 @@ impl Response {
         }
     }
 
+    /// Create a response from a file on disk.
+    ///
+    /// The status code is set to 200 OK and the content type is autodetected based on
+    /// the file extension.
+    pub fn from_file(path: &Path) -> IoResult<Response> {
+        let file = try!(File::open(path));
+        let mut response = Response::new();
+        response.status = Some(status::Ok);
+        response.body = Some(box file as Box<Reader + Send>);
+        response.headers.content_type = path.extension_str().and_then(get_content_type);
+        Ok(response)
+    }
+
     /// Write the `Status` and data to the `Response`.
     pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
         self.status = Some(status);
         self.body = Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>);
-    }
-
-    /// Serve the file located at `path`.
-    ///
-    /// This usually means a request has been handled, and `Middleware`
-    /// may want to `Unwind` after a file is served. If the status should be
-    /// anything other than `200`, `Middleware` must set it, including in
-    /// the case of an `Err`.
-    ///
-    /// `serve_file` will error if the file does not exist, the process
-    /// does not have correct permissions, or it has other issues in reading
-    /// from the file. `Middleware` should handle this gracefully.
-    pub fn serve_file(&mut self, path: &Path) -> IoResult<()> {
-        let file = try!(File::open(path));
-        self.headers.content_type = path.extension_str().and_then(get_content_type);
-        self.body = Some(box file as Box<Reader + Send>);
-        self.status = Some(status::Ok);
-        Ok(())
     }
 
     // `write_back` is used to put all the data added to `self`
