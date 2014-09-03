@@ -29,8 +29,6 @@ pub struct Logger {
     format: Option<Format>
 }
 
-pub struct LoggerBeforeMiddleware;
-
 impl Logger {
     /// Create a pair of `Logger` middlewares with the specified `format`. If a `None` is passed in, uses the default format:
     ///
@@ -48,15 +46,15 @@ impl Logger {
     /// // link other middlewares here...
     /// chain.link_after(logger_after);
     /// ```
-    pub fn new(format: Option<Format>) -> (LoggerBeforeMiddleware, Logger) {
-        (LoggerBeforeMiddleware, Logger { format: format })
+    pub fn new(format: Option<Format>) -> (Logger, Logger) {
+        (Logger { format: format.clone() }, Logger { format: format })
     }
 }
 
 struct StartTime;
 impl Assoc<u64> for StartTime {}
 
-impl BeforeMiddleware for LoggerBeforeMiddleware {
+impl BeforeMiddleware for Logger {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<StartTime, u64>(precise_time_ns());
         Ok(())
