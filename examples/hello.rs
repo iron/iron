@@ -6,9 +6,7 @@ use iron::{Iron, Request, Response, IronResult};
 use iron::status;
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    let mut res = Response::new();
-    let _ = res.serve(status::Ok, "Hello, world!");
-    Ok(res)
+    Ok(Response::with(status::Ok, "Hello world!"))
 }
 
 fn main() {

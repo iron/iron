@@ -80,12 +80,6 @@ impl Response {
         Ok(response)
     }
 
-    /// Write the `Status` and data to the `Response`.
-    pub fn serve<S: BytesContainer>(&mut self, status: Status, body: S) {
-        self.status = Some(status);
-        self.body = Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>);
-    }
-
     // `write_back` is used to put all the data added to `self`
     // back onto an `HttpResponse` so that it is sent back to the
     // client.
