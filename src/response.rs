@@ -25,7 +25,7 @@ pub struct Response {
     pub body: Option<Box<Reader + Send>>,
 
     /// The headers of the response.
-    pub headers: Box<HeaderCollection>,
+    pub headers: HeaderCollection,
 
     /// The response status-code.
     pub status: Option<Status>,
@@ -39,7 +39,7 @@ impl Response {
     /// Construct a blank Response
     pub fn new() -> Response {
         Response {
-            headers: box HeaderCollection::new(),
+            headers: HeaderCollection::new(),
             status: None, // Start with no response code.
             body: None, // Start with no body.
             extensions: TypeMap::new()
@@ -50,7 +50,7 @@ impl Response {
     pub fn status(status: status::Status) -> Response {
         Response {
             body: None,
-            headers: box HeaderCollection::new(),
+            headers: HeaderCollection::new(),
             status: Some(status),
             extensions: TypeMap::new()
         }
@@ -61,7 +61,7 @@ impl Response {
     pub fn with<B: BytesContainer>(status: status::Status, body: B) -> Response {
         Response {
             body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
-            headers: box HeaderCollection::new(),
+            headers: HeaderCollection::new(),
             status: Some(status),
             extensions: TypeMap::new()
         }
