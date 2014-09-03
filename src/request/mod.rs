@@ -28,7 +28,7 @@ pub struct Request {
     pub remote_addr: Option<SocketAddr>,
 
     /// The request headers.
-    pub headers: Box<HeaderCollection>,
+    pub headers: HeaderCollection,
 
     /// The request body.
     pub body: String,
