@@ -56,6 +56,9 @@ pub use typemap::TypeMap;
 pub use http::status;
 pub use http::method;
 
+// Headers
+pub use http::headers;
+
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
 
