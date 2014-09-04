@@ -6,7 +6,8 @@
 #![deny(missing_doc)]
 #![deny(warnings)]
 
-#![feature(macro_rules, phase, globs)]
+#![feature(macro_rules, phase, globs, unboxed_closure_sugar,
+           unboxed_closures, overloaded_calls)]
 //! The main crate for the Iron library.
 //!
 //! Iron is a high level web framework built in and for Rust.
