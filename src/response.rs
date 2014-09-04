@@ -2,6 +2,7 @@
 
 use std::io::{IoResult, File, MemReader};
 use std::path::BytesContainer;
+use std::fmt::{Show, Formatter, FormatError};
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -120,6 +121,17 @@ impl Response {
                 // Something is really, really wrong.
                 .map_err(|e| error!("Error writing error message: {}", e));
         });
+    }
+}
+
+impl Show for Response {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FormatError> {
+        try!(writeln!(f, "Response {{"));
+
+        try!(writeln!(f, "    status: {}", self.status));
+
+        try!(write!(f, "}}"));
+        Ok(())
     }
 }
 
