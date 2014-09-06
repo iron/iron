@@ -5,11 +5,11 @@ use std::io::net::ip::{SocketAddr, IpAddr};
 use std::sync::Arc;
 
 use http::server as http;
-use super::{Request, Handler};
-use super::status;
+use {Request, Handler};
+use status;
 
-use super::response::HttpResponse;
-use super::request::HttpRequest;
+use response::HttpResponse;
+use request::HttpRequest;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
