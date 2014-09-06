@@ -63,7 +63,7 @@
 use std::sync::Arc;
 use error::Error;
 
-use super::{Request, Response, IronResult, status};
+use {Request, Response, IronResult, status};
 
 /// `Handler`s are responsible for handling requests by creating Responses from Requests.
 ///

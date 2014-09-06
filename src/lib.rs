@@ -36,7 +36,7 @@ extern crate http;
 extern crate typemap;
 extern crate plugin;
 extern crate error;
-extern crate rust_url = "url";
+extern crate "url" as rust_url;
 
 // Request + Response
 pub use request::{Request, Url};
