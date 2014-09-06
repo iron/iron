@@ -7,7 +7,7 @@ use rust_url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt::{Show, Formatter, FormatError};
 
 /// HTTP/HTTPS URL type for Iron.
-#[deriving(PartialEq, Eq, Clone)]
+#[deriving(PartialEq, Eq, Clone, Encodable)]
 pub struct Url {
     /// The lower-cased scheme of the URL, typically "http" or "https".
     pub scheme: String,
