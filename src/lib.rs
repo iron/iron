@@ -25,8 +25,6 @@
 //! ```
 
 // Stdlib dependencies
-extern crate regex;
-#[phase(plugin)] extern crate regex_macros;
 #[phase(plugin, link)] extern crate log;
 #[cfg(test)] extern crate test;
 
