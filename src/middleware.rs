@@ -317,6 +317,18 @@ impl Handler for Arc<Box<Handler + Send + Sync>> {
     }
 }
 
+impl<'a> Handler for Box<Fn<(&'a mut Request,), IronResult<Response>> + Send + Sync> {
+    fn call(&self, req: &mut Request) -> IronResult<Response> {
+        use std::mem;
+
+        // FIXME: This transmute actually does nothing, but is needed
+        // because of the lack of higher kinded lifetimes.
+        //
+        // It can be removed when they are implemented.
+        (**self).call(( unsafe { mem::transmute(req) },))
+    }
+}
+
 impl BeforeMiddleware for fn(&mut Request) -> IronResult<()> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         (*self)(req)
