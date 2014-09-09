@@ -23,7 +23,7 @@ impl Logger {
         Logger { mode: mode }
     }
 
-    fn log(&self, req: &Request, res: Result<&Response, &Box<Error + Send>>, time: u64) {
+    fn log(&self, req: &Request, res: Result<&Response, &Box<Error>>, time: u64) {
         match self.mode {
             Silent => {},
             Tiny => println!("Req: {}\nRes: {}\nTook: {}", req, res, time),
