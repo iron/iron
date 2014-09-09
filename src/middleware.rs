@@ -143,20 +143,20 @@ pub trait AfterMiddleware: Send + Sync {
     }
 }
 
-/// AroundMiddleware are used to wrap and replace the `Handler` in a Chain.
+/// AroundMiddleware are used to wrap and replace the `Handler` in a `Chain`.
 ///
-/// AroundMiddleware must themselves be `Handler`s, and can integrate an existing
-/// `Handler` through the `with_handler` method, which is called once on insertion
-/// into a Chain.
-pub trait AroundMiddleware: Handler {
-    /// Incorporate another `Handler` into this `AroundMiddleware`.
+/// AroundMiddleware produce `Handler`s through their `around` method, which is
+/// called once on insertion into a Chain or can be called manually outside of a
+/// `Chain`.
+pub trait AroundMiddleware {
+    /// Produce a `Handler` from this `AroundMiddleware` given another `Handler`.
     ///
     /// Usually this means wrapping the handler and editing the `Request` on the
     /// way in and the `Response` on the way out.
     ///
     /// This is called only once, when an `AroundMiddleware` is added to a `Chain`
     /// using `Chain::around`, it is passed the `Chain`'s current `Handler`.
-    fn with_handler(&mut self, handler: Box<Handler + Send + Sync>);
+    fn around<H>(mut self, handler: H) -> Box<Handler + Send + Sync> where H: Handler;
 }
 
 /// Chain's hold `BeforeMiddleware`, a `Handler`, and `AfterMiddleware` and are responsible
@@ -233,12 +233,10 @@ impl Chain for ChainBuilder {
         self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
     }
 
-    fn around<A>(&mut self, mut around: A) where A: AroundMiddleware {
-        use std::mem;
-
-        let old = mem::replace(&mut self.handler, box Nop as Box<Handler + Send + Sync>);
-        around.with_handler(old);
-        self.handler = box around as Box<Handler + Send + Sync>;
+    fn around<A>(&mut self, around: A) where A: AroundMiddleware {
+        use rmap::replace_map;
+        replace_map(&mut self.handler,
+                    |: o: Box<Handler + Send + Sync>| { around.around(o) });
     }
 }
 
@@ -278,18 +276,6 @@ impl Handler for ChainBuilder {
 impl Handler for fn(&mut Request) -> IronResult<Response> {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
         (*self)(req)
-    }
-
-    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
-        (Response::status(status::InternalServerError), Err(err))
-    }
-}
-
-pub struct Nop;
-
-impl Handler for Nop {
-    fn call(&self, _: &mut Request) -> IronResult<Response> {
-        Ok(Response::new())
     }
 
     fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {

@@ -37,3 +37,7 @@ git = "https://github.com/reem/rust-plugin.git"
 
 git = "https://github.com/reem/rust-error.git"
 
+[dependencies.replace-map]
+
+git = "https://github.com/reem/rust-replace-map.git"
+

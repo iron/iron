@@ -6,7 +6,7 @@
 #![deny(missing_doc)]
 #![deny(warnings)]
 
-#![feature(macro_rules, phase, globs)]
+#![feature(macro_rules, phase, globs, unboxed_closures)]
 //! The main crate for the Iron library.
 //!
 //! Iron is a high level web framework built in and for Rust.
@@ -35,6 +35,7 @@ extern crate typemap;
 extern crate plugin;
 extern crate error;
 extern crate "url" as rust_url;
+extern crate "replace-map" as rmap;
 
 // Request + Response
 pub use request::{Request, Url};
