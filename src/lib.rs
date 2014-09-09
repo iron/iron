@@ -27,6 +27,7 @@
 // Stdlib dependencies
 #[phase(plugin, link)] extern crate log;
 #[cfg(test)] extern crate test;
+extern crate serialize;
 
 // Third party packages
 extern crate content_type;
