@@ -64,7 +64,7 @@ pub use plugin::GetCached as Plugin;
 pub use error::{Error, ErrorRefExt};
 
 // Return type of many methods
-pub type IronResult<T> = Result<T, Box<Error + Send>>;
+pub type IronResult<T> = Result<T, Box<Error>>;
 
 // Internal modules
 mod request;
