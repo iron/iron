@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use http::method::Method;
 use http::method;
-use iron::{Request, Response, Handler, IronResult, Error};
+use iron::{Request, Response, Handler, IronResult, Error, IronError};
 use iron::status;
 use typemap::Assoc;
 use recognizer::Router as Recognizer;
@@ -106,14 +106,14 @@ impl Handler for Router {
         let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
             Some(matched) => matched,
             // No match.
-            None => return Err(box NoRoute as Box<Error + Send>)
+            None => return Err(NoRoute.abstract())
         };
 
         req.extensions.insert::<Router, Params>(matched.params);
         matched.handler.call(req)
     }
 
-    fn catch(&self, req: &mut Request, err: Box<Error + Send>) -> (Response, IronResult<()>) {
+    fn catch(&self, req: &mut Request, err: IronError) -> (Response, IronResult<()>) {
         match self.error {
             Some(ref error_handler) => error_handler.catch(req, err),
             // Error that is not caught by anything!
