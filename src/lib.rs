@@ -8,7 +8,7 @@
 
 extern crate http;
 extern crate iron;
-extern crate recognizer = "route-recognizer";
+extern crate "route-recognizer" as recognizer;
 extern crate typemap;
 
 #[cfg(test)] extern crate test;
