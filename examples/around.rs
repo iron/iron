@@ -1,7 +1,7 @@
 extern crate iron;
 extern crate time;
 
-use iron::{Request, Response, IronResult, Handler, AroundMiddleware, Iron, Error};
+use iron::{Request, Response, IronResult, Handler, AroundMiddleware, Iron, IronError};
 use iron::status;
 
 use std::io::net::ip::Ipv4Addr;
@@ -23,7 +23,7 @@ impl Logger {
         Logger { mode: mode }
     }
 
-    fn log(&self, req: &Request, res: Result<&Response, &Box<Error>>, time: u64) {
+    fn log(&self, req: &Request, res: Result<&Response, &IronError>, time: u64) {
         match self.mode {
             Silent => {},
             Tiny => println!("Req: {}\nRes: {}\nTook: {}", req, res, time),
