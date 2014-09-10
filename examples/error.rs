@@ -6,9 +6,9 @@ extern crate http;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Handler, BeforeMiddleware, Error,
+use iron::{Iron, Handler, BeforeMiddleware, IronError,
            Request, Response, ChainBuilder, Chain,
-           IronResult};
+           IronResult, Error};
 use iron::status;
 
 struct ErrorHandler;
@@ -19,7 +19,7 @@ impl Handler for ErrorHandler {
         Ok(Response::new())
     }
 
-    fn catch(&self, _: &mut Request, err: Box<Error>) -> (Response, IronResult<()>) {
+    fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
         (Response::with(status::InternalServerError, "Internal Server Error."), Err(err))
     }
 
@@ -27,7 +27,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box "Error".to_string() as Box<Error>)
+        Err("Error".to_string().abstract())
     }
 }
 
