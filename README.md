@@ -6,19 +6,27 @@ persistent [![Build Status](https://secure.travis-ci.org/iron/persistent.png?bra
 ## Example
 
 ```rust
+pub struct HitCounter;
+impl Assoc<uint> for HitCounter {}
+
+fn serve_hits(req: &mut Request) -> IronResult<Response> {
+    let mutex = req.get::<Write<HitCounter, uint>>().unwrap();
+    let mut count = mutex.lock();
+
+    *count += 1;
+    Ok(Response::with(status::Ok, format!("Hits: {}", *count)))
+}
+
+fn main() {
+    let mut chain = ChainBuilder::new(serve_hits);
+    chain.link(Write::<HitCounter, uint>::both(0u));
+    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+}
+
 fn main() {
     let mut server: Server = Iron::new();
     server.chain.link(FromFn::new(counter)); // Add persistent counter to the server's stack
     server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
-}
-
-pub struct HitCounter;
-
-fn counter(req: &mut Request, _: &mut Response) -> Status {
-    let mut count = req.alloy.find::<Persistent<uint, HitCounter>>().unwrap().data.write();
-    *count += 1;
-    println!("{} hits!", *count);
-    Continue
 }
 ```
 
