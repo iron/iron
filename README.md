@@ -22,12 +22,6 @@ fn main() {
     chain.link(Write::<HitCounter, uint>::both(0u));
     Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 }
-
-fn main() {
-    let mut server: Server = Iron::new();
-    server.chain.link(FromFn::new(counter)); // Add persistent counter to the server's stack
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
-}
 ```
 
 ## Overview
