@@ -1,13 +1,6 @@
 language: rust
-os:
-    - linux
 env:
-    matrix:
-        - LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/rustlib/x86_64-unknown-linux-gnu/lib/
     global:
         secure: DUE2yG7/ASacYARIs7nysUAUhK86AqwE/PdQ3j+D5dqzxs3IOMSOcc7PA1r2w3FkXd52rENCYqKz2iReniJn4fG5S3Q+NbcfaYkhS/6P1y0sQB8yIIVeBRf/Bo2bR2P5TRh+piYWDmqYLUvsQ0+DpQ78MRA6HSxz7gCKpkZS4Y4=
-script:
-    - cargo build --verbose
-    - cargo test --verbose
-    - cargo doc
 after_success: 'curl https://raw.githubusercontent.com/iron-bot/build-doc/master/build-doc.sh | sh '
+
