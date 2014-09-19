@@ -321,7 +321,7 @@ mod helpers {
     pub fn run_befores(req: &mut Request, befores: &[Box<BeforeMiddleware>], err: Option<IronError>) -> IronResult<()> {
         match err {
             Some(mut e) => {
-                for (i, before) in befores.iter().enumerate() {
+                for before in befores.iter() {
                     match before.catch(req, e) {
                         Ok(_) => return run_befores(req, befores, None),
                         Err(new) => e = new
@@ -346,7 +346,7 @@ mod helpers {
                   afters: &[Box<AfterMiddleware>]) -> IronResult<Response> {
         match err {
             Some(mut e) => {
-                for (i, after) in afters.iter().enumerate() {
+                for after in afters.iter() {
                     match after.catch(req, &mut res, e) {
                         Ok(_) => return run_afters(req, res, None, afters),
                         Err(new) => e = new
