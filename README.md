@@ -1,47 +1,39 @@
-router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router)
+Router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router)
 ====
 
-> Routing middleware for the [Iron](https://github.com/iron/iron) web framework.
+> Routing handler for the [Iron](https://github.com/iron/iron) web framework.
 
 Router is a fast, convenient, and flexible routing middleware for Iron. It
 allows complex glob patterns and named url parameters and also allows handlers
-to be any Middleware - including Chain, which provides enormous amounts of
-flexibility for handling and dispatching requests.
+to be any Handler, including all Chains.
 
 ## Example
 
 ```rust
 fn main() {
     let mut router = Router::new();
-    router.route( // Setup our route.
-        Get,
-        "/:class/:id".to_string(),
-        vec!["class".to_string(), "id".to_string()],
-        FromFn::new(echo_to_term));
+    router.get("/", handler);
+    router.get("/:query", handler);
 
-    let mut server: Server = Iron::new();
-    server.chain.link(router); // Add middleware to the server's stack
-    server.listen(::std::io::net::ip::Ipv4Addr(127, 0, 0, 1), 3000);
-}
+    Iron::new(router).listen(Ipv4Addr(127, 0, 0, 1), 3000);
 
-fn echo_to_term(req: &mut Request, _: &mut Response) -> Status {
-    let query = req.alloy.find::<Params>().unwrap();
-    println!("Class: {}\t id: {}",
-             query.get("class").unwrap(), query.get("id").unwrap());
-    Unwind
+    fn handler(req: &mut Request) -> IronResult<Response> {
+        let ref query = req.extensions.find::<Router, Params>().unwrap().find("query").unwrap_or("/");
+        Ok(Response::with(status::Ok, *query))
+    }
 }
 ```
 
 ## Overview
 
-router is a part of Iron's [core bundle](https://github.com/iron/core).
+Router is a part of Iron's [core bundle](https://github.com/iron/core).
 
 - Route client requests based on their paths
 - Parse parameters and provide them to other middleware/handlers
 
 ## Installation
 
-If you're using a `Cargo.toml` to manage dependencies, just add router to the toml:
+If you're using cargo, just add router to your `Cargo.toml`.
 
 ```toml
 [dependencies.router]
@@ -60,7 +52,7 @@ you can build a local copy with `make doc`.
 
 ## Get Help
 
-One of us ([@reem](https://github.com/reem/), [@zzmp](https://github.com/zzmp/),
-[@theptrk](https://github.com/theptrk/), [@mcreinhard](https://github.com/mcreinhard))
-is usually on `#iron` on the mozilla irc. Come say hi and ask any questions you might have.
+One of us is usually on `#iron` on the mozilla irc.
+Come say hi and ask any questions you might have.
 We are also usually on `#rust` and `#rust-webdev`.
+
