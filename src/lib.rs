@@ -50,7 +50,7 @@ pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
 pub use iron::Iron;
 
 // Extensions
-pub use typemap::TypeMap;
+pub use typemap::{mod, TypeMap};
 
 // Status codes and Methods.
 pub use http::status;
