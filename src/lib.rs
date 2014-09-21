@@ -32,7 +32,7 @@ extern crate serialize;
 // Third party packages
 extern crate content_type;
 extern crate http;
-extern crate typemap;
+extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate error;
 extern crate "url" as rust_url;
@@ -68,6 +68,11 @@ pub use error::{Error, ErrorRefExt};
 // Return type of many methods
 pub type IronError = Box<Error>;
 pub type IronResult<T> = Result<T, IronError>;
+
+/// typemap crate re-exports
+pub mod typemap {
+    pub use tmap::{TypeMap, Assoc};
+}
 
 // Internal modules
 mod request;
