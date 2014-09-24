@@ -89,7 +89,9 @@ impl<H: Handler> http::Server for IronListener<H> {
         };
 
         // Dispatch the request
-        let res = self.handler.call(&mut req);
+        let res = self.handler.call(&mut req).map_err(|e| {
+            self.handler.catch(&mut req, e)
+        });
 
         match res {
             // Write the response back to http_res
