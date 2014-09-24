@@ -85,9 +85,9 @@ impl<P, D: Send + Sync> Clone for Write<P, D> {
     }
 }
 
-impl<P, D> Assoc<Arc<RWLock<D>>> for State<P, D> where P: Assoc<D> {}
-impl<P, D> Assoc<Arc<D>> for Read<P, D> where P: Assoc<D> {}
-impl<P, D> Assoc<Arc<Mutex<D>>> for Write<P, D> where P: Assoc<D> {}
+impl<P, D:'static> Assoc<Arc<RWLock<D>>> for State<P, D> where P: Assoc<D> {}
+impl<P, D:'static> Assoc<Arc<D>> for Read<P, D> where P: Assoc<D> {}
+impl<P, D:'static> Assoc<Arc<Mutex<D>>> for Write<P, D> where P: Assoc<D> {}
 
 impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for State<P, D>
     where D: Send + Sync,
@@ -211,4 +211,3 @@ impl<P, D> Write<P, D> where D: Send + Sync, P: Assoc<D> {
         Write { data: Arc::new(Mutex::new(start)) }
     }
 }
-
