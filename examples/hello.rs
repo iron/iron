@@ -1,4 +1,3 @@
-extern crate http;
 extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
