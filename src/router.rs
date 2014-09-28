@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::hashmap::{Occupied, Vacant};
 use http::method::Method;
 use http::method;
 use iron::{Request, Response, Handler, IronResult, Error, IronError};
@@ -46,9 +47,12 @@ impl Router {
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
     pub fn route<'a, H: Handler, S: Str>(&mut self, method: Method, glob: S, handler: H) -> &mut Router {
-        self.routers
-            .find_or_insert_with(method, |_| Recognizer::new())
-            .add(glob.as_slice(), box handler as Box<Handler + Send + Sync>);
+        match self.routers
+            .entry(method) {
+                Vacant(entry)   => entry.set(Recognizer::new()),
+                Occupied(entry) => entry.into_mut()
+            }
+        .add(glob.as_slice(), box handler as Box<Handler + Send + Sync>);
         self
     }
 
