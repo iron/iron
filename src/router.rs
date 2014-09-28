@@ -47,12 +47,10 @@ impl Router {
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
     pub fn route<'a, H: Handler, S: Str>(&mut self, method: Method, glob: S, handler: H) -> &mut Router {
-        match self.routers
-            .entry(method) {
-                Vacant(entry)   => entry.set(Recognizer::new()),
-                Occupied(entry) => entry.into_mut()
-            }
-        .add(glob.as_slice(), box handler as Box<Handler + Send + Sync>);
+        match self.routers.entry(method) {
+            Vacant(entry)   => entry.set(Recognizer::new()),
+            Occupied(entry) => entry.into_mut()
+        }.add(glob.as_slice(), box handler as Box<Handler + Send + Sync>);
         self
     }
 
