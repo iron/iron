@@ -235,7 +235,7 @@ impl Chain for ChainBuilder {
     fn around<A>(&mut self, around: A) where A: AroundMiddleware {
         use rmap::replace_map;
         replace_map(&mut self.handler,
-                    |: o: Box<Handler + Send + Sync>| { around.around(o) });
+                    move |: o: Box<Handler + Send + Sync>| { around.around(o) });
     }
 }
 
