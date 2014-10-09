@@ -284,21 +284,21 @@ impl Handler for fn(&mut Request) -> IronResult<Response> {
 
 impl Handler for Box<Handler + Send + Sync> {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
-        self.call(req)
+        (**self).call(req)
     }
 
     fn catch(&self, req: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        self.catch(req, err)
+        (**self).catch(req, err)
     }
 }
 
 impl Handler for Arc<Box<Handler + Send + Sync>> {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
-        self.call(req)
+        (***self).call(req)
     }
 
     fn catch(&self, req: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        self.catch(req, err)
+        (***self).catch(req, err)
     }
 }
 
