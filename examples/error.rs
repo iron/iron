@@ -27,7 +27,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err("Error".to_string().abstract())
+        Err("Error".to_string().erase())
     }
 }
 
