@@ -43,9 +43,9 @@ git = "https://github.com/iron/router.git"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://docs.ironframework.io/router)
+## [Documentation](http://ironframework.io/doc/router)
 
-Along with the [online documentation](http://docs.ironframework.io/router),
+Along with the [online documentation](http://ironframework.io/doc/router),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)
