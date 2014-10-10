@@ -80,7 +80,7 @@ impl Handler for Mount {
             // Search the Trie for the nearest most specific match.
             match self.inner.find_ancestor(key) {
                 Some(matched) => matched,
-                None => return Err(NoMatch.abstract())
+                None => return Err(NoMatch.erase())
             }
         };
 
