@@ -108,7 +108,7 @@ impl Handler for Router {
         let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
             Some(matched) => matched,
             // No match.
-            None => return Err(NoRoute.abstract())
+            None => return Err(NoRoute.erase())
         };
 
         req.extensions.insert::<Router, Params>(matched.params);
