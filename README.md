@@ -43,9 +43,9 @@ git = "https://github.com/iron/persistent.git"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://docs.ironframework.io/persistent)
+## [Documentation](http://ironframework.io/doc/persistent)
 
-Along with the [online documentation](http://docs.ironframework.io/persistent),
+Along with the [online documentation](http://ironframework.io/doc/persistent),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)
