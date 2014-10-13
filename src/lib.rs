@@ -79,7 +79,7 @@ impl<P, D: Send + Sync> Clone for State<P, D> {
     }
 }
 
-impl<P, D: Send + Sync> Clone for Write<P, D> {
+impl<P, D: Send> Clone for Write<P, D> {
     fn clone(&self) -> Write<P, D> {
         Write { data: self.data.clone() }
     }
@@ -108,7 +108,7 @@ impl<P, D> PluginFor<Request, Arc<D>> for Read<P, D>
 }
 
 impl<P, D> PluginFor<Request, Arc<Mutex<D>>> for Write<P, D>
-    where D: Send + Sync,
+    where D: Send,
           P: Assoc<D> {
     fn eval(req: &Request, _: Phantom<Write<P, D>>) -> Option<Arc<Mutex<D>>> {
         req.extensions.find::<Write<P, D>, Arc<Mutex<D>>>()
@@ -144,14 +144,14 @@ impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Read<P, D> {
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Write<P, D> {
+impl<D: Send, P: Assoc<D>> BeforeMiddleware for Write<P, D> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Write<P, D> {
+impl<D: Send, P: Assoc<D>> AfterMiddleware for Write<P, D> {
     fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
         res.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
         Ok(())
@@ -194,7 +194,7 @@ impl<P, D> Read<P, D> where D: Send + Sync, P: Assoc<D> {
     }
 }
 
-impl<P, D> Write<P, D> where D: Send + Sync, P: Assoc<D> {
+impl<P, D> Write<P, D> where D: Send, P: Assoc<D> {
     /// Construct a new pair of `Write` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
