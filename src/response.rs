@@ -10,6 +10,8 @@ use super::status;
 use super::status::Status;
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
+use Url;
+use rust_url;
 
 pub use http::server::response::ResponseWriter as HttpResponse;
 
@@ -63,6 +65,18 @@ impl Response {
         Response {
             body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
             headers: HeaderCollection::new(),
+            status: Some(status),
+            extensions: TypeMap::new()
+        }
+    }
+
+    /// Create a new Response with the `location` header set to the specified url.
+    pub fn redirect(status: status::Status, url: Url) -> Response {
+        let mut headers = HeaderCollection::new();
+        headers.location = Some(rust_url::Url::parse(url.to_string().as_slice()).unwrap());
+        Response {
+            body: None,
+            headers: headers,
             status: Some(status),
             extensions: TypeMap::new()
         }
