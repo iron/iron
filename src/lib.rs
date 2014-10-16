@@ -69,14 +69,16 @@ pub use error::{Error, ErrorRefExt};
 pub type IronError = Box<Error>;
 pub type IronResult<T> = Result<T, IronError>;
 
-/// typemap crate re-exports
+/// Re-exports from the TypeMap crate.
 pub mod typemap {
     pub use tmap::{TypeMap, Assoc};
 }
+
+// Publicized to show the documentation
+pub mod middleware;
 
 // Internal modules
 mod request;
 mod response;
 mod iron;
-mod middleware;
 
