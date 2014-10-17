@@ -1,7 +1,7 @@
 //! HTTP/HTTPS URL type for Iron.
 
 use rust_url;
-use rust_url::{Host, RelativeSchemeData,};
+use rust_url::{Host, RelativeSchemeData, UrlRelativeSchemeData};
 use rust_url::{whatwg_scheme_type_mapper, RelativeScheme};
 use rust_url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt::{Show, Formatter, FormatError};
@@ -115,6 +115,27 @@ impl Url {
             _ => Err(format!("Not a relative scheme: `{}`", raw_url.scheme))
         }
     }
+
+    /// Create a `rust-url` `Url` from a `Url`.
+    pub fn into_generic_url(self) -> rust_url::Url {
+        let default_port = whatwg_scheme_type_mapper(self.scheme[]).default_port();
+
+        rust_url::Url {
+            scheme: self.scheme,
+            scheme_data: RelativeSchemeData(
+                UrlRelativeSchemeData {
+                    username: self.username.unwrap_or("".to_string()),
+                    password: self.password,
+                    host: self.host,
+                    port: Some(self.port),
+                    default_port: default_port,
+                    path: self.path
+                }
+            ),
+            query: self.query,
+            fragment: self.fragment
+        }
+    }
 }
 
 impl Show for Url {
@@ -206,5 +227,19 @@ mod test {
     fn test_formatting() {
         assert_eq!(Url::parse("http://michael@example.com/path/?q=wow").unwrap().to_string(),
                     "http://michael@example.com:80/path/?q=wow".to_string());
+    }
+
+    #[test]
+    fn test_conversion() {
+        let url_str = "https://user:password@iron.com:8080/path?q=wow#fragment";
+        let url = Url::parse(url_str).unwrap();
+
+        // Convert to a generic URL and check fidelity.
+        let raw_url = url.clone().into_generic_url();
+        assert_eq!(::rust_url::Url::parse(url_str).unwrap(), raw_url);
+
+        // Convert back to an Iron URL and check fidelity.
+        let new_url = Url::from_generic_url(raw_url).unwrap();
+        assert_eq!(url, new_url);
     }
 }
