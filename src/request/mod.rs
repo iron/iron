@@ -31,7 +31,7 @@ pub struct Request {
     pub headers: HeaderCollection,
 
     /// The request body.
-    pub body: String,
+    pub body: Vec<u8>,
 
     /// The request method.
     pub method: Method,
