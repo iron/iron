@@ -71,7 +71,7 @@ impl Format {
                                     }
                                 }
                             }
-                            Some(c) => { name.push_char(c); }
+                            Some(c) => { name.push(c); }
                         }
                     }
                 }
@@ -112,14 +112,14 @@ impl Format {
                                         name = String::from_str("");
                                         break;
                                     }
-                                    Some(c) => { name.push_char(c); }
+                                    Some(c) => { name.push(c); }
                                 }
                             }
                         }
                         _ => { return None; }
                     }
                 }
-                Some(c) => { string.push_char(c); }
+                Some(c) => { string.push(c); }
             }
         }
     }
