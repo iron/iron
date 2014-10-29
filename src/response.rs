@@ -1,16 +1,18 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{IoResult, File, MemReader};
+use std::io::{File, MemReader};
 use std::path::BytesContainer;
 use std::fmt::{Show, Formatter, FormatError};
 
 use typemap::TypeMap;
 use plugin::Extensible;
-use super::status;
-use super::status::Status;
+
 use http::headers::response::HeaderCollection;
 use http::headers::content_type::MediaType;
-use Url;
+
+use errors::FileError;
+use status::{mod, Status};
+use {Url};
 
 pub use http::server::response::ResponseWriter as HttpResponse;
 
@@ -85,8 +87,8 @@ impl Response {
     ///
     /// The status code is set to 200 OK and the content type is autodetected based on
     /// the file extension.
-    pub fn from_file(path: &Path) -> IoResult<Response> {
-        let file = try!(File::open(path));
+    pub fn from_file(path: &Path) -> Result<Response, FileError> {
+        let file = try!(File::open(path).map_err(FileError::new));
         let mut response = Response::new();
         response.status = Some(status::Ok);
         response.body = Some(box file as Box<Reader + Send>);
