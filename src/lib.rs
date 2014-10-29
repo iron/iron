@@ -77,6 +77,9 @@ pub mod typemap {
 // Publicized to show the documentation
 pub mod middleware;
 
+// Common Errors
+pub mod errors;
+
 // Internal modules
 mod request;
 mod response;
