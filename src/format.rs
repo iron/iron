@@ -4,6 +4,9 @@ use http::status::NotFound;
 
 use std::default::Default;
 use std::from_str::FromStr;
+use std::str::Chars;
+use std::vec::MoveItems;
+use std::iter::Peekable;
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
@@ -32,7 +35,7 @@ impl Default for Format {
             }
         }
 
-        Format::new("@[bold]{method}@@ {uri} @[bold]->@@ @[C]{status}@@ ({response_time})",
+        Format::new("@[bold]{method}@ {uri} @[bold]->@ @[C]{status}@ ({response-time})",
            vec![FunctionColor(status_color)], vec![]).unwrap()
     }
 }
@@ -48,126 +51,234 @@ impl Format {
         attrses.reverse();
         colors.reverse();
 
-        // The buffer we will be filling with formatting options.
-        let mut result = vec![];
+        let mut parser = FormatParser::new(s.chars().peekable(), colors.into_iter(), attrses.into_iter());
 
-        // String buffers will we use throughout to build relevant Strings.
-        let mut string = "".into_string();
-        let mut name = "".into_string();
+        let mut results = Vec::new();
 
-        // Attributes we will set and push into result.
-        let mut color = ConstantColor(None);
-        let mut attrs = ConstantAttrs(vec![]);
+        for unit in parser {
+            match unit {
+                Some(unit) => results.push(unit),
+                None => return None
+            }
+        }
 
-        // The characters of the input string, which we are parsing.
-        let mut chars = s.chars();
+        Some(Format(results))
+    }
+}
 
-        loop {
-            match chars.next() {
-                None => {
-                    // No more chars, push our final format unit.
-                    result.push(FormatUnit { text: Str(string), color: color, attrs: attrs.clone() });
+struct FormatParser<'a> {
+    // The characters of the format string.
+    chars: Peekable<char, Chars<'a>>,
 
-                    // Done.
-                    return Some(Format(result));
-                },
+    // Passed-in FormatColors
+    colors: MoveItems<FormatColor>,
 
-                // Parse a thing to print, e.g. {method}, {uri}.
-                Some('{') => {
-                    result.push(FormatUnit { text: Str(string), color: color, attrs: attrs.clone() });
-                    string = "".into_string();
+    // Passed-in FormatAttrs
+    attrs: MoveItems<FormatAttrs>,
 
-                    loop {
-                        match chars.next() {
-                            None => return None,
+    // A reusable buffer for parsing style attributes.
+    object_buffer: String,
 
-                            Some('}') => {
-                                let text = match name.as_slice() {
-                                    "method" => Method,
-                                    "uri" => URI,
-                                    "status" => Status,
-                                    "response_time" => ResponseTime,
-                                    _ => return None
-                                };
+    // Are we done?
+    finished: bool,
 
-                                result.push(FormatUnit { text: text, color: color, attrs: attrs.clone() });
-                                name.clear();
-                                break;
-                            },
+    // A queue of waiting format units to avoid full-on
+    // state-machine parsing.
+    waitqueue: Vec<FormatUnit>
+}
 
-                            Some(c) => name.push(c)
-                        }
+impl<'a> FormatParser<'a> {
+    fn new(chars: Peekable<char, Chars>, colors: MoveItems<FormatColor>, attrs: MoveItems<FormatAttrs>) -> FormatParser {
+        FormatParser {
+            chars: chars,
+            colors: colors,
+            attrs: attrs,
+
+            // No attributes are longer than 14 characters, so we can
+            // avoid reallocating.
+            object_buffer: String::with_capacity(14),
+
+            finished: false,
+            waitqueue: vec![]
+        }
+    }
+}
+
+// Some(None) means there was a parse error and this FormatParser
+// should be abandoned.
+impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
+    fn next(&mut self) -> Option<Option<FormatUnit>> {
+        // If the parser has been cancelled or errored for some reason.
+        if self.finished { return None }
+
+        if self.waitqueue.len() != 0 {
+            return Some(self.waitqueue.remove(0));
+        }
+
+        // Try to parse a new FormatUnit.
+        match self.chars.next() {
+            // Parse a recognized object.
+            //
+            // The allowed forms are:
+            //   - {method}
+            //   - {uri}
+            //   - {status}
+            //   - {response-time}
+            Some('{') => {
+                self.object_buffer.clear();
+
+                loop {
+                    match self.chars.next() {
+                        // Finished parsing, parse buffer.
+                        Some('}') => break,
+
+                        Some(c) => self.object_buffer.push(c),
+
+                        None => break
                     }
-                },
+                }
 
-                // Begin the application of an attribute. The grammar is as follows:
-                //
-                // `@[attribute]applies to@@`
-                //
-                // @ begins the attribute, which is then followed by `[attribute]`, which declares
-                // what attribute is being applied, then follows the text or {object} that the
-                // attribute will be applied to. `@@` then ends the application of the attribute.
-                Some('@') => {
-                    result.push(FormatUnit { text: Str(string), color: color, attrs: attrs.clone() });
-                    string = "".into_string();
+                let text = match self.object_buffer.as_slice() {
+                    "method" => Method,
+                    "uri" => URI,
+                    "status" => Status,
+                    "response-time" => ResponseTime,
+                    _ => {
+                        // Error, so mark as finished.
+                        self.finished = true;
+                        return Some(None);
+                    }
+                };
 
-                    match chars.next() {
-                        // This is actually the end of an attribute application.
-                        Some('@') => {
-                            color = ConstantColor(None);
-                            attrs = ConstantAttrs(vec![]);
-                        },
+                Some(Some(FormatUnit {
+                    text: text,
+                    color: ConstantColor(None),
+                    attrs: ConstantAttrs(vec![])
+                }))
+            },
 
-                        // Parse the attribute or style being applied.
-                        Some('[') => {
-                            loop {
-                                match chars.next() {
-                                    // Unexpected end of input.
-                                    None => { return None; },
+            // Parse an attribute and the thing it applies to.
+            //
+            // The form is:
+            //   - @[attributes]target@
+            Some('@') => {
+                match self.chars.next() {
+                    // Parse attributes
+                    Some('[') => {
+                        let mut buffer = String::new();
 
-                                    // Parse the attribute.
-                                    Some(']') => {
-                                        for word in name.as_slice().words() {
-                                            match word {
-                                                "A" => {
-                                                    attrs = attrses.pop().unwrap_or(ConstantAttrs(vec![]));
-                                                },
+                        loop {
+                            match self.chars.next() {
+                                // Finished parsing into buffer.
+                                Some(']') => break,
 
-                                                "C" => {
-                                                    color = colors.pop().unwrap_or(ConstantColor(None));
-                                                },
+                                // Push into buffer.
+                                Some(c) => buffer.push(c),
 
-                                                style => match from_str(style) {
-                                                    Some(Color(c)) => match color {
-                                                        ConstantColor(_) => { color = ConstantColor(Some(c)); },
-                                                        _ => {}
-                                                    },
-
-                                                    Some(Attr(a)) => match attrs {
-                                                        ConstantAttrs(ref mut v) => { v.push(a); },
-                                                        _ => {}
-                                                    },
-
-                                                    _ => {}
-                                                }
-                                            }
-                                        }
-
-                                        name.clear();
-                                        break;
-                                    },
-
-                                    Some(c) => { name.push(c); }
+                                None => {
+                                    // Error, so mark as finished.
+                                    self.finished = true;
+                                    return Some(None);
                                 }
                             }
                         }
-                        // Unexpected non `@` or `[` after `@`
-                        _ => return None,
-                    }
-                },
 
-                Some(c) => { string.push(c); }
-            }
+                        let mut attrs = ConstantAttrs(vec![]);
+                        let mut color = ConstantColor(None);
+
+                        // Collect the attributes into attrs and color, for use as properties
+                        // of a FormatUnit.
+                        for word in buffer.as_slice().words() {
+                            match word {
+                                "A" => attrs = self.attrs.next().unwrap_or(ConstantAttrs(vec![])),
+
+                                "C" => color = self.colors.next().unwrap_or(ConstantColor(None)),
+
+                                style => match from_str(style) {
+                                    Some(Color(c)) => match color {
+                                        ConstantColor(_) => { color = ConstantColor(Some(c)); },
+                                        _ => {}
+                                    },
+
+                                    Some(Attr(a)) => match attrs {
+                                        ConstantAttrs(ref mut v) => { v.push(a); },
+                                        _ => {}
+                                    },
+
+                                    _ => {}
+                                }
+                            }
+                        }
+
+                        // Nested attributes are not supported.
+                        if self.chars.peek() == Some(&'@') {
+                            self.finished = true;
+                            return Some(None);
+                        }
+
+                        // Now we have the parsed attributes, so we can parse what they apply to.
+                        let mut apply_to = vec![];
+
+                        loop {
+                            match self.next() {
+                                Some(Some(unit)) => apply_to.push(unit),
+                                _ => {
+                                    self.finished = true;
+                                    return Some(None);
+                                }
+                            };
+
+                            if self.chars.peek() == Some(&'@') {
+                                // Jump over the closing '@'
+                                self.chars.next();
+                                break;
+                            }
+                        }
+
+                        self.waitqueue.extend(apply_to.into_iter().map(|unit| {
+                            FormatUnit {
+                                text: unit.text,
+                                color: color.clone(),
+                                attrs: attrs.clone()
+                            }
+                        }));
+
+                        self.next()
+                    },
+
+                    _ => {
+                        // Error, so mark as finished.
+                        self.finished = true;
+                        return Some(None);
+                    }
+                }
+            },
+
+            // Parse a regular string part of the format string.
+            Some(c) => {
+                let mut buffer = String::new();
+                buffer.push(c);
+
+                loop {
+                    match self.chars.peek() {
+                        // Done parsing.
+                        Some(&'@') | Some(&'{') | None => {
+                            return Some(Some(FormatUnit {
+                                text: Str(buffer),
+                                color: ConstantColor(None),
+                                attrs: ConstantAttrs(vec![])
+                            }))
+                        },
+
+                        Some(_) => {
+                            buffer.push(self.chars.next().unwrap())
+                        }
+                    }
+                }
+            },
+
+            // Reached end of the format string.
+            None => None
         }
     }
 }
