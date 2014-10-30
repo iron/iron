@@ -64,7 +64,7 @@ impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
         let entry_time = *req.extensions.find::<StartTime, u64>().unwrap();
         let response_time_ms = (precise_time_ns() - entry_time) as f64 / 1000000.0;
-        let Format(format) = self.format.clone().unwrap_or(Format::default());
+        let Format(format) = self.format.clone().unwrap_or_default();
 
         let render = |text: &FormatText| {
             match *text {
