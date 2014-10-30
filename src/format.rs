@@ -1,6 +1,6 @@
 use iron::{Request, Response};
 use term::{attr, color};
-use http::status::NotFound;
+use iron::status::NotFound;
 
 use std::default::Default;
 use std::from_str::FromStr;

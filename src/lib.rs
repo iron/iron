@@ -6,7 +6,6 @@
 #[deny(warnings)]
 
 extern crate iron;
-extern crate http;
 extern crate time;
 extern crate term;
 extern crate typemap;
