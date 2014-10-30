@@ -11,9 +11,9 @@ extern crate time;
 extern crate term;
 extern crate typemap;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response};
-use typemap::Assoc;
-use time::precise_time_ns;
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response, Error};
+use iron::errors::FileError;
+use iron::typemap::Assoc;
 use term::{Terminal, WriterWrapper, stdout};
 
 use std::io::IoResult;
@@ -55,7 +55,7 @@ impl Assoc<u64> for StartTime {}
 
 impl BeforeMiddleware for Logger {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<StartTime, u64>(precise_time_ns());
+        req.extensions.insert::<StartTime, u64>(time::precise_time_ns());
         Ok(())
     }
 }
@@ -63,7 +63,7 @@ impl BeforeMiddleware for Logger {
 impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
         let entry_time = *req.extensions.find::<StartTime, u64>().unwrap();
-        let response_time_ms = (precise_time_ns() - entry_time) as f64 / 1000000.0;
+        let response_time_ms = (time::precise_time_ns() - entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or_default();
 
         let render = |text: &FormatText| {
@@ -75,6 +75,7 @@ impl AfterMiddleware for Logger {
                 ResponseTime => format!("{} ms", response_time_ms)
             }
         };
+
         let log = |mut t: Box<Terminal<WriterWrapper> + Send>| -> IoResult<()> {
             for unit in format.iter() {
                 match unit.color {
@@ -107,12 +108,28 @@ impl AfterMiddleware for Logger {
         match stdout() {
             Some(terminal) => {
                 match log(terminal) {
-                    Err(e) => { println!("Error logging to terminal: {}", e); },
-                    Ok(_) => ()
+                    Err(e) => return Err(FileError(e).erase()),
+                    _ => {}
                 }
             }
-            None => { println!("Logger could not open terminal"); }
-        }
+            None => { return Err(CouldNotOpenTerminal.erase()) }
+        };
+
         Ok(())
     }
 }
+
+/// Error returned when logger cannout access stdout.
+#[deriving(Show)]
+pub struct CouldNotOpenTerminal;
+
+impl Error for CouldNotOpenTerminal {
+    fn name(&self) -> &'static str {
+        "Could Not Open Terminal"
+    }
+
+    fn description(&self) -> Option<&str> {
+        Some("Logger could not open stdout as a terminal.")
+    }
+}
+
