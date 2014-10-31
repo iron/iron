@@ -10,7 +10,7 @@ extern crate time;
 extern crate term;
 extern crate typemap;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response, Error};
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, Error};
 use iron::errors::FileError;
 use iron::typemap::Assoc;
 use term::{Terminal, WriterWrapper, stdout};
@@ -107,11 +107,11 @@ impl AfterMiddleware for Logger {
         match stdout() {
             Some(terminal) => {
                 match log(terminal) {
-                    Err(e) => return Err(FileError(e).erase()),
+                    Err(e) => return Err(box FileError(e) as IronError),
                     _ => {}
                 }
             }
-            None => { return Err(CouldNotOpenTerminal.erase()) }
+            None => { return Err(box CouldNotOpenTerminal as IronError) }
         };
 
         Ok(())
