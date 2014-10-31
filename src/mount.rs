@@ -1,4 +1,4 @@
-use iron::{Handler, Response, Request, IronResult, Url, Error};
+use iron::{Handler, Response, Request, IronResult, IronError, Url, Error};
 use typemap::Assoc;
 use trie::Trie;
 
@@ -80,7 +80,7 @@ impl Handler for Mount {
             // Search the Trie for the nearest most specific match.
             match self.inner.find_ancestor(key) {
                 Some(matched) => matched,
-                None => return Err(NoMatch.erase())
+                None => return Err(box NoMatch as IronError)
             }
         };
 
