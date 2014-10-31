@@ -8,7 +8,7 @@ extern crate time;
 use std::io::net::ip::Ipv4Addr;
 use iron::{Iron, Handler, BeforeMiddleware, IronError,
            Request, Response, ChainBuilder, Chain,
-           IronResult, Error};
+           IronResult};
 use iron::status;
 
 struct ErrorHandler;
@@ -27,7 +27,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err("Error".to_string().erase())
+        Err(box "Error".to_string() as IronError)
     }
 }
 
