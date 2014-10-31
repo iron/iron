@@ -103,7 +103,7 @@ impl Handler for Mount {
         // Reverse the URL munging, for future middleware.
         req.url = match req.extensions.find::<OriginalUrl, Url>() {
             Some(original) => original.clone(),
-            None => fail!("OriginalUrl unexpectedly removed from req.extensions.")
+            None => panic!("OriginalUrl unexpectedly removed from req.extensions.")
         };
 
         // If this mount middleware is the outermost mount middleware,
