@@ -1,9 +1,9 @@
 #![crate_name = "logger"]
+#![deny(missing_docs)]
+#![deny(warnings)]
 #![license = "MIT"]
 
 //! Request logging middleware for Iron
-
-#[deny(warnings)]
 
 extern crate iron;
 extern crate time;
@@ -61,8 +61,10 @@ impl BeforeMiddleware for Logger {
 
 impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+        let exit_time = time::precise_time_ns();
         let entry_time = *req.extensions.find::<StartTime, u64>().unwrap();
-        let response_time_ms = (time::precise_time_ns() - entry_time) as f64 / 1000000.0;
+
+        let response_time_ms = (exit_time - entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or_default();
 
         let render = |text: &FormatText| {
