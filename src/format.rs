@@ -1,3 +1,5 @@
+//! Formatting helpers for the logger middleware.
+
 use iron::{Request, Response};
 use term::{attr, color};
 use iron::status::NotFound;
@@ -17,20 +19,19 @@ impl Default for Format {
     /// Return the default formatting style for the `Logger`:
     ///
     /// ```ignore
-    /// {method} {uri} -> {status} ({response_time})
+    /// {method} {uri} -> {status} ({response-time})
     /// ```
     ///
     /// The method is in bold, and the response status is colored blue for 100s,
-    /// green for 200s, yellow for 300s, and red for 400s and 500s. For now,
-    /// this needs to take `req`/`res` as arguments in order to color the status
-    /// appropriately.
+    /// green for 200s, yellow for 300s, red for 400s, and bright red for 500s.
     fn default() -> Format {
         fn status_color(_req: &Request, res: &Response) -> Option<color::Color> {
             match res.status.as_ref().unwrap_or(&NotFound).code() / 100 {
                 1 => Some(color::BLUE), // Information
                 2 => Some(color::GREEN), // Success
                 3 => Some(color::YELLOW), // Redirection
-                4 | 5 => Some(color::RED), // Error
+                4 => Some(color::RED), // Client Error
+                5 => Some(color::BRIGHT_RED), // Internal Error
                 _ => None
             }
         }
@@ -41,17 +42,56 @@ impl Default for Format {
 }
 
 impl Format {
+    // TODO: Document the color/attribute tags.
     /// Create a `Format` from a format string, which can contain the fields
-    /// `{method}`, `{uri}`, `{status}`, and `{response_time}`.
+    /// `{method}`, `{uri}`, `{status}`, and `{response-time}`.
+    ///
     /// Returns `None` if the format string syntax is incorrect.
-    pub fn new(s: &str, mut colors: Vec<FormatColor>,
-               mut attrses: Vec<FormatAttrs>) -> Option<Format> {
+    ///
+    /// ---
+    ///
+    /// Colors and attributes can also be added to the format string within `@` delimiters,
+    /// by specifying them in a space-delimited list within square brackets (`[bold italic]`).
+    /// They can be made dependent on the request/response by passing `FunctionColor` and
+    /// `FunctionAttr`s in as the `colors` and `attrs` vecs; these colors/attributes will
+    /// be used sequentially when there is a `[C]` or `[A]` marker, respectively.
+    ///
+    /// For example: `@[bold C]{status}@` will be formatted based upon
+    /// the first FormatColor function in the `colors` vector.
+    ///
+    /// Available colors are:
+    /// - `black`
+    /// - `blue`
+    /// - `brightblack`
+    /// - `brightblue`
+    /// - `brightcyan`
+    /// - `brightgreen`
+    /// - `brightmagenta`
+    /// - `brightred`
+    /// - `brightwhite`
+    /// - `brightyellow`
+    /// - `cyan`
+    /// - `green`
+    /// - `magenta`
+    /// - `red`
+    /// - `white`
+    /// - `yellow`
+    ///
+    /// Available attributes are:
+    /// - `bold`
+    /// - `dim`
+    /// - `italic`
+    /// - `underline`
+    /// - `blink`
+    /// - `standout`
+    /// - `reverse`
+    /// - `secure`
+    pub fn new(s: &str, colors: Vec<FormatColor>, attrs: Vec<FormatAttr>)
+            -> Option<Format> {
 
-        // We use these as stacks, but in the wrong direction.
-        attrses.reverse();
-        colors.reverse();
-
-        let mut parser = FormatParser::new(s.chars().peekable(), colors.into_iter(), attrses.into_iter());
+        let mut parser = FormatParser::new(s.chars().peekable(),
+                                           colors.into_iter(),
+                                           attrs.into_iter());
 
         let mut results = Vec::new();
 
@@ -73,39 +113,37 @@ struct FormatParser<'a> {
     // Passed-in FormatColors
     colors: MoveItems<FormatColor>,
 
-    // Passed-in FormatAttrs
-    attrs: MoveItems<FormatAttrs>,
+    // Passed-in FormatAttr
+    attrs: MoveItems<FormatAttr>,
 
     // A reusable buffer for parsing style attributes.
     object_buffer: String,
 
-    // Are we done?
-    finished: bool,
-
     // A queue of waiting format units to avoid full-on
     // state-machine parsing.
-    waitqueue: Vec<FormatUnit>
+    waitqueue: Vec<FormatUnit>,
+
+    finished: bool
 }
 
 impl<'a> FormatParser<'a> {
-    fn new(chars: Peekable<char, Chars>, colors: MoveItems<FormatColor>, attrs: MoveItems<FormatAttrs>) -> FormatParser {
+    fn new(chars: Peekable<char, Chars>, colors: MoveItems<FormatColor>,
+           attrs: MoveItems<FormatAttr>) -> FormatParser {
         FormatParser {
             chars: chars,
             colors: colors,
             attrs: attrs,
 
-            // No attributes are longer than 14 characters, so we can
-            // avoid reallocating.
+            // No attributes are longer than 14 characters, so we can avoid reallocating.
             object_buffer: String::with_capacity(14),
 
-            finished: false,
-            waitqueue: vec![]
+            waitqueue: vec![],
+            finished: false
         }
     }
 }
 
-// Some(None) means there was a parse error and this FormatParser
-// should be abandoned.
+// Some(None) means there was a parse error and this FormatParser should be abandoned.
 impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
     fn next(&mut self) -> Option<Option<FormatUnit>> {
         // If the parser has been cancelled or errored for some reason.
@@ -324,13 +362,21 @@ enum ColorOrAttr {
 
 /// A representation of color in a `FormatUnit`.
 pub enum FormatColor {
+    /// A constant color
     ConstantColor(Option<color::Color>),
+    /// A variable color, dependent on the request/response
+    ///
+    /// This can be used to change the color depending on response status, &c.
     FunctionColor(fn(&Request, &Response) -> Option<color::Color>)
 }
 
 /// A representation of attributes in a `FormatUnit`.
-pub enum FormatAttrs {
+pub enum FormatAttr {
+    /// A constant attribute
     ConstantAttrs(Vec<attr::Attr>),
+    /// A variable attribute, dependent on the request/response
+    ///
+    /// This can be used to change the attribute depending on response status, &c.
     FunctionAttrs(fn(&Request, &Response) -> Vec<attr::Attr>)
 }
 
@@ -338,8 +384,8 @@ impl Clone for FormatColor {
     fn clone(&self) -> FormatColor { *self }
 }
 
-impl Clone for FormatAttrs {
-    fn clone(&self) -> FormatAttrs {
+impl Clone for FormatAttr {
+    fn clone(&self) -> FormatAttr {
         match *self {
             ConstantAttrs(ref attrs) => ConstantAttrs(attrs.iter().map(|&attr| attr).collect()),
             FunctionAttrs(f) => FunctionAttrs(f)
@@ -348,8 +394,9 @@ impl Clone for FormatAttrs {
 }
 
 /// A string of text to be logged. This is either one of the data
-/// fields supported by the `Logger`, or a custom `&str`.
+/// fields supported by the `Logger`, or a custom `String`.
 #[deriving(Clone)]
+#[doc(hidden)]
 pub enum FormatText {
     Str(String),
     Method,
@@ -360,9 +407,10 @@ pub enum FormatText {
 
 /// A `FormatText` with associated style information.
 #[deriving(Clone)]
+#[doc(hidden)]
 pub struct FormatUnit {
     pub text: FormatText,
     pub color: FormatColor,
-    pub attrs: FormatAttrs
+    pub attrs: FormatAttr
 }
 
