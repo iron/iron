@@ -3,7 +3,7 @@
 #![comment = "Rapid Web Development in Rust"]
 #![license = "MIT"]
 
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 #![deny(warnings)]
 
 #![feature(macro_rules, phase, globs, unboxed_closures, slicing_syntax)]
