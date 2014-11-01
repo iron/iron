@@ -71,6 +71,27 @@ impl Response {
         }
     }
 
+    /// Create a new response with the specified body, status and media type.
+    pub fn with_media_type<B: BytesContainer>(status: status::Status, body: B, media_type: MediaType) -> Response {
+
+        let mut headers = HeaderCollection::new();
+        headers.content_type = Some(media_type);
+
+        Response {
+            body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
+            headers: headers,
+            status: Some(status),
+            extensions: TypeMap::new()
+        }
+
+/*        Response {
+            body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
+            headers: HeaderCollection::new(),
+            status: Some(status),
+            extensions: TypeMap::new()
+        }*/
+    }    
+
     /// Create a new Response with the `location` header set to the specified url.
     pub fn redirect(status: status::Status, url: Url) -> Response {
         let mut headers = HeaderCollection::new();
@@ -169,3 +190,15 @@ fn matches_content_type () {
     assert_eq!(content_type.type_.as_slice(), "text");
     assert_eq!(content_type.subtype.as_slice(), "plain");
 }
+
+#[test]
+fn content_type () {
+    let json_media_type = MediaType::new("application".to_string(), "json".to_string(), Vec::new());
+
+    let response = Response::with_media_type(status::Ok, "response_body".to_string(), json_media_type);
+    let content_type = response.headers.content_type.unwrap();
+
+    assert_eq!(content_type.type_.as_slice(), "application");
+    assert_eq!(content_type.subtype.as_slice(), "json");
+}
+
