@@ -1,19 +1,18 @@
 #![crate_name = "logger"]
+#![deny(missing_docs)]
+#![deny(warnings)]
 #![license = "MIT"]
 
 //! Request logging middleware for Iron
 
-#[deny(warnings)]
-
 extern crate iron;
-extern crate http;
 extern crate time;
 extern crate term;
 extern crate typemap;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response};
-use typemap::Assoc;
-use time::precise_time_ns;
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, Error};
+use iron::errors::FileError;
+use iron::typemap::Assoc;
 use term::{Terminal, WriterWrapper, stdout};
 
 use std::io::IoResult;
@@ -55,16 +54,18 @@ impl Assoc<u64> for StartTime {}
 
 impl BeforeMiddleware for Logger {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<StartTime, u64>(precise_time_ns());
+        req.extensions.insert::<StartTime, u64>(time::precise_time_ns());
         Ok(())
     }
 }
 
 impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+        let exit_time = time::precise_time_ns();
         let entry_time = *req.extensions.find::<StartTime, u64>().unwrap();
-        let response_time_ms = (precise_time_ns() - entry_time) as f64 / 1000000.0;
-        let Format(format) = self.format.clone().unwrap_or(Format::default());
+
+        let response_time_ms = (exit_time - entry_time) as f64 / 1000000.0;
+        let Format(format) = self.format.clone().unwrap_or_default();
 
         let render = |text: &FormatText| {
             match *text {
@@ -75,6 +76,7 @@ impl AfterMiddleware for Logger {
                 ResponseTime => format!("{} ms", response_time_ms)
             }
         };
+
         let log = |mut t: Box<Terminal<WriterWrapper> + Send>| -> IoResult<()> {
             for unit in format.iter() {
                 match unit.color {
@@ -107,12 +109,28 @@ impl AfterMiddleware for Logger {
         match stdout() {
             Some(terminal) => {
                 match log(terminal) {
-                    Err(e) => { println!("Error logging to terminal: {}", e); },
-                    Ok(_) => ()
+                    Err(e) => return Err(box FileError(e) as IronError),
+                    _ => {}
                 }
             }
-            None => { println!("Logger could not open terminal"); }
-        }
+            None => { return Err(box CouldNotOpenTerminal as IronError) }
+        };
+
         Ok(())
     }
 }
+
+/// Error returned when logger cannout access stdout.
+#[deriving(Show)]
+pub struct CouldNotOpenTerminal;
+
+impl Error for CouldNotOpenTerminal {
+    fn name(&self) -> &'static str {
+        "Could Not Open Terminal"
+    }
+
+    fn description(&self) -> Option<&str> {
+        Some("Logger could not open stdout as a terminal.")
+    }
+}
+
