@@ -63,6 +63,7 @@ impl Format {
     /// yielding a bold and colored response status.
     ///
     /// Available colors are:
+    ///
     /// - `black`
     /// - `blue`
     /// - `brightblack`
@@ -81,6 +82,7 @@ impl Format {
     /// - `yellow`
     ///
     /// Available attributes are:
+    ///
     /// - `bold`
     /// - `dim`
     /// - `italic`
