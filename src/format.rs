@@ -19,7 +19,9 @@ impl Default for Format {
     /// Return the default formatting style for the `Logger`:
     ///
     /// ```ignore
-    /// {method} {uri} -> {status} ({response-time})
+    /// @[bold]{method}@ {uri} @[bold]->@ @[C]{status}@ ({response-time})
+    /// // This will be written as: {method} {uri} -> {status} ({response-time})
+    /// // with certain style attributes.
     /// ```
     ///
     /// The method is in bold, and the response status is colored blue for 100s,
@@ -54,10 +56,11 @@ impl Format {
     /// by specifying them in a space-delimited list within square brackets (`[bold italic]`).
     /// They can be made dependent on the request/response by passing `FunctionColor` and
     /// `FunctionAttr`s in as the `colors` and `attrs` vecs; these colors/attributes will
-    /// be used sequentially when there is a `[C]` or `[A]` marker, respectively.
+    /// be used sequentially when there is a `[C]` or `[A]` marker, respectively (`[bold C]`).
     ///
     /// For example: `@[bold C]{status}@` will be formatted based upon
-    /// the first FormatColor function in the `colors` vector.
+    /// the first FormatColor constant or function in the `colors` vector,
+    /// yielding a bold and colored response status.
     ///
     /// Available colors are:
     /// - `black`
@@ -165,14 +168,11 @@ impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
             Some('{') => {
                 self.object_buffer.clear();
 
-                loop {
-                    match self.chars.next() {
+                for chr in self.chars {
+                    match chr {
                         // Finished parsing, parse buffer.
-                        Some('}') => break,
-
-                        Some(c) => self.object_buffer.push(c),
-
-                        None => break
+                        '}' => break,
+                        c => self.object_buffer.push(c)
                     }
                 }
 
@@ -209,12 +209,9 @@ impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
                             match self.chars.next() {
                                 // Finished parsing into buffer.
                                 Some(']') => break,
-
-                                // Push into buffer.
                                 Some(c) => buffer.push(c),
-
+                                // Error, so mark as finished.
                                 None => {
-                                    // Error, so mark as finished.
                                     self.finished = true;
                                     return Some(None);
                                 }
