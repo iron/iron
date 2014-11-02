@@ -1,7 +1,6 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{File, MemReader};
-use std::io::util;
+use std::io::{mod, File, MemReader};
 use std::path::BytesContainer;
 use std::fmt::{Show, Formatter, FormatError};
 
@@ -116,14 +115,36 @@ impl Response {
         http_res.status = self.status.clone().unwrap_or(status::NotFound);
 
         match self.body {
-            Some(body) => {
+            Some(mut body) => {
                 http_res.headers.content_type =
                     Some(http_res.headers
                             .content_type
+                            .clone()
                             .unwrap_or_else(||
                                 MediaType::new("text".into_string(), "plain".into_string(), vec![])
                             ));
-                match util::copy(&mut body, http_res) {
+
+                // FIXME: Manually inlined io::util::copy
+                // because Box<Reader + Send> does not impl Reader.
+                let mut buf = [0, ..1024 * 64];
+                let mut out = Ok(());
+                loop {
+                    let len = match body.read(buf) {
+                        Ok(len) => len,
+                        Err(ref e) if e.kind == io::EndOfFile => break,
+                        Err(e) => { out = Err(e); break; },
+                    };
+
+                    match http_res.write(buf[..len]) {
+                        Err(e) => {
+                            out = Err(e);
+                            break;
+                        },
+                        _ => {}
+                    };
+                }
+
+                match out {
                     Err(e) => {
                         error!("Error reading/writing body: {}", e);
 
