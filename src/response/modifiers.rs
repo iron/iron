@@ -1,4 +1,25 @@
 //! Defines a series of convenience modifiers for editing Responses
+//!
+//! Modifiers can be used to edit Responses both through the owning
+//! method `set` and the mutating `set_mut`, both of which are
+//! defined through the `Set` trait.
+//!
+//! Instead of having a combinatorial explosion of Response methods
+//! and constructors, we instead provide a series of modifiers that
+//! can be used through the Set trait.
+//!
+//! For instance, instead of `Response::redirect` constructing a
+//! redirect response, we provide a `Redirect` modifier, so you
+//! can just do:
+//!
+//! ```rust,ignore
+//! Response::new().set(Status(status)).set(Redirect(url));
+//! ```
+//!
+//! This is much more extensible as it allows you to combine
+//! arbitrary modifiers without having a massive number of
+//! Response constructors.
+//!
 
 use std::str::StrAllocating;
 use std::io::{File, MemReader};
