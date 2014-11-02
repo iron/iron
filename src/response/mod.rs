@@ -1,6 +1,7 @@
 //! Iron's HTTP Response representation and associated methods.
 
 use std::io::{File, MemReader};
+use std::io::util;
 use std::path::BytesContainer;
 use std::fmt::{Show, Formatter, FormatError};
 
@@ -114,34 +115,29 @@ impl Response {
         // Default to a 404 if no response code was set
         http_res.status = self.status.clone().unwrap_or(status::NotFound);
 
-        // Read the body into the http_res body
-        let mut body = self.body.unwrap_or_else(|| box MemReader::new(vec![]) as Box<Reader + Send>);
-        let _ = match body.read_to_end() {
-            Ok(body_content) => {
-                let plain_txt = MediaType {
-                    type_: "text".to_string(),
-                    subtype: "plain".to_string(),
-                    parameters: vec![]
-                };
-
-                // Set content length and type
-                http_res.headers.content_length =
-                    Some(body_content.len());
+        match self.body {
+            Some(body) => {
                 http_res.headers.content_type =
-                    Some(http_res.headers.content_type.clone().unwrap_or(plain_txt));
+                    Some(http_res.headers
+                            .content_type
+                            .unwrap_or_else(||
+                                MediaType::new("text".into_string(), "plain".into_string(), vec![])
+                            ));
+                match util::copy(&mut body, http_res) {
+                    Err(e) => {
+                        error!("Error reading/writing body: {}", e);
 
-                // Write the body
-                http_res.write(body_content.as_slice())
+                        // Can't do anything else here since all headers/status have
+                        // already been sent.
+                    },
+                    _ => {}
+                }
             },
-            Err(e) => Err(e)
-        // Catch errors from reading + writing
-        }.map_err(|e| {
-            error!("Error reading/writing body: {}", e);
-            http_res.status = status::InternalServerError;
-            let _ = http_res.write(b"Internal Server Error")
-                // Something is really, really wrong.
-                .map_err(|e| error!("Error writing error message: {}", e));
-        });
+
+            None => {
+                http_res.headers.content_length = Some(0u);
+            }
+        }
     }
 }
 
