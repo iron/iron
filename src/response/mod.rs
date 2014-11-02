@@ -121,7 +121,9 @@ impl Response {
                             .content_type
                             .clone()
                             .unwrap_or_else(||
-                                MediaType::new("text".into_string(), "plain".into_string(), vec![])
+                                MediaType::new("text".into_string(),
+                                               "plain".into_string(),
+                                               vec![])
                             ));
 
                 // FIXME: Manually inlined io::util::copy

@@ -1,25 +1,29 @@
 //! Defines a series of convenience modifiers for editing Responses
 //!
-//! Modifiers can be used to edit Responses both through the owning
-//! method `set` and the mutating `set_mut`, both of which are
-//! defined through the `Set` trait.
+//! Modifiers can be used to edit Responses through the owning
+//! method `set` or the mutating `set_mut`, both of which are
+//! defined in the `Set` trait.
 //!
 //! Instead of having a combinatorial explosion of Response methods
-//! and constructors, we instead provide a series of modifiers that
-//! can be used through the Set trait.
+//! and constructors, this provides a series of modifiers that
+//! can be used through the `Set` trait.
 //!
 //! For instance, instead of `Response::redirect` constructing a
 //! redirect response, we provide a `Redirect` modifier, so you
 //! can just do:
 //!
 //! ```rust,ignore
-//! Response::new().set(Status(status)).set(Redirect(url));
+//! Response::new()
+//!     .set(Status(status))
+//!     .set(Redirect(url));
 //! ```
 //!
-//! This is much more extensible as it allows you to combine
+//! This is more extensible as it allows you to combine
 //! arbitrary modifiers without having a massive number of
 //! Response constructors.
 //!
+//! For more information about the modifier system, see
+//! [rust-modifier](https://github.com/reem/rust-modifier).
 
 use std::str::StrAllocating;
 use std::io::{File, MemReader};
@@ -50,7 +54,7 @@ impl Modifier<Response> for ContentType {
     }
 }
 
-/// A response modifier for seeting the body of a response.
+/// A response modifier for setting the body of a response.
 pub struct Body<B: Bodyable>(pub B);
 
 impl<B: Bodyable> Modifier<Response> for Body<B> {
@@ -62,7 +66,7 @@ impl<B: Bodyable> Modifier<Response> for Body<B> {
     }
 }
 
-/// A modifier that can be used to set the body of a response.
+/// Something that can be used to set the body of a response.
 pub trait Bodyable {
     /// Set the body of this response, possibly also setting headers.
     fn set_body(self, res: &mut Response);
