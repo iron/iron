@@ -9,6 +9,26 @@ use http::headers::content_type::MediaType;
 use content_type::get_content_type;
 use {Response};
 
+/// A response modifier for setting the content-type header.
+pub struct ContentType(pub MediaType);
+
+impl ContentType {
+    /// Create a new ContentType modifier from the parts of a content-type header value.
+    #[inline]
+    pub fn new<S: StrAllocating, S1: StrAllocating>(type_: S, subtype: S1) -> ContentType {
+        ContentType(MediaType::new(type_.into_string(), subtype.into_string(), vec![]))
+    }
+}
+
+impl Modifier<Response> for ContentType {
+    #[inline]
+    fn modify(self, mut res: Response) -> Response {
+        let ContentType(media) = self;
+        res.headers.content_type = Some(media);
+        res
+    }
+}
+
 /// A response modifier for seeting the body of a response.
 pub struct Body<B: Bodyable>(B);
 
