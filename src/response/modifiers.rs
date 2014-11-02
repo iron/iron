@@ -7,7 +7,7 @@ use std::path::Path;
 use modifier::Modifier;
 use http::headers::content_type::MediaType;
 use content_type::get_content_type;
-use {Response};
+use {status, Response};
 
 /// A response modifier for setting the content-type header.
 pub struct ContentType(pub MediaType);
@@ -102,6 +102,17 @@ impl Bodyable for Path {
         File::open(&self)
             .ok().expect(format!("No such file: {}", self.display()).as_slice())
             .set_body(res);
+    }
+}
+
+/// A modifier for setting the status of a response.
+pub struct Status(pub status::Status);
+
+impl Modifier<Response> for Status {
+    fn modify(self, mut res: Response) -> Response {
+        let Status(status) = self;
+        res.status = Some(status);
+        res
     }
 }
 
