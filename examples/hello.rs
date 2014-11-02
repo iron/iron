@@ -1,11 +1,12 @@
 extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Request, Response, IronResult};
+use iron::{Iron, Request, Response, IronResult, Set};
+use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(status::Ok, "Hello world!"))
+    Ok(Response::new().set(Status(status::Ok)).set(Body("Hello world!")))
 }
 
 fn main() {

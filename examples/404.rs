@@ -4,11 +4,12 @@ extern crate iron;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Iron, Request, Response, IronResult};
+use iron::{Iron, Request, Response, IronResult, Set};
+use iron::response::modifiers::Status;
 use iron::status;
 
 fn fourzerofour(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::status(status::NotFound))
+    Ok(Response::new().set(Status(status::NotFound)))
 }
 
 fn main() {

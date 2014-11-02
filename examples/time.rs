@@ -4,7 +4,9 @@ extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
 
-use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult, Iron, ChainBuilder, Chain};
+use iron::{Request, Response, BeforeMiddleware, AfterMiddleware,
+           IronResult, Iron, ChainBuilder, Chain, Set};
+use iron::response::modifiers::{Status, Body};
 use typemap::Assoc;
 use time::precise_time_ns;
 
@@ -28,7 +30,7 @@ impl AfterMiddleware for ResponseTime {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(iron::status::Ok, "Hello World"))
+    Ok(Response::new().set(Status(iron::status::Ok)).set(Body("Hello World")))
 }
 
 fn main() {

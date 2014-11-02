@@ -51,7 +51,7 @@ impl Modifier<Response> for ContentType {
 }
 
 /// A response modifier for seeting the body of a response.
-pub struct Body<B: Bodyable>(B);
+pub struct Body<B: Bodyable>(pub B);
 
 impl<B: Bodyable> Modifier<Response> for Body<B> {
     #[inline]
