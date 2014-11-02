@@ -31,7 +31,7 @@ pub struct Response {
     pub body: Option<Box<Reader + Send>>,
 
     /// The headers of the response.
-    pub headers: HeaderCollection,
+    pub headers: Box<HeaderCollection>,
 
     /// The response status-code.
     pub status: Option<Status>,
@@ -45,7 +45,7 @@ impl Response {
     /// Construct a blank Response
     pub fn new() -> Response {
         Response {
-            headers: HeaderCollection::new(),
+            headers: box HeaderCollection::new(),
             status: None, // Start with no response code.
             body: None, // Start with no body.
             extensions: TypeMap::new()
@@ -57,7 +57,7 @@ impl Response {
     pub fn status(status: status::Status) -> Response {
         Response {
             body: None,
-            headers: HeaderCollection::new(),
+            headers: box HeaderCollection::new(),
             status: Some(status),
             extensions: TypeMap::new()
         }
@@ -69,7 +69,7 @@ impl Response {
     pub fn with<B: BytesContainer>(status: status::Status, body: B) -> Response {
         Response {
             body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
-            headers: HeaderCollection::new(),
+            headers: box HeaderCollection::new(),
             status: Some(status),
             extensions: TypeMap::new()
         }
@@ -78,7 +78,7 @@ impl Response {
     /// Create a new Response with the `location` header set to the specified url.
     #[deprecated = "Use `Response::new().set(Status(status)).set(Redirect(url))` instead."]
     pub fn redirect(status: status::Status, url: Url) -> Response {
-        let mut headers = HeaderCollection::new();
+        let mut headers = box HeaderCollection::new();
         headers.location = Some(url.into_generic_url());
         Response {
             body: None,
@@ -109,7 +109,7 @@ impl Response {
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
     pub fn write_back(self, http_res: &mut HttpResponse) {
-        http_res.headers = self.headers.clone();
+        http_res.headers = *self.headers.clone();
 
         // Default to a 404 if no response code was set
         http_res.status = self.status.clone().unwrap_or(status::NotFound);
