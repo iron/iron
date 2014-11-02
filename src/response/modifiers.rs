@@ -7,7 +7,7 @@ use std::path::Path;
 use modifier::Modifier;
 use http::headers::content_type::MediaType;
 use content_type::get_content_type;
-use {status, Response};
+use {status, Response, Url};
 
 /// A response modifier for setting the content-type header.
 pub struct ContentType(pub MediaType);
@@ -112,6 +112,17 @@ impl Modifier<Response> for Status {
     fn modify(self, mut res: Response) -> Response {
         let Status(status) = self;
         res.status = Some(status);
+        res
+    }
+}
+
+/// A modifier for creating redirect responses.
+pub struct Redirect(pub Url);
+
+impl Modifier<Response> for Redirect {
+    fn modify(self, mut res: Response) -> Response {
+        let Redirect(url) = self;
+        res.headers.location = Some(url.into_generic_url());
         res
     }
 }
