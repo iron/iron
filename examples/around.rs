@@ -52,7 +52,9 @@ impl AroundMiddleware for Logger {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new().set(Status(status::Ok)).set(Body("Hello World!")))
+    Ok(Response::new()
+           .set(Status(status::Ok))
+           .set(Body("Hello World!")))
 }
 
 fn main() {

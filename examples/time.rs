@@ -30,7 +30,9 @@ impl AfterMiddleware for ResponseTime {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new().set(Status(iron::status::Ok)).set(Body("Hello World")))
+    Ok(Response::new()
+           .set(Status(iron::status::Ok))
+           .set(Body("Hello World")))
 }
 
 fn main() {

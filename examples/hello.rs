@@ -6,7 +6,9 @@ use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new().set(Status(status::Ok)).set(Body("Hello world!")))
+    Ok(Response::new()
+           .set(Status(status::Ok))
+           .set(Body("Hello world!")))
 }
 
 fn main() {

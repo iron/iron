@@ -7,7 +7,9 @@ use iron::status;
 
 fn redirect(_: &mut Request) -> IronResult<Response> {
     let url = Url::parse("http://rust-lang.org").unwrap();
-    Ok(Response::new().set(Status(status::Ok)).set(Redirect(url)))
+    Ok(Response::new()
+           .set(Status(status::Ok))
+           .set(Redirect(url)))
 }
 
 fn main() {

@@ -9,7 +9,8 @@ use iron::response::modifiers::Status;
 use iron::status;
 
 fn fourzerofour(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new().set(Status(status::NotFound)))
+    Ok(Response::new()
+           .set(Status(status::NotFound)))
 }
 
 fn main() {
