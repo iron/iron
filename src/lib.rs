@@ -34,6 +34,7 @@ extern crate content_type;
 extern crate http;
 extern crate "typemap" as tmap;
 extern crate plugin;
+extern crate modifier;
 extern crate error;
 extern crate "url" as rust_url;
 
@@ -79,8 +80,10 @@ pub mod middleware;
 // Common Errors
 pub mod errors;
 
+// Response utilities
+pub mod response;
+
 // Internal modules
 mod request;
-mod response;
 mod iron;
 

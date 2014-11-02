@@ -18,6 +18,8 @@ pub use http::server::response::ResponseWriter as HttpResponse;
 
 use content_type::get_content_type;
 
+pub mod modifiers;
+
 /// The response representation given to `Middleware`
 pub struct Response {
     /// The body of the response.
