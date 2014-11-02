@@ -53,6 +53,7 @@ impl Response {
     }
 
     /// Create a new response with the status.
+    #[deprecated = "Use `Response::new().set(Status(status))` instead."]
     pub fn status(status: status::Status) -> Response {
         Response {
             body: None,
@@ -64,6 +65,7 @@ impl Response {
 
 
     /// Create a new response with the specified body and status.
+    #[deprecated = "Use `Response::new().set(Status(status)).set(Body(body))` instead."]
     pub fn with<B: BytesContainer>(status: status::Status, body: B) -> Response {
         Response {
             body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
@@ -74,6 +76,7 @@ impl Response {
     }
 
     /// Create a new Response with the `location` header set to the specified url.
+    #[deprecated = "Use `Response::new().set(Status(status)).set(Redirect(url))` instead."]
     pub fn redirect(status: status::Status, url: Url) -> Response {
         let mut headers = HeaderCollection::new();
         headers.location = Some(url.into_generic_url());
@@ -89,6 +92,7 @@ impl Response {
     ///
     /// The status code is set to 200 OK and the content type is autodetected based on
     /// the file extension.
+    #[deprecated = "Use `Response::new().set(Status(status)).set(Body(path))` instead"]
     pub fn from_file(path: &Path) -> Result<Response, FileError> {
         let file = try!(File::open(path).map_err(FileError::new));
         let mut response = Response::new();
