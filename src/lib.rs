@@ -62,6 +62,9 @@ pub use http::headers;
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
 
+// Expose modifiers.
+pub use modifier::Set;
+
 // Errors
 pub use error::{Error, ErrorRefExt};
 
