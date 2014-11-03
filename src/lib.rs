@@ -36,7 +36,6 @@ extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate error;
 extern crate "url" as rust_url;
-extern crate "replace-map" as rmap;
 
 // Request + Response
 pub use request::{Request, Url};
