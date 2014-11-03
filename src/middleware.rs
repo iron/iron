@@ -155,7 +155,7 @@ pub trait AroundMiddleware {
     ///
     /// This is called only once, when an `AroundMiddleware` is added to a `Chain`
     /// using `Chain::around`, it is passed the `Chain`'s current `Handler`.
-    fn around<H>(mut self, handler: H) -> Box<Handler + Send + Sync> where H: Handler;
+    fn around(mut self, handler: Box<Handler + Send + Sync>) -> Box<Handler + Send + Sync>;
 }
 
 /// Chain's hold `BeforeMiddleware`, a `Handler`, and `AfterMiddleware` and are responsible
@@ -194,7 +194,9 @@ pub trait Chain: Handler {
 pub struct ChainBuilder {
     befores: Vec<Box<BeforeMiddleware + Send + Sync>>,
     afters: Vec<Box<AfterMiddleware + Send + Sync>>,
-    handler: Box<Handler + Send + Sync>
+
+    // Internal invariant: this is always Some
+    handler: Option<Box<Handler + Send + Sync>>
 }
 
 impl ChainBuilder {
@@ -203,7 +205,7 @@ impl ChainBuilder {
         ChainBuilder {
             befores: vec![],
             afters: vec![],
-            handler: box handler as Box<Handler + Send + Sync>
+            handler: Some(box handler as Box<Handler + Send + Sync>)
         }
     }
 }
@@ -213,7 +215,7 @@ impl Chain for ChainBuilder {
         ChainBuilder {
             befores: vec![],
             afters: vec![],
-            handler: box handler as Box<Handler + Send + Sync>
+            handler: Some(box handler as Box<Handler + Send + Sync>)
         }
     }
 
@@ -233,9 +235,9 @@ impl Chain for ChainBuilder {
     }
 
     fn around<A>(&mut self, around: A) where A: AroundMiddleware {
-        use rmap::replace_map;
-        replace_map(&mut self.handler,
-                    move |: o: Box<Handler + Send + Sync>| { around.around(o) });
+        let mut handler = self.handler.take().unwrap();
+        handler = around.around(handler);
+        self.handler = Some(handler);
     }
 }
 
@@ -244,11 +246,11 @@ impl Handler for ChainBuilder {
         let before_result = helpers::run_befores(req, self.befores.as_slice(), None);
 
         let (res, err) = match before_result {
-            Ok(()) => match self.handler.call(req) {
+            Ok(()) => match self.handler.as_ref().unwrap().call(req) {
                 Ok(res) => (res, None),
-                Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+                Err(e) => helpers::run_handler_catch(req, e, self.handler.as_ref().unwrap())
             },
-            Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+            Err(e) => helpers::run_handler_catch(req, e, self.handler.as_ref().unwrap())
         };
 
         helpers::run_afters(req, res, err, self.afters.as_slice())
@@ -258,11 +260,11 @@ impl Handler for ChainBuilder {
         let before_result = helpers::run_befores(req, self.befores.as_slice(), Some(err));
 
         let (res, err) = match before_result {
-            Ok(()) => match self.handler.call(req) {
+            Ok(()) => match self.handler.as_ref().unwrap().call(req) {
                 Ok(res) => (res, None),
-                Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+                Err(e) => helpers::run_handler_catch(req, e, self.handler.as_ref().unwrap())
             },
-            Err(e) => helpers::run_handler_catch(req, e, &self.handler)
+            Err(e) => helpers::run_handler_catch(req, e, self.handler.as_ref().unwrap())
         };
 
         match helpers::run_afters(req, res, err, self.afters.as_slice()) {
