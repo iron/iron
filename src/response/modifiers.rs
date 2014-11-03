@@ -47,10 +47,9 @@ impl ContentType {
 
 impl Modifier<Response> for ContentType {
     #[inline]
-    fn modify(self, mut res: Response) -> Response {
+    fn modify(self, res: &mut Response) {
         let ContentType(media) = self;
         res.headers.content_type = Some(media);
-        res
     }
 }
 
@@ -59,10 +58,9 @@ pub struct Body<B: Bodyable>(pub B);
 
 impl<B: Bodyable> Modifier<Response> for Body<B> {
     #[inline]
-    fn modify(self, mut res: Response) -> Response {
+    fn modify(self, res: &mut Response) {
         let Body(b) = self;
-        b.set_body(&mut res);
-        res
+        b.set_body(res);
     }
 }
 
@@ -134,10 +132,9 @@ impl Bodyable for Path {
 pub struct Status(pub status::Status);
 
 impl Modifier<Response> for Status {
-    fn modify(self, mut res: Response) -> Response {
+    fn modify(self, res: &mut Response) {
         let Status(status) = self;
         res.status = Some(status);
-        res
     }
 }
 
@@ -145,10 +142,9 @@ impl Modifier<Response> for Status {
 pub struct Redirect(pub Url);
 
 impl Modifier<Response> for Redirect {
-    fn modify(self, mut res: Response) -> Response {
+    fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
         res.headers.location = Some(url.into_generic_url());
-        res
     }
 }
 
