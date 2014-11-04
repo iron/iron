@@ -1,7 +1,6 @@
 #![crate_name = "router"]
 #![license = "MIT"]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![deny(missing_docs, warnings)]
 #![feature(phase, globs)]
 
 //! `Router` provides a fast router handler for the Iron web framework.
