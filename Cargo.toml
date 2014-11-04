@@ -33,6 +33,10 @@ git = "https://github.com/servo/rust-url.git"
 
 git = "https://github.com/reem/rust-plugin.git"
 
+[dependencies.modifier]
+
+git = "https://github.com/reem/rust-modifier.git"
+
 [dependencies.error]
 
 git = "https://github.com/reem/rust-error.git"

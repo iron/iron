@@ -1,7 +1,8 @@
 extern crate iron;
 extern crate time;
 
-use iron::{Request, Response, IronResult, Handler, AroundMiddleware, Iron, IronError};
+use iron::{Request, Response, IronResult, Handler, AroundMiddleware, Iron, IronError, Set};
+use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 use std::io::net::ip::Ipv4Addr;
@@ -51,7 +52,9 @@ impl AroundMiddleware for Logger {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(status::Ok, "Hello World!"))
+    Ok(Response::new()
+           .set(Status(status::Ok))
+           .set(Body("Hello World!")))
 }
 
 fn main() {

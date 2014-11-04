@@ -8,7 +8,8 @@ extern crate time;
 use std::io::net::ip::Ipv4Addr;
 use iron::{Iron, Handler, BeforeMiddleware, IronError,
            Request, Response, ChainBuilder, Chain,
-           IronResult};
+           IronResult, Set};
+use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 struct ErrorHandler;
@@ -20,7 +21,10 @@ impl Handler for ErrorHandler {
     }
 
     fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::with(status::InternalServerError, "Internal Server Error."), Err(err))
+        (Response::new()
+            .set(Status(status::InternalServerError))
+            .set(Body("Internal Server Error.")),
+         Err(err))
     }
 
 }
