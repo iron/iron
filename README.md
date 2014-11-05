@@ -33,11 +33,7 @@ Iron does not come bundled with any middleware - instead, Iron is a robust and e
 **Iron focuses on providing a clean API for creating middleware and integrating
 them in Iron servers.**
 
-After spawning, handling a single request through Iron’s middleware stack
-with a single no-op middleware takes only 0.9 _micro_ seconds - with ten middleware,
-it's only 1.1 microseconds.
-
-Iron averages [17,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example).
+Iron averages [52,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example).
 
 ## [Overview](http://ironframework.io)
 
