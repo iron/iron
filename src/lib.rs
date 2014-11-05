@@ -7,6 +7,7 @@
 #![deny(warnings)]
 
 #![feature(macro_rules, phase, globs, unboxed_closures, slicing_syntax)]
+
 //! The main crate for the Iron library.
 //!
 //! Iron is a high level web framework built in and for Rust.
@@ -18,7 +19,7 @@
 //!
 //! ```ignore
 //! fn hello_world(req: &mut Request) -> IronResult<Response> {
-//!   Response::with(status::Ok, "Hello World!")
+//!   Response::new().set(Status(status::Ok)).set(Body("Hello World!"))
 //! }
 //!
 //! Iron::new(hello_world).listen(Ipv4Addr(127, 0, 0, 1), 3000);
