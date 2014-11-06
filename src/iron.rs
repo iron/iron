@@ -77,7 +77,7 @@ impl<H: Handler> Iron<H> {
 
 impl<H: Handler> IronListener<H> {
     fn serve(self, threads: uint) {
-        let mut acceptor = match tcp::TcpListener::bind(format!("{}", self.ip).as_slice(), self.port).listen() {
+        let mut acceptor = match tcp::TcpListener::bind((self.ip, self.port)).listen() {
             Err(err) => {
                 error!("Bind or Listen failed: {}", err);
                 return;
