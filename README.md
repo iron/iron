@@ -44,7 +44,7 @@ Middleware is painless to build, and the [core bundle](https://github.com/iron/c
 already includes:
 - [Routing](https://github.com/iron/router)
 - [Mounting](https://github.com/iron/mount)
-- [Static File Serving](https://github.com/iron/static-file)
+- [Static File Serving](https://github.com/iron/static)
 - [JSON Body Parsing](https://github.com/iron/body-parser)
 - [URL Encoded Data Parsing](https://github.com/iron/urlencoded)
 - [Logging](https://github.com/iron/logger)
