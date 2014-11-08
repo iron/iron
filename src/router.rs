@@ -98,7 +98,7 @@ impl Router {
 
     fn recognize<'a>(&'a self, method: &Method, path: &str)
                      -> Option<Match<&'a Box<Handler + Send + Sync>>> {
-        self.routers.find(method).and_then(|router| router.recognize(path).ok())
+        self.routers.get(method).and_then(|router| router.recognize(path).ok())
     }
 }
 
