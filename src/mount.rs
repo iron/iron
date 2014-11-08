@@ -101,7 +101,7 @@ impl Handler for Mount {
         let res = matched.handler.call(req);
 
         // Reverse the URL munging, for future middleware.
-        req.url = match req.extensions.find::<OriginalUrl, Url>() {
+        req.url = match req.extensions.get::<OriginalUrl, Url>() {
             Some(original) => original.clone(),
             None => panic!("OriginalUrl unexpectedly removed from req.extensions.")
         };
