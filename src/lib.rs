@@ -1,6 +1,6 @@
 #![crate_name = "persistent"]
 #![license = "MIT"]
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 #![deny(warnings)]
 #![feature(default_type_params)]
 
@@ -93,7 +93,7 @@ impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for State<P, D>
     where D: Send + Sync,
           P: Assoc<D> {
     fn eval(req: &mut Request, _: Phantom<State<P, D>>) -> Option<Arc<RWLock<D>>> {
-        req.extensions.find::<State<P, D>, Arc<RWLock<D>>>()
+        req.extensions.get::<State<P, D>, Arc<RWLock<D>>>()
             .map(|x| x.clone())
     }
 }
@@ -102,7 +102,7 @@ impl<P, D> PluginFor<Request, Arc<D>> for Read<P, D>
     where D: Send + Sync,
           P: Assoc<D> {
     fn eval(req: &mut Request, _: Phantom<Read<P, D>>) -> Option<Arc<D>> {
-        req.extensions.find::<Read<P, D>, Arc<D>>()
+        req.extensions.get::<Read<P, D>, Arc<D>>()
             .map(|x| x.clone())
     }
 }
@@ -111,7 +111,7 @@ impl<P, D> PluginFor<Request, Arc<Mutex<D>>> for Write<P, D>
     where D: Send,
           P: Assoc<D> {
     fn eval(req: &mut Request, _: Phantom<Write<P, D>>) -> Option<Arc<Mutex<D>>> {
-        req.extensions.find::<Write<P, D>, Arc<Mutex<D>>>()
+        req.extensions.get::<Write<P, D>, Arc<Mutex<D>>>()
             .map(|x| x.clone())
     }
 }
