@@ -1,10 +1,12 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
+use taskpool::TaskPool;
+
 use std::io::net::ip::IpAddr;
 use std::io::net::tcp;
 use std::io::{Listener, Acceptor};
-use std::sync::{mod, Arc};
+use std::sync::Arc;
 
 use {Request, Handler};
 use status;
@@ -85,7 +87,7 @@ impl<H: Handler> IronListener<H> {
             Ok(acceptor) => acceptor
         };
 
-        let mut taskpool = sync::TaskPool::new(threads, || { proc(_) () });
+        let mut taskpool = TaskPool::new(threads);
 
         for stream in acceptor.incoming() {
             let stream = match stream {
@@ -97,7 +99,7 @@ impl<H: Handler> IronListener<H> {
 
             let handler = self.handler.clone();
 
-            taskpool.execute(proc(_) {
+            taskpool.execute(proc() {
                 let mut stream = ::http::buffer::BufferedStream::new(stream);
                 let mut close = false;
 

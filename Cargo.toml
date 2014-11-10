@@ -41,3 +41,7 @@ git = "https://github.com/reem/rust-modifier.git"
 
 git = "https://github.com/reem/rust-error.git"
 
+[dependencies.taskpool]
+
+git = "https://github.com/reem/rust-resistant-taskpool.git"
+
