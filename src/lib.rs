@@ -37,6 +37,7 @@ extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate modifier;
 extern crate error;
+extern crate taskpool;
 extern crate "url" as rust_url;
 
 // Request + Response
