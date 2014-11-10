@@ -23,7 +23,7 @@ impl BeforeMiddleware for ResponseTime {
 
 impl AfterMiddleware for ResponseTime {
     fn after(&self, req: &mut Request, _: &mut Response) -> IronResult<()> {
-        let delta = precise_time_ns() - *req.extensions.find::<ResponseTime, u64>().unwrap();
+        let delta = precise_time_ns() - *req.extensions.get::<ResponseTime, u64>().unwrap();
         println!("Request took: {} ms", (delta as f64) / 1000000.0);
         Ok(())
     }
