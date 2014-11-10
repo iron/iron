@@ -6,6 +6,8 @@ persistent [![Build Status](https://secure.travis-ci.org/iron/persistent.png?bra
 ## Example
 
 ```rust
+use iron::Plugin; // Request::get is provided through this trait.
+
 pub struct HitCounter;
 impl Assoc<uint> for HitCounter {}
 
