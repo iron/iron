@@ -1,7 +1,9 @@
+#![feature(globs)]
 extern crate iron;
 
+use iron::prelude::*;
+
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Request, Response, IronResult, Set};
 use iron::response::modifiers::{Status, Body};
 use iron::status;
 
