@@ -1,7 +1,9 @@
+#![feature(globs)]
 extern crate iron;
 extern crate time;
 
-use iron::{Request, Response, IronResult, Handler, AroundMiddleware, Iron, IronError, Set};
+use iron::prelude::*;
+use iron::{Handler, AroundMiddleware};
 use iron::response::modifiers::{Status, Body};
 use iron::status;
 

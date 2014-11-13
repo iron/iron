@@ -1,14 +1,12 @@
-#![feature(phase)]
+#![feature(globs)]
 
-#[phase(plugin, link)] extern crate log;
 extern crate iron;
 extern crate http;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
-use iron::{Iron, Handler, BeforeMiddleware, IronError,
-           Request, Response, ChainBuilder, Chain,
-           IronResult, Set};
+use iron::prelude::*;
+use iron::{Handler, BeforeMiddleware, ChainBuilder};
 use iron::response::modifiers::{Status, Body};
 use iron::status;
 
