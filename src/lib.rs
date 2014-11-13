@@ -74,6 +74,21 @@ pub use error::{Error, ErrorRefExt};
 pub type IronError = Box<Error>;
 pub type IronResult<T> = Result<T, IronError>;
 
+/// A module meant to be glob imported when using Iron, for instance:
+///
+/// ```{ignore}
+/// #![feature(globs)]
+/// use iron::prelude::*;
+/// ```
+///
+/// This module contains several important traits that provide many
+/// of the convenience methods in Iron, as well as `Request`, `Response`
+/// `IronResult`, `IronError` and `Iron`.
+pub mod prelude {
+    pub use {Set, Plugin, ErrorRefExt, Chain, Request,
+             Response, IronResult, IronError, Iron};
+}
+
 /// Re-exports from the TypeMap crate.
 pub mod typemap {
     pub use tmap::{TypeMap, Assoc};
