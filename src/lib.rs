@@ -35,7 +35,7 @@ extern crate content_type;
 extern crate http;
 extern crate "typemap" as tmap;
 extern crate plugin;
-extern crate modifier;
+extern crate "modifier" as modfier;
 extern crate error;
 extern crate taskpool;
 extern crate "url" as rust_url;
@@ -92,6 +92,11 @@ pub mod prelude {
 /// Re-exports from the TypeMap crate.
 pub mod typemap {
     pub use tmap::{TypeMap, Assoc};
+}
+
+/// Re-exports from the Modifier crate.
+pub mod modifier {
+    pub use modfier::{Set, Modifier};
 }
 
 // Publicized to show the documentation
