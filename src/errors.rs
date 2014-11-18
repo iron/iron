@@ -42,3 +42,18 @@ impl Error for HyperError {
     }
 }
 
+/// Occurs when the address to listen on is not valid.
+#[deriving(Show)]
+pub struct InvalidAddressError(pub IoError);
+
+impl InvalidAddressError {
+    /// Create a new InvalidAddressError.
+    pub fn new(err: IoError) -> InvalidAddressError { InvalidAddressError(err) }
+}
+
+impl Error for InvalidAddressError {
+    fn name(&self) -> &'static str {
+        let InvalidAddressError(ref err) = *self;
+        err.desc
+    }
+}
