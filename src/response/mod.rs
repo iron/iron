@@ -128,7 +128,7 @@ impl Response {
 
                 // FIXME: Manually inlined io::util::copy
                 // because Box<Reader + Send> does not impl Reader.
-                let mut buf = [0, ..1024 * 64];
+                let mut buf = &mut [0, ..1024 * 64];
                 let mut out = Ok(());
                 loop {
                     let len = match body.read(buf) {
