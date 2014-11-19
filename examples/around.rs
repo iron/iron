@@ -28,9 +28,9 @@ impl Logger {
 
     fn log(&self, req: &Request, res: Result<&Response, &IronError>, time: u64) {
         match self.mode {
-            Silent => {},
-            Tiny => println!("Req: {}\nRes: {}\nTook: {}", req, res, time),
-            Large => println!("Request: {}\nResponse: {}\nResponse-Time: {}", req, res, time)
+            LoggerMode::Silent => {},
+            LoggerMode::Tiny => println!("Req: {}\nRes: {}\nTook: {}", req, res, time),
+            LoggerMode::Large => println!("Request: {}\nResponse: {}\nResponse-Time: {}", req, res, time)
         }
     }
 }
@@ -60,9 +60,9 @@ fn hello_world(_: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    let tiny = Iron::new(Logger::new(Tiny).around(box hello_world));
-    let silent = Iron::new(Logger::new(Silent).around(box hello_world));
-    let large = Iron::new(Logger::new(Large).around(box hello_world));
+    let tiny = Iron::new(Logger::new(LoggerMode::Tiny).around(box hello_world));
+    let silent = Iron::new(Logger::new(LoggerMode::Silent).around(box hello_world));
+    let large = Iron::new(Logger::new(LoggerMode::Large).around(box hello_world));
 
     tiny.listen(Ipv4Addr(127, 0, 0, 1), 2000);
     silent.listen(Ipv4Addr(127, 0, 0, 1), 3000);
