@@ -114,7 +114,7 @@ impl Response {
         // Default to a 404 if no response code was set
         http_res.status = self.status.clone().unwrap_or(status::NotFound);
 
-        match self.body {
+        let out = match self.body {
             Some(mut body) => {
                 http_res.headers.content_type =
                     Some(http_res.headers
@@ -146,20 +146,24 @@ impl Response {
                     };
                 }
 
-                match out {
-                    Err(e) => {
-                        error!("Error reading/writing body: {}", e);
-
-                        // Can't do anything else here since all headers/status have
-                        // already been sent.
-                    },
-                    _ => {}
-                }
+                out.and_then(|_| http_res.finish_response())
             },
 
             None => {
                 http_res.headers.content_length = Some(0u);
+                http_res.write_headers()
+                    .and_then(|_| http_res.finish_response())
             }
+        };
+
+        match out {
+            Err(e) => {
+                error!("Error reading/writing body: {}", e);
+
+                // Can't do anything else here since all headers/status have
+                // already been sent.
+            },
+            _ => {}
         }
     }
 }
