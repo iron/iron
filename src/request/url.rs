@@ -4,7 +4,7 @@ use rust_url;
 use rust_url::{Host, RelativeSchemeData, UrlRelativeSchemeData};
 use rust_url::{whatwg_scheme_type_mapper, RelativeScheme};
 use rust_url::format::{PathFormatter, UserInfoFormatter};
-use std::fmt::{Show, Formatter, FormatError};
+use std::fmt::{mod, Show};
 
 use {serialize};
 
@@ -139,7 +139,7 @@ impl Url {
 }
 
 impl Show for Url {
-    fn fmt<'a>(&self, formatter: &mut Formatter) -> Result<(), FormatError> {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         // Write the scheme.
         try!(self.scheme.fmt(formatter));
         try!("://".fmt(formatter));

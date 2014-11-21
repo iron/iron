@@ -1,7 +1,7 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
-use std::fmt::{Show, Formatter, FormatError};
+use std::fmt::{mod, Show};
 
 use http::server::request::{AbsoluteUri, AbsolutePath};
 use http::headers::request::HeaderCollection;
@@ -41,7 +41,7 @@ pub struct Request {
 }
 
 impl Show for Request {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), FormatError> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Request {{"));
 
         try!(writeln!(f, "    url: {}", self.url));
