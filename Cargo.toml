@@ -13,9 +13,9 @@ authors = [
 name = "iron"
 path = "src/lib.rs"
 
-[dependencies.http]
+[dependencies.hyper]
 
-git = "https://github.com/chris-morgan/rust-http.git"
+git = "https://github.com/hyperium/hyper.git"
 
 [dependencies.typemap]
 
