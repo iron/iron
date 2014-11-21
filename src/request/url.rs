@@ -1,10 +1,9 @@
 //! HTTP/HTTPS URL type for Iron.
 
-use rust_url;
-use rust_url::{Host, RelativeSchemeData};
-use rust_url::{whatwg_scheme_type_mapper};
-use rust_url::{SchemeData, SchemeType};
-use rust_url::format::{PathFormatter, UserInfoFormatter};
+use url::{Host, RelativeSchemeData};
+use url::{whatwg_scheme_type_mapper};
+use url::{mod, SchemeData, SchemeType};
+use url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt::{mod, Show};
 
 use {serialize};
@@ -64,14 +63,14 @@ impl Url {
     /// See: http://url.spec.whatwg.org/#relative-scheme
     pub fn parse(input: &str) -> Result<Url, String> {
         // Parse the string using rust-url, then convert.
-        match rust_url::Url::parse(input) {
+        match url::Url::parse(input) {
             Ok(raw_url) => Url::from_generic_url(raw_url),
             Err(e) => Err(format!("{}", e))
         }
     }
 
     /// Create a `Url` from a `rust-url` `Url`.
-    pub fn from_generic_url(raw_url: rust_url::Url) -> Result<Url, String> {
+    pub fn from_generic_url(raw_url: url::Url) -> Result<Url, String> {
         // Create an Iron URL by extracting the relative scheme data.
         match raw_url.scheme_data {
             SchemeData::Relative(data) => {
@@ -118,10 +117,10 @@ impl Url {
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
-    pub fn into_generic_url(self) -> rust_url::Url {
+    pub fn into_generic_url(self) -> url::Url {
         let default_port = whatwg_scheme_type_mapper(self.scheme[]).default_port();
 
-        rust_url::Url {
+        url::Url {
             scheme: self.scheme,
             scheme_data: SchemeData::Relative(
                 RelativeSchemeData {
@@ -237,7 +236,7 @@ mod test {
 
         // Convert to a generic URL and check fidelity.
         let raw_url = url.clone().into_generic_url();
-        assert_eq!(::rust_url::Url::parse(url_str).unwrap(), raw_url);
+        assert_eq!(::url::Url::parse(url_str).unwrap(), raw_url);
 
         // Convert back to an Iron URL and check fidelity.
         let new_url = Url::from_generic_url(raw_url).unwrap();

@@ -3,16 +3,18 @@
 use std::io::net::ip::SocketAddr;
 use std::fmt::{mod, Show};
 
-use http::server::request::{AbsoluteUri, AbsolutePath};
-use http::headers::request::HeaderCollection;
-use http::method::Method;
+use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
+use hyper::header::Headers;
+use hyper::method::Method;
 
 use typemap::TypeMap;
 use plugin::Extensible;
 
-pub use http::server::request::Request as HttpRequest;
+pub use hyper::server::request::Request as HttpRequest;
 
 pub use self::url::Url;
+
+use {headers};
 
 mod url;
 
@@ -25,10 +27,10 @@ pub struct Request {
     pub url: Url,
 
     /// The originating address of the request.
-    pub remote_addr: Option<SocketAddr>,
+    pub remote_addr: SocketAddr,
 
     /// The request headers.
-    pub headers: HeaderCollection,
+    pub headers: Headers,
 
     /// The request body.
     pub body: Vec<u8>,
@@ -58,47 +60,44 @@ impl Request {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest) -> Result<Request, String> {
-        match req.request_uri {
-            AbsoluteUri(url) => {
-                let url = match Url::from_generic_url(url) {
+    pub fn from_http(mut req: HttpRequest) -> Result<Request, String> {
+        let url = match req.uri {
+            AbsoluteUri(ref url) => {
+                match Url::from_generic_url(url.clone()) {
                     Ok(url) => url,
                     Err(e) => return Err(e)
-                };
-
-                Ok(Request {
-                    url: url,
-                    remote_addr: req.remote_addr,
-                    headers: req.headers,
-                    body: req.body,
-                    method: req.method,
-                    extensions: TypeMap::new()
-                })
+                }
             },
-            AbsolutePath(path) => {
+
+            AbsolutePath(ref path) => {
                 // Attempt to prepend the Host header (mandatory in HTTP/1.1)
-                // XXX: HTTPS incompatible, update when switching to Teepee.
-                let url_string = match req.headers.host {
+                // FIXME: HTTPS incompatible, update when Hyper gains HTTPS support.
+                let url_string = match req.headers.get::<headers::Host>() {
                     Some(ref host) => format!("http://{}{}", host, path),
                     None => return Err("No host specified in request".to_string())
                 };
 
-                let url = match Url::parse(url_string.as_slice()) {
+                match Url::parse(url_string.as_slice()) {
                     Ok(url) => url,
                     Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
-                };
-
-                Ok(Request {
-                    url: url,
-                    remote_addr: req.remote_addr,
-                    headers: req.headers,
-                    body: req.body,
-                    method: req.method,
-                    extensions: TypeMap::new()
-                })
+                }
             },
-            _ => Err("Unsupported request URI".to_string())
-        }
+            _ => return Err("Unsupported request URI".to_string())
+        };
+
+        let body = match req.read_to_end() {
+            Ok(body) => body,
+            Err(e) => return Err(format!("Couldn't read request body: {}", e))
+        };
+
+        Ok(Request {
+            url: url,
+            remote_addr: req.remote_addr,
+            headers: req.headers,
+            body: body,
+            method: req.method,
+            extensions: TypeMap::new()
+        })
     }
 }
 
