@@ -2,7 +2,7 @@
 
 use std::io::{mod, File, MemReader};
 use std::path::BytesContainer;
-use std::fmt::{Show, Formatter, FormatError};
+use std::fmt::{Show, Formatter, Error};
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -169,7 +169,7 @@ impl Response {
 }
 
 impl Show for Response {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), FormatError> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         try!(writeln!(f, "Response {{"));
 
         try!(writeln!(f, "    status: {}", self.status));
