@@ -1,8 +1,8 @@
 //! HTTP/HTTPS URL type for Iron.
 
 use rust_url;
-use rust_url::{Host, RelativeSchemeData, UrlRelativeSchemeData};
-use rust_url::{whatwg_scheme_type_mapper, RelativeScheme};
+use rust_url::{Host, RelativeSchemeData, SchemeData};
+use rust_url::{whatwg_scheme_type_mapper, SchemeType};
 use rust_url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt::{mod, Show};
 
@@ -73,7 +73,7 @@ impl Url {
     pub fn from_generic_url(raw_url: rust_url::Url) -> Result<Url, String> {
         // Create an Iron URL by extracting the relative scheme data.
         match raw_url.scheme_data {
-            RelativeSchemeData(data) => {
+            SchemeData::Relative(data) => {
                 // Extract the port as a 16-bit unsigned integer.
                 let port: u16 = match data.port {
                     // If explicitly defined, unwrap it.
@@ -82,7 +82,7 @@ impl Url {
                     // Otherwise, use the scheme's default port.
                     None => {
                         match whatwg_scheme_type_mapper(raw_url.scheme.as_slice()) {
-                            RelativeScheme(port) => port,
+                            SchemeType::Relative(port) => port,
                             _ => return Err(format!("Invalid relative scheme: `{}`", raw_url.scheme))
                         }
                     }
@@ -122,8 +122,8 @@ impl Url {
 
         rust_url::Url {
             scheme: self.scheme,
-            scheme_data: RelativeSchemeData(
-                UrlRelativeSchemeData {
+            scheme_data: SchemeData::Relative(
+                RelativeSchemeData {
                     username: self.username.unwrap_or("".to_string()),
                     password: self.password,
                     host: self.host,
