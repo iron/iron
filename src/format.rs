@@ -5,10 +5,15 @@ use term::{attr, color};
 use iron::status::NotFound;
 
 use std::default::Default;
-use std::from_str::FromStr;
+use std::str::FromStr;
 use std::str::Chars;
 use std::vec::MoveItems;
 use std::iter::Peekable;
+
+use self::ColorOrAttr::{Color, Attr};
+use self::FormatText::{Method, URI, Status, ResponseTime};
+use self::FormatColor::{ConstantColor, FunctionColor};
+use self::FormatAttr::{ConstantAttrs, FunctionAttrs};
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
@@ -301,7 +306,7 @@ impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
                         // Done parsing.
                         Some(&'@') | Some(&'{') | None => {
                             return Some(Some(FormatUnit {
-                                text: Str(buffer),
+                                text: FormatText::Str(buffer),
                                 color: ConstantColor(None),
                                 attrs: ConstantAttrs(vec![])
                             }))
