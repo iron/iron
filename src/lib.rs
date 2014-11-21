@@ -11,7 +11,7 @@ extern crate iron;
 extern crate regex;
 extern crate url;
 extern crate typemap;
-extern crate trie;
+extern crate sequence_trie;
 
 pub use mount::{Mount, OriginalUrl};
 

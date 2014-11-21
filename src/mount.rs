@@ -1,6 +1,6 @@
 use iron::{Handler, Response, Request, IronResult, IronError, Url, Error};
 use typemap::Assoc;
-use trie::Trie;
+use sequence_trie::SequenceTrie;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
 pub struct OriginalUrl;
@@ -18,7 +18,7 @@ impl Assoc<Url> for OriginalUrl {}
 /// Mounted handlers may also access the *original* URL by requesting the `OriginalUrl` key
 /// from `Request::extensions`.
 pub struct Mount {
-    inner: Trie<String, Match>
+    inner: SequenceTrie<String, Match>
 }
 
 struct Match {
@@ -38,7 +38,7 @@ impl Mount {
     /// Creates a new instance of `Mount`.
     pub fn new() -> Mount {
         Mount {
-            inner: Trie::new()
+            inner: SequenceTrie::new()
         }
     }
 
@@ -78,7 +78,7 @@ impl Handler for Mount {
             };
 
             // Search the Trie for the nearest most specific match.
-            match self.inner.find_ancestor(key) {
+            match self.inner.get_ancestor(key) {
                 Some(matched) => matched,
                 None => return Err(box NoMatch as IronError)
             }
