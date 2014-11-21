@@ -14,7 +14,7 @@ fn fourzerofour(_: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    Iron::new(fourzerofour).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(fourzerofour).listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
     println!("On 3000");
 }
 
