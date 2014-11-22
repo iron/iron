@@ -1,7 +1,6 @@
 #![feature(globs)]
 
 extern crate iron;
-extern crate http;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
@@ -40,7 +39,7 @@ fn main() {
     // Link our error maker.
     chain.link_before(ErrorProducer);
 
-    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
     println!("On 3000");
 }
 

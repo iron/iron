@@ -6,7 +6,7 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#![feature(macro_rules, phase, globs, unboxed_closures, slicing_syntax)]
+#![feature(macro_rules, phase, globs, unboxed_closures, slicing_syntax, default_type_params)]
 
 //! The main crate for the Iron library.
 //!
@@ -31,13 +31,12 @@
 extern crate serialize;
 
 // Third party packages
-extern crate content_type;
-extern crate http;
+extern crate hyper;
 extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate "modifier" as modfier;
 extern crate error;
-extern crate "url" as rust_url;
+extern crate url;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -53,12 +52,9 @@ pub use iron::Iron;
 // Extensions
 pub use typemap::TypeMap;
 
-// Status codes and Methods.
-pub use http::status;
-pub use http::method;
-
 // Headers
-pub use http::headers;
+pub use hyper::header::common as headers;
+pub use hyper::header::Headers;
 
 // Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::GetCached as Plugin;
@@ -68,6 +64,9 @@ pub use modifier::Set;
 
 // Errors
 pub use error::{Error, ErrorRefExt};
+
+// Mime types
+pub use hyper::mime;
 
 // Return type of many methods
 pub type IronError = Box<Error>;
@@ -96,6 +95,18 @@ pub mod typemap {
 /// Re-exports from the Modifier crate.
 pub mod modifier {
     pub use modfier::{Set, Modifier};
+}
+
+/// Status Codes
+pub mod status {
+    pub use hyper::status::StatusCode as Status;
+    pub use hyper::status::StatusCode::*;
+}
+
+/// HTTP Methods
+pub mod method {
+    pub use hyper::method::Method;
+    pub use hyper::method::Method::*;
 }
 
 // Publicized to show the documentation

@@ -1,105 +1,52 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{mod, File, MemReader};
-use std::path::BytesContainer;
+use std::io::{mod, IoResult};
 use std::fmt::{mod, Show};
+use std::str::from_str;
 
 use typemap::TypeMap;
 use plugin::Extensible;
 
-use http::headers::response::HeaderCollection;
-use http::headers::content_type::MediaType;
+use hyper::header::Headers;
 
-use errors::FileError;
 use status::{mod, Status};
-use {Url};
+use {headers};
 
-pub use http::server::response::ResponseWriter as HttpResponse;
-
-use content_type::get_content_type;
+pub use hyper::server::response::Response as HttpResponse;
+use hyper::net::Fresh;
 
 pub mod modifiers;
 
 /// The response representation given to `Middleware`
 pub struct Response {
+    /// The response status-code.
+    pub status: Option<Status>,
+
+    /// The headers of the response.
+    pub headers: Headers,
+
+    /// A TypeMap to be used as an extensible storage for data
+    /// associated with this Response.
+    pub extensions: TypeMap,
+
     /// The body of the response.
     ///
     /// This is a Reader for generality, most data should
     /// be sent using either `serve` or `serve_file`.
     ///
     /// Arbitrary Readers can be sent by assigning to body.
-    pub body: Option<Box<Reader + Send>>,
-
-    /// The headers of the response.
-    pub headers: Box<HeaderCollection>,
-
-    /// The response status-code.
-    pub status: Option<Status>,
-
-    /// A TypeMap to be used as an extensible storage for data
-    /// associated with this Response.
-    pub extensions: TypeMap
+    pub body: Option<Box<Reader + Send>>
 }
 
 impl Response {
     /// Construct a blank Response
     pub fn new() -> Response {
         Response {
-            headers: box HeaderCollection::new(),
             status: None, // Start with no response code.
             body: None, // Start with no body.
+            headers: Headers::new(),
             extensions: TypeMap::new()
         }
-    }
-
-    /// Create a new response with the status.
-    #[deprecated = "Use `Response::new().set(Status(status))` instead."]
-    pub fn status(status: status::Status) -> Response {
-        Response {
-            body: None,
-            headers: box HeaderCollection::new(),
-            status: Some(status),
-            extensions: TypeMap::new()
-        }
-    }
-
-
-    /// Create a new response with the specified body and status.
-    #[deprecated = "Use `Response::new().set(Status(status)).set(Body(body))` instead."]
-    pub fn with<B: BytesContainer>(status: status::Status, body: B) -> Response {
-        Response {
-            body: Some(box MemReader::new(body.container_as_bytes().to_vec()) as Box<Reader + Send>),
-            headers: box HeaderCollection::new(),
-            status: Some(status),
-            extensions: TypeMap::new()
-        }
-    }
-
-    /// Create a new Response with the `location` header set to the specified url.
-    #[deprecated = "Use `Response::new().set(Status(status)).set(Redirect(url))` instead."]
-    pub fn redirect(status: status::Status, url: Url) -> Response {
-        let mut headers = box HeaderCollection::new();
-        headers.location = Some(url.into_generic_url());
-        Response {
-            body: None,
-            headers: headers,
-            status: Some(status),
-            extensions: TypeMap::new()
-        }
-    }
-
-    /// Create a response from a file on disk.
-    ///
-    /// The status code is set to 200 OK and the content type is autodetected based on
-    /// the file extension.
-    #[deprecated = "Use `Response::new().set(Status(status)).set(Body(path))` instead"]
-    pub fn from_file(path: &Path) -> Result<Response, FileError> {
-        let file = try!(File::open(path).map_err(FileError::new));
-        let mut response = Response::new();
-        response.status = Some(status::Ok);
-        response.body = Some(box file as Box<Reader + Send>);
-        response.headers.content_type = path.extension_str().and_then(get_content_type);
-        Ok(response)
     }
 
     // `write_back` is used to put all the data added to `self`
@@ -108,51 +55,20 @@ impl Response {
     //
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
-    pub fn write_back(self, http_res: &mut HttpResponse) {
-        http_res.headers = *self.headers.clone();
+    pub fn write_back(self, mut http_res: HttpResponse<Fresh>) {
+        *http_res.headers_mut() = self.headers;
 
         // Default to a 404 if no response code was set
-        http_res.status = self.status.clone().unwrap_or(status::NotFound);
+        *http_res.status_mut() = self.status.clone().unwrap_or(status::NotFound);
 
         let out = match self.body {
-            Some(mut body) => {
-                http_res.headers.content_type =
-                    Some(http_res.headers
-                            .content_type
-                            .clone()
-                            .unwrap_or_else(||
-                                MediaType::new("text".into_string(),
-                                               "plain".into_string(),
-                                               vec![])
-                            ));
-
-                // FIXME: Manually inlined io::util::copy
-                // because Box<Reader + Send> does not impl Reader.
-                let mut buf = &mut [0, ..1024 * 64];
-                let mut out = Ok(());
-                loop {
-                    let len = match body.read(buf) {
-                        Ok(len) => len,
-                        Err(ref e) if e.kind == io::EndOfFile => break,
-                        Err(e) => { out = Err(e); break; },
-                    };
-
-                    match http_res.write(buf[..len]) {
-                        Err(e) => {
-                            out = Err(e);
-                            break;
-                        },
-                        _ => {}
-                    };
-                }
-
-                out.and_then(|_| http_res.finish_response())
+            Some(body) => {
+                write_with_body(http_res, body)
             },
 
             None => {
-                http_res.headers.content_length = Some(0u);
-                http_res.write_headers()
-                    .and_then(|_| http_res.finish_response())
+                http_res.headers_mut().set(headers::ContentLength(0));
+                http_res.start().and_then(|res| res.end())
             }
         };
 
@@ -168,14 +84,39 @@ impl Response {
     }
 }
 
+fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -> IoResult<()> {
+    let content_type = res.headers().get::<headers::ContentType>()
+                           .map(|cx| cx.clone())
+                           .unwrap_or_else(|| headers::ContentType(from_str("text/plain").unwrap()));
+    res.headers_mut().set(content_type);
+
+    let mut res = try!(res.start());
+
+    // FIXME: Manually inlined io::util::copy
+    // because Box<Reader + Send> does not impl Reader.
+    //
+    // Tracking issue: rust-lang/rust#18542
+    let mut buf = &mut [0, ..1024 * 64];
+    loop {
+        let len = match body.read(buf) {
+            Ok(len) => len,
+            Err(ref e) if e.kind == io::EndOfFile => break,
+            Err(e) => { return Err(e) },
+        };
+
+        try!(res.write(buf[..len]))
+    }
+
+    res.end()
+}
+
 impl Show for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(f, "Response {{"));
-
-        try!(writeln!(f, "    status: {}", self.status));
-
-        try!(write!(f, "}}"));
-        Ok(())
+        writeln!(f, "HTTP/1.1 {} {}\n{}",
+            self.status.unwrap_or(status::NotFound),
+            self.status.unwrap_or(status::NotFound).canonical_reason().unwrap(),
+            self.headers
+        )
     }
 }
 
@@ -190,11 +131,3 @@ impl Extensible for Response {
     }
 }
 
-#[test]
-fn matches_content_type () {
-    let path = &Path::new("test.txt");
-    let content_type = path.extension_str().and_then(get_content_type).unwrap();
-
-    assert_eq!(content_type.type_.as_slice(), "text");
-    assert_eq!(content_type.subtype.as_slice(), "plain");
-}

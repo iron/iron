@@ -32,3 +32,13 @@ impl Error for FileError {
     }
 }
 
+/// An error occuring within Hyper, Iron's underlying HTTP implementation.
+#[deriving(Show)]
+pub struct HyperError(pub ::hyper::HttpError);
+
+impl Error for HyperError {
+    fn name(&self) -> &'static str {
+        "Hyper Error"
+    }
+}
+

@@ -38,5 +38,5 @@ fn main() {
     let mut chain = ChainBuilder::new(hello_world);
     chain.link_before(ResponseTime);
     chain.link_after(ResponseTime);
-    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
 }
