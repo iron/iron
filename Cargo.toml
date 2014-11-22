@@ -1,7 +1,11 @@
 [package]
 
 name = "iron"
-version = "0.0.1"
+version = "0.0.2"
+description = "Middleware-Oriented, Concurrency Focused Web Development in Rust."
+readme = "README.md"
+documentation = "http://ironframework.io/doc/iron/"
+license = "MIT"
 authors = [
     "Jonathan Reem <jonathan.reem@gmail.com>",
     "Zach Pomerantz <zmp@umich.edu>",

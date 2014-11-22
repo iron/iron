@@ -1,7 +1,6 @@
 #![feature(globs)]
 
 extern crate iron;
-extern crate http;
 extern crate time;
 
 use std::io::net::ip::Ipv4Addr;
