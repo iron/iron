@@ -13,31 +13,11 @@ authors = [
 name = "iron"
 path = "src/lib.rs"
 
-[dependencies.hyper]
-
-git = "https://github.com/hyperium/hyper.git"
-
-[dependencies.typemap]
-
-git = "https://github.com/reem/rust-typemap.git"
-
-[dependencies.content_type]
-
-git = "https://github.com/reem/rust-http-content-type.git"
-
-[dependencies.url]
-
-git = "https://github.com/servo/rust-url.git"
-
-[dependencies.plugin]
-
-git = "https://github.com/reem/rust-plugin.git"
-
-[dependencies.modifier]
-
-git = "https://github.com/reem/rust-modifier.git"
-
-[dependencies.error]
-
-git = "https://github.com/reem/rust-error.git"
+[dependencies]
+hyper = "*"
+typemap = "*"
+url = "*"
+plugin = "*"
+modifier = "*"
+error = "*"
 

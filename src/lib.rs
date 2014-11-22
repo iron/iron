@@ -31,7 +31,6 @@
 extern crate serialize;
 
 // Third party packages
-extern crate content_type;
 extern crate hyper;
 extern crate "typemap" as tmap;
 extern crate plugin;
