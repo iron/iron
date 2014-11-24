@@ -17,8 +17,10 @@ use term::{Terminal, WriterWrapper, stdout};
 
 use std::io::IoResult;
 
-use format::{Format, FormatText, Str, Method, URI, Status, ResponseTime,
-             ConstantColor, FunctionColor, ConstantAttrs, FunctionAttrs};
+use format::FormatText::{Str, Method, URI, Status, ResponseTime};
+use format::FormatColor::{ConstantColor, FunctionColor};
+use format::FormatAttr::{ConstantAttrs, FunctionAttrs};
+use format::{Format, FormatText};
 
 pub mod format;
 
