@@ -4,6 +4,7 @@ name = "iron"
 version = "0.0.3-pre"
 description = "Middleware-Oriented, Concurrency Focused Web Development in Rust."
 readme = "README.md"
+repository = "https://github.com/iron/iron"
 documentation = "http://ironframework.io/doc/iron/"
 license = "MIT"
 authors = [
