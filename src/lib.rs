@@ -8,12 +8,11 @@
 //! framework.
 
 extern crate iron;
-extern crate typemap;
 extern crate plugin;
 
 use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
+use iron::typemap::Assoc;
 use std::sync::{Arc, RWLock, Mutex};
-use typemap::Assoc;
 use plugin::{PluginFor, Phantom};
 
 /// Middleware for data that persists between requests with read and write capabilities.
