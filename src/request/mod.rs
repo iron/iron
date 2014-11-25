@@ -73,7 +73,9 @@ impl Request {
                 // Attempt to prepend the Host header (mandatory in HTTP/1.1)
                 // FIXME: HTTPS incompatible, update when Hyper gains HTTPS support.
                 let url_string = match req.headers.get::<headers::Host>() {
-                    Some(ref host) => format!("http://{}{}", host, path),
+                    Some(ref host) => {
+                        format!("http://{}{}", host.hostname, path)
+                    },
                     None => return Err("No host specified in request".to_string())
                 };
 

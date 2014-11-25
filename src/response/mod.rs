@@ -62,10 +62,7 @@ impl Response {
         *http_res.status_mut() = self.status.clone().unwrap_or(status::NotFound);
 
         let out = match self.body {
-            Some(body) => {
-                write_with_body(http_res, body)
-            },
-
+            Some(body) => write_with_body(http_res, body),
             None => {
                 http_res.headers_mut().set(headers::ContentLength(0));
                 http_res.start().and_then(|res| res.end())
@@ -74,10 +71,7 @@ impl Response {
 
         match out {
             Err(e) => {
-                error!("Error reading/writing body: {}", e);
-
-                // Can't do anything else here since all headers/status have
-                // already been sent.
+                error!("Error writing response: {}", e);
             },
             _ => {}
         }
