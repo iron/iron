@@ -1,7 +1,6 @@
 #![feature(globs)]
 extern crate iron;
 
-use std::io::net::ip::Ipv4Addr;
 use iron::prelude::*;
 use iron::response::modifiers::{Status, Redirect};
 use iron::{Url, status};
@@ -14,7 +13,7 @@ fn redirect(_: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    Iron::new(redirect).listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
+    Iron::new(redirect).listen("localhost:3000").unwrap();
     println!("On 3000");
 }
 

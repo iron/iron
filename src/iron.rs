@@ -1,7 +1,7 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-use std::io::net::ip::IpAddr;
+use std::io::net::ip::{ToSocketAddr, SocketAddr};
 use std::io::{Listener};
 
 pub use hyper::server::Listening;
@@ -11,7 +11,7 @@ use hyper::net::Fresh;
 use request::HttpRequest;
 use response::HttpResponse;
 
-use errors::HyperError;
+use errors::{HyperError, InvalidAddressError};
 
 use {Request, Handler, IronResult, IronError};
 use status;
@@ -34,13 +34,19 @@ impl<H: Handler> Iron<H> {
     /// another task, so is not blocking.
     ///
     /// Defaults to a threadpool of size 100.
-    pub fn listen(self, ip: IpAddr, port: u16) -> IronResult<Listening> {
+    pub fn listen<A: ToSocketAddr>(self, addr: A) -> IronResult<Listening> {
+        let SocketAddr { ip, port } = try!(addr.to_socket_addr()
+            .map_err(|e| box InvalidAddressError::new(e) as IronError));
+
         Server::http(ip, port).listen(self)
             .map_err(|e| box HyperError(e) as IronError)
     }
 
     /// Kick off the server process with X threads.
-    pub fn listen_with(self, ip: IpAddr, port: u16, threads: uint) -> IronResult<Listening> {
+    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: uint) -> IronResult<Listening> {
+        let SocketAddr { ip, port } = try!(addr.to_socket_addr()
+            .map_err(|e| box InvalidAddressError::new(e) as IronError));
+
         Server::http(ip, port).listen_threads(self, threads)
             .map_err(|e| box HyperError(e) as IronError)
     }

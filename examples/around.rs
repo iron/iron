@@ -7,8 +7,6 @@ use iron::{Handler, AroundMiddleware};
 use iron::response::modifiers::{Status, Body};
 use iron::status;
 
-use std::io::net::ip::Ipv4Addr;
-
 enum LoggerMode {
     Silent,
     Tiny,
@@ -64,9 +62,9 @@ fn main() {
     let silent = Iron::new(Logger::new(LoggerMode::Silent).around(box hello_world));
     let large = Iron::new(Logger::new(LoggerMode::Large).around(box hello_world));
 
-    tiny.listen(Ipv4Addr(127, 0, 0, 1), 2000).unwrap();
-    silent.listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
-    large.listen(Ipv4Addr(127, 0, 0, 1), 4000).unwrap();
+    tiny.listen("localhost:2000").unwrap();
+    silent.listen("localhost:3000").unwrap();
+    large.listen("localhost:4000").unwrap();
 
     println!("Servers listening on 2000, 3000, and 4000");
 }

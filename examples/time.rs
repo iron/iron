@@ -2,8 +2,6 @@
 extern crate iron;
 extern crate time;
 
-use std::io::net::ip::Ipv4Addr;
-
 use iron::prelude::*;
 use iron::{BeforeMiddleware, AfterMiddleware, ChainBuilder, typemap};
 use iron::response::modifiers::{Status, Body};
@@ -38,5 +36,5 @@ fn main() {
     let mut chain = ChainBuilder::new(hello_world);
     chain.link_before(ResponseTime);
     chain.link_after(ResponseTime);
-    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000).unwrap();
+    Iron::new(chain).listen("localhost:3000").unwrap();
 }
