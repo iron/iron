@@ -2,25 +2,13 @@
 
 name = "router"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
-version = "0.1.0"
+license = "MIT"
+version = "0.0.1"
+description = "A router for the Iron framework."
+repository = "https://github.com/iron/router"
+documentation = "http://ironframework.io/doc/router/index.html"
 
-[lib]
+[dependencies]
+iron = "*"
+route-recognizer = "*"
 
-name = "router"
-path = "src/lib.rs"
-
-[dependencies.iron]
-
-git = "https://github.com/iron/iron.git"
-
-[dependencies.http]
-
-git = "https://github.com/chris-morgan/rust-http.git"
-
-[dependencies.route-recognizer]
-
-git = "https://github.com/conduit-rust/route-recognizer.rs.git"
-
-[dependencies.typemap]
-
-git = "https://github.com/reem/rust-typemap.git"
