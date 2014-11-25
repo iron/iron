@@ -1,8 +1,6 @@
 extern crate iron;
 extern crate mount;
 
-use std::io::net::ip::Ipv4Addr;
-
 use iron::{Iron, Request, Response, IronResult, Url, Set};
 use iron::response::modifiers::{Body, Status};
 use iron::status;
@@ -23,6 +21,6 @@ fn main() {
     second.mount("/leveltwo/", level_two);
     first.mount("/levelone/", second);
 
-    Iron::new(first).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(first).listen("localhost:3000").unwrap();
 }
 
