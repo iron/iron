@@ -2,22 +2,14 @@
 
 name = "mount"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
-version = "0.1.0"
+version = "0.0.1"
+description = "Mounting middleware for Iron."
+repository = "https://github.com/iron/mount"
+documentation = "http://ironframework.io/doc/mount/index.html"
+license = "MIT"
 
-[lib]
-
-name = "mount"
-path = "src/lib.rs"
-
-[dependencies.iron]
-
-git = "https://github.com/iron/iron.git"
-
-[dependencies.typemap]
-
-git = "https://github.com/reem/rust-typemap.git"
-
-[dependencies.sequence_trie]
-
-git = "https://github.com/michaelsproul/rust-sequence-trie.git"
+[dependencies]
+iron = "*"
+sequence_trie = "*"
+url = "*"
 

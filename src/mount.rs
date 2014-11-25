@@ -1,5 +1,5 @@
 use iron::{Handler, Response, Request, IronResult, IronError, Url, Error};
-use typemap::Assoc;
+use iron::typemap::Assoc;
 use sequence_trie::SequenceTrie;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.

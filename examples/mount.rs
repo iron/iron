@@ -1,8 +1,6 @@
 extern crate iron;
 extern crate mount;
 
-use std::io::net::ip::Ipv4Addr;
-
 use iron::{Iron, Request, Response, IronResult, Set};
 use iron::response::modifiers::{Body, Status};
 use iron::status;
@@ -23,6 +21,6 @@ fn main() {
     let mut mount = Mount::new();
     mount.mount("/blocked/", intercept).mount("/", send_hello);
 
-    Iron::new(mount).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(mount).listen("localhost:3000").unwrap();
 }
 
