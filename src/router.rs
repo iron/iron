@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use std::collections::hash_map::{Occupied, Vacant};
-use http::method::Method;
-use http::method;
 use iron::{Request, Response, Handler, IronResult, Error, IronError, Set};
-use iron::status;
+use iron::{status, method};
 use iron::response::modifiers::Status;
-use typemap::Assoc;
+use iron::typemap::Assoc;
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
 
@@ -13,7 +11,7 @@ use recognizer::{Match, Params};
 /// for the Iron framework.
 pub struct Router {
     // The routers, specialized by method.
-    routers: HashMap<Method, Recognizer<Box<Handler + Send + Sync>>>,
+    routers: HashMap<method::Method, Recognizer<Box<Handler + Send + Sync>>>,
     error: Option<Box<Handler + Send + Sync>>
 }
 
@@ -42,12 +40,12 @@ impl Router {
     /// router.route(http::method::Get, "/users/:userid/:friendid", controller);
     /// ```
     ///
-    /// The controller provided to route can be any `Middleware`, which allows
+    /// The controller provided to route can be any `Handler`, which allows
     /// extreme flexibility when handling routes. For instance, you could provide
-    /// a `Chain`, a `Middleware`, which contains an authorization middleware and
+    /// a `Chain`, a `Handler`, which contains an authorization middleware and
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
-    pub fn route<'a, H: Handler, S: Str>(&mut self, method: Method, glob: S, handler: H) -> &mut Router {
+    pub fn route<H: Handler, S: Str>(&mut self, method: method::Method, glob: S, handler: H) -> &mut Router {
         match self.routers.entry(method) {
             Vacant(entry)   => entry.set(Recognizer::new()),
             Occupied(entry) => entry.into_mut()
@@ -56,37 +54,37 @@ impl Router {
     }
 
     /// Like route, but specialized to the `Get` method.
-    pub fn get<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn get<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Get, glob, handler)
     }
 
     /// Like route, but specialized to the `Post` method.
-    pub fn post<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn post<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Post, glob, handler)
     }
 
     /// Like route, but specialized to the `Put` method.
-    pub fn put<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn put<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Put, glob, handler)
     }
 
     /// Like route, but specialized to the `Delete` method.
-    pub fn delete<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn delete<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Delete, glob, handler)
     }
 
     /// Like route, but specialized to the `Head` method.
-    pub fn head<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn head<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Head, glob, handler)
     }
 
     /// Like route, but specialized to the `Patch` method.
-    pub fn patch<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn patch<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Patch, glob, handler)
     }
 
     /// Like route, but specialized to the `Options` method.
-    pub fn options<'a, H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
+    pub fn options<H: Handler, S: Str>(&mut self, glob: S, handler: H) -> &mut Router {
         self.route(method::Options, glob, handler)
     }
 
@@ -96,7 +94,7 @@ impl Router {
         self
     }
 
-    fn recognize<'a>(&'a self, method: &Method, path: &str)
+    fn recognize<'a>(&'a self, method: &method::Method, path: &str)
                      -> Option<Match<&'a Box<Handler + Send + Sync>>> {
         self.routers.get(method).and_then(|router| router.recognize(path).ok())
     }
