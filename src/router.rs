@@ -37,7 +37,7 @@ impl Router {
     /// the exposed Params object:
     ///
     /// ```ignore
-    /// router.route(http::method::Get, "/users/:userid/:friendid", controller);
+    /// router.route(iron::method::Method::Get, "/users/:userid/:friendid", controller);
     /// ```
     ///
     /// The controller provided to route can be any `Handler`, which allows
