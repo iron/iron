@@ -1,5 +1,3 @@
-#![crate_name = "router"]
-#![license = "MIT"]
 #![deny(missing_docs, warnings)]
 #![feature(phase, globs)]
 
