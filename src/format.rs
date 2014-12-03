@@ -33,7 +33,7 @@ impl Default for Format {
     /// green for 200s, yellow for 300s, red for 400s, and bright red for 500s.
     fn default() -> Format {
         fn status_color(_req: &Request, res: &Response) -> Option<color::Color> {
-            match res.status.as_ref().unwrap_or(&NotFound).code() / 100 {
+            match *res.status.as_ref().unwrap_or(&NotFound) as u16 / 100 {
                 1 => Some(color::BLUE), // Information
                 2 => Some(color::GREEN), // Success
                 3 => Some(color::YELLOW), // Redirection

@@ -1,7 +1,4 @@
-#![crate_name = "logger"]
-#![deny(missing_docs)]
-#![deny(warnings)]
-#![license = "MIT"]
+#![deny(missing_docs, warnings)]
 
 //! Request logging middleware for Iron
 

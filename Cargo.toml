@@ -1,15 +1,12 @@
 [package]
 
 name = "logger"
+version = "0.0.1"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>", "Michael Reinhard <mcreinhard@gmail.com>"]
-version = "0.1.0"
+description = "Logging middleware for the Iron framework."
+repository = "https://github.com/iron/logger"
+license = "MIT"
 
-[lib]
-
-name = "logger"
-path = "src/lib.rs"
-
-[dependencies.iron]
-
-git = "https://github.com/iron/iron.git"
+[dependencies]
+iron = "*"
 
