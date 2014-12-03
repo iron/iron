@@ -1,7 +1,4 @@
-#![crate_name = "persistent"]
-#![license = "MIT"]
-#![deny(missing_docs)]
-#![deny(warnings)]
+#![deny(missing_docs, warnings)]
 #![feature(default_type_params)]
 
 //! A set of middleware for sharing data between requests in the Iron
