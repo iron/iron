@@ -1,5 +1,4 @@
 #![crate_name = "mount"]
-#![license = "MIT"]
 #![deny(missing_docs)]
 #![deny(warnings)]
 #![feature(macro_rules)]
