@@ -2,7 +2,7 @@
 
 name = "mount"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
-version = "0.0.1"
+version = "0.0.2"
 description = "Mounting middleware for Iron."
 repository = "https://github.com/iron/mount"
 documentation = "http://ironframework.io/doc/mount/index.html"
