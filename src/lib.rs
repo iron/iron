@@ -65,7 +65,11 @@ pub use error::{Error, ErrorRefExt};
 pub use hyper::mime;
 
 // Return type of many methods
+
+/// The type of Errors inside and when using Iron.
 pub type IronError = Box<Error>;
+
+/// The Result alias used throughout Iron and in clients of Iron.
 pub type IronResult<T> = Result<T, IronError>;
 
 /// A module meant to be glob imported when using Iron, for instance:
