@@ -134,6 +134,7 @@ impl Bodyable for Path {
 }
 
 /// A modifier for setting the status of a response.
+#[deriving(Copy)]
 pub struct Status(pub status::Status);
 
 impl Modifier<Response> for Status {
