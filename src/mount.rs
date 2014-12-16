@@ -3,6 +3,7 @@ use iron::typemap::Assoc;
 use sequence_trie::SequenceTrie;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
+#[deriving(Copy)]
 pub struct OriginalUrl;
 impl Assoc<Url> for OriginalUrl {}
 
