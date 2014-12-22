@@ -8,8 +8,17 @@ use iron::{Handler, BeforeMiddleware, ChainBuilder};
 use iron::response::modifiers::{Status, Body};
 use iron::status;
 
+use std::error::Error;
+
 struct ErrorHandler;
 struct ErrorProducer;
+
+#[deriving(Show)]
+struct StringError(String);
+
+impl Error for StringError {
+    fn description(&self) -> &str { self.0.as_slice() }
+}
 
 impl Handler for ErrorHandler {
     fn call(&self, _: &mut Request) -> IronResult<Response> {
@@ -27,7 +36,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box "Error".to_string() as IronError)
+        Err(box StringError("Error".into_string()) as IronError)
     }
 }
 

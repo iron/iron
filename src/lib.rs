@@ -59,7 +59,7 @@ pub use plugin::GetCached as Plugin;
 pub use modifier::Set;
 
 // Errors
-pub use error::{Error, ErrorRefExt};
+pub use error::Error;
 
 // Mime types
 pub use hyper::mime;
@@ -83,8 +83,8 @@ pub type IronResult<T> = Result<T, IronError>;
 /// of the convenience methods in Iron, as well as `Request`, `Response`
 /// `IronResult`, `IronError` and `Iron`.
 pub mod prelude {
-    pub use {Set, Plugin, ErrorRefExt, Chain, Request,
-             Response, IronResult, IronError, Iron};
+    pub use {Set, Plugin, Chain, Request, Response,
+             IronResult, IronError, Iron};
 }
 
 /// Re-exports from the TypeMap crate.
@@ -111,9 +111,6 @@ pub mod method {
 
 // Publicized to show the documentation
 pub mod middleware;
-
-// Common Errors
-pub mod errors;
 
 // Response utilities
 pub mod response;

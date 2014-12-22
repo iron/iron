@@ -11,9 +11,7 @@ use hyper::net::Fresh;
 use request::HttpRequest;
 use response::HttpResponse;
 
-use errors::{HyperError, InvalidAddressError};
-
-use {Request, Handler, IronResult, IronError};
+use {Request, Handler, IronResult};
 use status;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
@@ -35,20 +33,16 @@ impl<H: Handler> Iron<H> {
     ///
     /// Defaults to a threadpool of size 100.
     pub fn listen<A: ToSocketAddr>(self, addr: A) -> IronResult<Listening> {
-        let SocketAddr { ip, port } = try!(addr.to_socket_addr()
-            .map_err(|e| box InvalidAddressError::new(e) as IronError));
+        let SocketAddr { ip, port } = try!(addr.to_socket_addr());
 
-        Server::http(ip, port).listen(self)
-            .map_err(|e| box HyperError(e) as IronError)
+        Ok(try!(Server::http(ip, port).listen(self)))
     }
 
     /// Kick off the server process with X threads.
     pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: uint) -> IronResult<Listening> {
-        let SocketAddr { ip, port } = try!(addr.to_socket_addr()
-            .map_err(|e| box InvalidAddressError::new(e) as IronError));
+        let SocketAddr { ip, port } = try!(addr.to_socket_addr());
 
-        Server::http(ip, port).listen_threads(self, threads)
-            .map_err(|e| box HyperError(e) as IronError)
+        Ok(try!(Server::http(ip, port).listen_threads(self, threads)))
     }
 
     /// Instantiate a new instance of `Iron`.
