@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::hash_map::{Occupied, Vacant};
-use iron::{Request, Response, Handler, IronResult, Error, IronError, Set};
+use std::error::Error;
+use iron::{Request, Response, Handler, IronResult, IronError, Set};
 use iron::{status, method};
 use iron::response::modifiers::Status;
 use iron::typemap::Assoc;
@@ -20,7 +21,7 @@ pub struct Router {
 pub struct NoRoute;
 
 impl Error for NoRoute {
-    fn name(&self) -> &'static str { "No Route" }
+    fn description(&self) -> &str { "No Route" }
 }
 
 impl Router {
