@@ -365,6 +365,7 @@ enum ColorOrAttr {
 }
 
 /// A representation of color in a `FormatUnit`.
+#[deriving(Copy)]
 pub enum FormatColor {
     /// A constant color
     ConstantColor(Option<color::Color>),
