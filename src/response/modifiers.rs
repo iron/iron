@@ -96,7 +96,7 @@ impl Bodyable for Vec<u8> {
 impl<'a> Bodyable for &'a str {
     #[inline]
     fn set_body(self, res: &mut Response) {
-        self.into_string().set_body(res);
+        self.to_string().set_body(res);
     }
 }
 

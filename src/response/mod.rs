@@ -2,7 +2,6 @@
 
 use std::io::{mod, IoResult};
 use std::fmt::{mod, Show};
-use std::str::from_str;
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -81,7 +80,7 @@ impl Response {
 fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -> IoResult<()> {
     let content_type = res.headers().get::<headers::ContentType>()
                            .map(|cx| cx.clone())
-                           .unwrap_or_else(|| headers::ContentType(from_str("text/plain").unwrap()));
+                           .unwrap_or_else(|| headers::ContentType("text/plain".parse().unwrap()));
     res.headers_mut().set(content_type);
 
     let mut res = try!(res.start());
