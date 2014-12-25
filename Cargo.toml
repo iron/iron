@@ -25,4 +25,5 @@ url = "*"
 plugin = "*"
 modifier = "*"
 error = "*"
+log = "*"
 
