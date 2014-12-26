@@ -4,7 +4,6 @@ extern crate time;
 
 use iron::prelude::*;
 use iron::{Handler, AroundMiddleware};
-use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 enum LoggerMode {
@@ -52,9 +51,7 @@ impl AroundMiddleware for Logger {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new()
-           .set(Status(status::Ok))
-           .set(Body("Hello World!")))
+    Ok(Response::new().set(status::Ok).set("Hello World!"))
 }
 
 fn main() {

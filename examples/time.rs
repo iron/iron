@@ -4,7 +4,6 @@ extern crate time;
 
 use iron::prelude::*;
 use iron::{BeforeMiddleware, AfterMiddleware, ChainBuilder, typemap};
-use iron::response::modifiers::{Status, Body};
 use time::precise_time_ns;
 
 struct ResponseTime;
@@ -27,9 +26,7 @@ impl AfterMiddleware for ResponseTime {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new()
-           .set(Status(iron::status::Ok))
-           .set(Body("Hello World")))
+    Ok(Response::new().set(iron::status::Ok).set("Hello World"))
 }
 
 fn main() {
