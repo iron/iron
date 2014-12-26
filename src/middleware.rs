@@ -275,7 +275,7 @@ impl Handler for ChainBuilder {
     }
 }
 
-impl Handler for fn(&mut Request) -> IronResult<Response> {
+impl<F: Send + Sync + for<'a> Fn(&'a mut Request) -> IronResult<Response>> Handler for F {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
         (*self)(req)
     }
