@@ -14,7 +14,7 @@
 //!
 //! ```rust,ignore
 //! Response::new()
-//!     .set(Status(status))
+//!     .set(status)
 //!     .set(Redirect(url));
 //! ```
 //!
@@ -29,39 +29,25 @@ use std::io::{File, MemReader};
 use std::path::Path;
 
 use modifier::Modifier;
-// use content_type::get_content_type;
 
 use hyper::mime::Mime;
 
 use {status, headers, Response, Url};
 
-/// A response modifier for setting the content-type header.
-pub struct ContentType(pub Mime);
-
-impl ContentType {
-    /// Create a new ContentType modifier from  a content-type header value.
-    #[inline]
-    pub fn new(m: Mime) -> ContentType {
-        ContentType(m)
-    }
-}
-
-impl Modifier<Response> for ContentType {
+impl Modifier<Response> for Mime {
     #[inline]
     fn modify(self, res: &mut Response) {
-        let ContentType(media) = self;
-        res.headers.set(headers::ContentType(media))
+        res.headers.set(headers::ContentType(self))
     }
 }
 
 /// A response modifier for setting the body of a response.
 pub struct Body<B: Bodyable>(pub B);
 
-impl<B: Bodyable> Modifier<Response> for Body<B> {
+impl<B: Bodyable> Modifier<Response> for B {
     #[inline]
     fn modify(self, res: &mut Response) {
-        let Body(b) = self;
-        b.set_body(res);
+        self.set_body(res);
     }
 }
 
@@ -96,7 +82,7 @@ impl Bodyable for Vec<u8> {
 impl<'a> Bodyable for &'a str {
     #[inline]
     fn set_body(self, res: &mut Response) {
-        self.into_string().set_body(res);
+        self.to_string().set_body(res);
     }
 }
 
@@ -133,14 +119,9 @@ impl Bodyable for Path {
     }
 }
 
-/// A modifier for setting the status of a response.
-#[deriving(Copy)]
-pub struct Status(pub status::Status);
-
-impl Modifier<Response> for Status {
+impl Modifier<Response> for status::Status {
     fn modify(self, res: &mut Response) {
-        let Status(status) = self;
-        res.status = Some(status);
+        res.status = Some(self);
     }
 }
 

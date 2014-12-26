@@ -62,7 +62,6 @@
 
 use std::sync::Arc;
 
-use response::modifiers::Status;
 use {Request, Response, IronResult, IronError, Set, status};
 
 /// `Handler`s are responsible for handling requests by creating Responses from Requests.
@@ -85,7 +84,7 @@ pub trait Handler: Send + Sync {
     /// instead to indicate that all is good with the Response and the error has
     /// been dealt with.
     fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::new().set(Status(status::InternalServerError)), Err(err))
+        (Response::new().set(status::InternalServerError), Err(err))
     }
 }
 
@@ -270,7 +269,7 @@ impl Handler for ChainBuilder {
 
         match helpers::run_afters(req, res, err, self.afters.as_slice()) {
             Ok(res) => (res, Ok(())),
-            Err(err) => (Response::new().set(Status(status::InternalServerError)), Err(err))
+            Err(err) => (Response::new().set(status::InternalServerError), Err(err))
         }
     }
 }
@@ -281,7 +280,7 @@ impl<F: Send + Sync + for<'a> Fn(&'a mut Request) -> IronResult<Response>> Handl
     }
 
     fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::new().set(Status(status::InternalServerError)), Err(err))
+        (Response::new().set(status::InternalServerError), Err(err))
     }
 }
 
