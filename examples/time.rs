@@ -26,7 +26,7 @@ impl AfterMiddleware for ResponseTime {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::new().set(iron::status::Ok).set("Hello World"))
+    Ok(Response::with((iron::status::Ok, "Hello World")))
 }
 
 fn main() {

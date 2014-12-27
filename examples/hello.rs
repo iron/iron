@@ -6,7 +6,7 @@ use iron::status;
 
 fn main() {
     Iron::new(|&: _: &mut Request| {
-        Ok(Response::new().set(status::Ok).set("Hello world!"))
+        Ok(Response::with((status::Ok, "Hello world!")))
     }).listen("localhost:3000").unwrap();
 }
 

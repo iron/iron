@@ -25,7 +25,7 @@ impl Handler for ErrorHandler {
     }
 
     fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::new().set(status::InternalServerError).set("Internal Server Error."),
+        (Response::with((status::InternalServerError, "Internal Server Error.")),
          Err(err))
     }
 
