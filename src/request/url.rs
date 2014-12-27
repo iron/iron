@@ -6,8 +6,6 @@ use url::{mod, SchemeData, SchemeType};
 use url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt::{mod, Show};
 
-use {serialize};
-
 /// HTTP/HTTPS URL type for Iron.
 #[deriving(PartialEq, Eq, Clone)]
 pub struct Url {
@@ -179,20 +177,6 @@ impl Show for Url {
         }
 
         Ok(())
-    }
-}
-
-impl<E, S: serialize::Encoder<E>> serialize::Encodable<S, E> for Url {
-    fn encode(&self, encoder: &mut S) -> Result<(), E> {
-        encoder.emit_str(self.to_string().as_slice())
-    }
-}
-
-impl<E, D: serialize::Decoder<E>> serialize::Decodable<D, E> for Url {
-    fn decode(decoder: &mut D) -> Result<Url, E> {
-        Url::parse(try!(decoder.read_str()).as_slice()).map_err(|error| {
-            decoder.error(format!("URL parsing error: {}", error).as_slice())
-        })
     }
 }
 

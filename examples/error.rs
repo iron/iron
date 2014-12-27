@@ -5,7 +5,6 @@ extern crate time;
 
 use iron::prelude::*;
 use iron::{Handler, BeforeMiddleware, ChainBuilder};
-use iron::response::modifiers::{Status, Body};
 use iron::status;
 
 use std::error::Error;
@@ -26,9 +25,7 @@ impl Handler for ErrorHandler {
     }
 
     fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::new()
-            .set(Status(status::InternalServerError))
-            .set(Body("Internal Server Error.")),
+        (Response::new().set(status::InternalServerError).set("Internal Server Error."),
          Err(err))
     }
 
@@ -36,7 +33,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box StringError("Error".into_string()) as IronError)
+        Err(box StringError("Error".to_string()) as IronError)
     }
 }
 
