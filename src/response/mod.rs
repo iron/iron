@@ -5,7 +5,7 @@ use std::fmt::{mod, Show};
 
 use typemap::TypeMap;
 use plugin::Extensible;
-use modifier::Set;
+use modifier::{Set, Modifier};
 
 use hyper::header::Headers;
 
@@ -47,6 +47,11 @@ impl Response {
             headers: Headers::new(),
             extensions: TypeMap::new()
         }
+    }
+
+    /// Construct a Response with the specified modifier pre-applied.
+    pub fn with<M: Modifier<Response>>(m: M) -> Response {
+        Response::new().set(m)
     }
 
     // `write_back` is used to put all the data added to `self`
