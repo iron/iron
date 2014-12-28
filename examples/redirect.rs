@@ -8,9 +8,7 @@ use iron::{Url, status};
 fn main() {
     Iron::new(|&: _: &mut Request | {
         let url = Url::parse("http://rust-lang.org").unwrap();
-        Ok(Response::new()
-               .set(status::Ok)
-               .set(Redirect(url)))
+        Ok(Response::with((status::Ok, Redirect(url))))
     }).listen("localhost:3000").unwrap();
     println!("On 3000");
 }
