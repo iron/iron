@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error::Error;
 use iron::{Request, Response, Handler, IronResult, IronError, Set};
 use iron::{status, method};
-use iron::response::modifiers::Status;
 use iron::typemap::Assoc;
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
@@ -119,7 +118,7 @@ impl Handler for Router {
         match self.error {
             Some(ref error_handler) => error_handler.catch(req, err),
             // Error that is not caught by anything!
-            None => (Response::new().set(Status(status::InternalServerError)), Err(err))
+            None => (Response::with(status::InternalServerError), Err(err))
         }
     }
 }
