@@ -1,4 +1,5 @@
-use iron::{Handler, Response, Request, IronResult, IronError, Url, Error};
+use std::error::Error;
+use iron::{Handler, Response, Request, IronResult, IronError, Url};
 use iron::typemap::Assoc;
 use sequence_trie::SequenceTrie;
 
@@ -32,7 +33,7 @@ struct Match {
 pub struct NoMatch;
 
 impl Error for NoMatch {
-    fn name(&self) -> &'static str { "No Match" }
+    fn description(&self) -> &'static str { "No Match" }
 }
 
 impl Mount {

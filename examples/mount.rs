@@ -1,20 +1,19 @@
 extern crate iron;
 extern crate mount;
 
-use iron::{Iron, Request, Response, IronResult, Set};
-use iron::response::modifiers::{Body, Status};
+use iron::{Iron, Request, Response, IronResult};
 use iron::status;
 
 use mount::Mount;
 
 fn send_hello(req: &mut Request) -> IronResult<Response> {
     println!("Running send_hello handler, URL path: {}", req.url.path);
-    Ok(Response::new().set(Status(status::Ok)).set(Body("Hello!")))
+    Ok(Response::with((status::Ok, "Hello!")))
 }
 
 fn intercept(req: &mut Request) -> IronResult<Response> {
     println!("Running intercept handler, URL path: {}", req.url.path);
-    Ok(Response::new().set(Status(status::Ok)).set(Body("Blocked!")))
+    Ok(Response::with((status::Ok, "Blocked!")))
 }
 
 fn main() {
