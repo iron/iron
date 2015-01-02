@@ -7,7 +7,7 @@ use iron::status::NotFound;
 use std::default::Default;
 use std::str::FromStr;
 use std::str::Chars;
-use std::vec::MoveItems;
+use std::vec::IntoIter;
 use std::iter::Peekable;
 
 use self::ColorOrAttr::{Color, Attr};
@@ -121,10 +121,10 @@ struct FormatParser<'a> {
     chars: Peekable<char, Chars<'a>>,
 
     // Passed-in FormatColors
-    colors: MoveItems<FormatColor>,
+    colors: IntoIter<FormatColor>,
 
     // Passed-in FormatAttr
-    attrs: MoveItems<FormatAttr>,
+    attrs: IntoIter<FormatAttr>,
 
     // A reusable buffer for parsing style attributes.
     object_buffer: String,
@@ -137,8 +137,8 @@ struct FormatParser<'a> {
 }
 
 impl<'a> FormatParser<'a> {
-    fn new(chars: Peekable<char, Chars>, colors: MoveItems<FormatColor>,
-           attrs: MoveItems<FormatAttr>) -> FormatParser {
+    fn new(chars: Peekable<char, Chars>, colors: IntoIter<FormatColor>,
+           attrs: IntoIter<FormatAttr>) -> FormatParser {
         FormatParser {
             chars: chars,
             colors: colors,
@@ -236,7 +236,7 @@ impl<'a> Iterator<Option<FormatUnit>> for FormatParser<'a> {
 
                                 "C" => color = self.colors.next().unwrap_or(ConstantColor(None)),
 
-                                style => match from_str(style) {
+                                style => match style.parse() {
                                     Some(Color(c)) => match color {
                                         ConstantColor(_) => { color = ConstantColor(Some(c)); },
                                         _ => {}

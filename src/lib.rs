@@ -56,6 +56,10 @@ impl BeforeMiddleware for Logger {
         req.extensions.insert::<StartTime, u64>(time::precise_time_ns());
         Ok(())
     }
+
+    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<()> {
+        Err(err)
+    }
 }
 
 impl AfterMiddleware for Logger {
@@ -114,6 +118,10 @@ impl AfterMiddleware for Logger {
 
         Ok(())
     }
+
+    fn catch(&self, _: &mut Request, _: &mut Response, err: IronError) -> IronResult<()> {
+        Err(err)
+    }
 }
 
 /// Error returned when logger cannout access stdout.
@@ -126,7 +134,6 @@ impl Error for CouldNotOpenTerminal {
     }
 
     fn detail(&self) -> Option<String> {
-        Some("Logger could not open stdout as a terminal.".into_string())
+        Some("Logger could not open stdout as a terminal.".to_string())
     }
 }
-
