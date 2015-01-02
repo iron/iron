@@ -95,7 +95,7 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
     // because Box<Reader + Send> does not impl Reader.
     //
     // Tracking issue: rust-lang/rust#18542
-    let mut buf = &mut [0, ..1024 * 64];
+    let mut buf = &mut [0; 1024 * 64];
     loop {
         let len = match body.read(buf) {
             Ok(len) => len,
@@ -131,4 +131,3 @@ impl Extensible for Response {
 }
 
 impl Set for Response {}
-
