@@ -7,12 +7,12 @@ extern crate time;
 extern crate term;
 extern crate typemap;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, Error};
-use iron::errors::FileError;
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response};
 use iron::typemap::Assoc;
 use term::{Terminal, WriterWrapper, stdout};
 
 use std::io::IoResult;
+use std::error::Error;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime};
 use format::FormatColor::{ConstantColor, FunctionColor};
@@ -55,6 +55,10 @@ impl BeforeMiddleware for Logger {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<StartTime, u64>(time::precise_time_ns());
         Ok(())
+    }
+
+    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<()> {
+        Err(err)
     }
 }
 
@@ -107,29 +111,29 @@ impl AfterMiddleware for Logger {
 
         match stdout() {
             Some(terminal) => {
-                match log(terminal) {
-                    Err(e) => return Err(box FileError(e) as IronError),
-                    _ => {}
-                }
+                try!(log(terminal));
             }
             None => { return Err(box CouldNotOpenTerminal as IronError) }
         };
 
         Ok(())
     }
+
+    fn catch(&self, _: &mut Request, _: &mut Response, err: IronError) -> IronResult<()> {
+        Err(err)
+    }
 }
 
 /// Error returned when logger cannout access stdout.
-#[deriving(Show)]
+#[deriving(Show, Copy)]
 pub struct CouldNotOpenTerminal;
 
 impl Error for CouldNotOpenTerminal {
-    fn name(&self) -> &'static str {
+    fn description(&self) -> &str {
         "Could Not Open Terminal"
     }
 
-    fn description(&self) -> Option<&str> {
-        Some("Logger could not open stdout as a terminal.")
+    fn detail(&self) -> Option<String> {
+        Some("Logger could not open stdout as a terminal.".to_string())
     }
 }
-

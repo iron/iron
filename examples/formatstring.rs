@@ -3,12 +3,11 @@ extern crate iron;
 extern crate logger;
 extern crate term;
 
-use std::io::net::ip::Ipv4Addr;
-
 use iron::{Chain, ChainBuilder, Iron, IronResult, Request, Response};
 
 use logger::Logger;
-use logger::format::{Format, FunctionAttrs};
+use logger::format::Format;
+use logger::format::FormatAttr::FunctionAttrs;
 
 use term::attr;
 
@@ -28,9 +27,9 @@ fn main() {
     let mut chain = ChainBuilder::new(no_op_handler);
     let format = Format::new(FORMAT, vec![], vec![FunctionAttrs(attrs)]);
     chain.link(Logger::new(Some(format.unwrap())));
-    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(chain).listen("localhost:3000");
 }
 
 fn no_op_handler(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(iron::status::Ok, ""))
+    Ok(Response::with(iron::status::Ok))
 }
