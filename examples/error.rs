@@ -33,7 +33,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box StringError("Error".to_string()) as IronError)
+        Err(Box::new(StringError("Error".to_string()) as IronError))
     }
 }
 

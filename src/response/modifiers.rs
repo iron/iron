@@ -75,7 +75,7 @@ impl Bodyable for Vec<u8> {
     #[inline]
     fn set_body(self, res: &mut Response) {
         res.headers.set(headers::ContentLength(self.len()));
-        res.body = Some(box MemReader::new(self) as Box<Reader + Send>);
+        res.body = Some(Box::new(MemReader::new(self) as Box<Reader + Send>));
     }
 }
 
@@ -102,7 +102,7 @@ impl Bodyable for File {
         //     .and_then(|ct| {
         //         res.headers.set(headers::ContentType(ct))
         //     });
-        res.body = Some(box self as Box<Reader + Send>);
+        res.body = Some(Box::new(self as Box<Reader + Send>));
     }
 }
 
