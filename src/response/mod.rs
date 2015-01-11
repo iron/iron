@@ -1,7 +1,7 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{mod, IoResult};
-use std::fmt::{mod, Show};
+use std::io::{self, IoResult};
+use std::fmt::{self, Show};
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -9,7 +9,7 @@ use modifier::{Set, Modifier};
 
 use hyper::header::Headers;
 
-use status::{mod, Status};
+use status::{self, Status};
 use {headers};
 
 pub use hyper::server::response::Response as HttpResponse;

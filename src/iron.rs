@@ -39,7 +39,7 @@ impl<H: Handler> Iron<H> {
     }
 
     /// Kick off the server process with X threads.
-    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: uint) -> IronResult<Listening> {
+    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: usize) -> IronResult<Listening> {
         let SocketAddr { ip, port } = try!(addr.to_socket_addr());
 
         Ok(try!(Server::http(ip, port).listen_threads(self, threads)))

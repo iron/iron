@@ -205,7 +205,7 @@ impl ChainBuilder {
         ChainBuilder {
             befores: vec![],
             afters: vec![],
-            handler: Some(box handler as Box<Handler + Send + Sync>)
+            handler: Some(Box::new(handler as Box<Handler + Send + Sync>))
         }
     }
 }
@@ -215,23 +215,23 @@ impl Chain for ChainBuilder {
         ChainBuilder {
             befores: vec![],
             afters: vec![],
-            handler: Some(box handler as Box<Handler + Send + Sync>)
+            handler: Some(Box::new(handler as Box<Handler + Send + Sync>))
         }
     }
 
     fn link<B, A>(&mut self, link: (B, A))
     where A: AfterMiddleware, B: BeforeMiddleware {
         let (before, after) = link;
-        self.befores.push(box before as Box<BeforeMiddleware + Send + Sync>);
-        self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+        self.befores.push(Box::new(before as Box<BeforeMiddleware + Send + Sync>));
+        self.afters.push(Box::new(after as Box<AfterMiddleware + Send + Sync>));
     }
 
     fn link_before<B>(&mut self, before: B) where B: BeforeMiddleware {
-        self.befores.push(box before as Box<BeforeMiddleware + Send + Sync>);
+        self.befores.push(Box::new(before as Box<BeforeMiddleware + Send + Sync>));
     }
 
     fn link_after<A>(&mut self, after: A) where A: AfterMiddleware {
-        self.afters.push(box after as Box<AfterMiddleware + Send + Sync>);
+        self.afters.push(Box::new(after as Box<AfterMiddleware + Send + Sync>));
     }
 
     fn around<A>(&mut self, around: A) where A: AroundMiddleware {
