@@ -15,8 +15,6 @@ use {headers};
 pub use hyper::server::response::Response as HttpResponse;
 use hyper::net::Fresh;
 
-pub mod modifiers;
-
 /// The response representation given to `Middleware`
 pub struct Response {
     /// The response status-code.
@@ -103,7 +101,7 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
             Err(e) => { return Err(e) },
         };
 
-        try!(res.write(buf[..len]))
+        try!(res.write(&buf[..len]))
     }
 
     res.end()
@@ -116,6 +114,12 @@ impl Show for Response {
             self.status.unwrap_or(status::NotFound).canonical_reason().unwrap(),
             self.headers
         )
+    }
+}
+
+impl fmt::String for Response {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Show::fmt(self, f)
     }
 }
 

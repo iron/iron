@@ -58,8 +58,8 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.set(headers::ContentLength(self.len()));
-        res.body = Some(Box::new(MemReader::new(self)));
+        res.headers.set(headers::ContentLength(self.len() as u64));
+        res.body = Some(Box::new(MemReader::new(self)) as Box<Reader + Send>);
     }
 }
 
@@ -84,7 +84,7 @@ impl Modifier<Response> for File {
         // self.path().extension_str()
         //     .and_then(get_content_type)
         //     .and_then(|ct| { res.set_mut(ct) });
-        res.body = Some(Box::new(self as Box<Reader + Send>));
+        res.body = Some(Box::new(self) as Box<Reader + Send>);
     }
 }
 
@@ -113,7 +113,7 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.set(headers::Location(url.to_string()));
+        res.headers.set(headers::Location(format!("{:?}", url)));
     }
 }
 
