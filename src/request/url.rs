@@ -2,9 +2,9 @@
 
 use url::{Host, RelativeSchemeData};
 use url::{whatwg_scheme_type_mapper};
-use url::{mod, SchemeData, SchemeType};
+use url::{self, SchemeData, SchemeType};
 use url::format::{PathFormatter, UserInfoFormatter};
-use std::fmt::{mod, Show};
+use std::fmt::{self, Show};
 
 /// HTTP/HTTPS URL type for Iron.
 #[deriving(PartialEq, Eq, Clone)]

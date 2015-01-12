@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#![feature(macro_rules, phase, globs, unboxed_closures, slicing_syntax, default_type_params)]
+#![feature(unboxed_closures, slicing_syntax)]
 
 //! The main crate for the Iron library.
 //!
@@ -22,7 +22,7 @@
 //! ```
 
 // Stdlib dependencies
-#[phase(plugin, link)] extern crate log;
+#[macro_use] extern crate log;
 #[cfg(test)] extern crate test;
 
 // Third party packages
@@ -51,8 +51,8 @@ pub use typemap::TypeMap;
 pub use hyper::header::common as headers;
 pub use hyper::header::Headers;
 
-// Expose `GetCached` as `Plugin` so users can do `use iron::Plugin`.
-pub use plugin::GetCached as Plugin;
+// Expose `Pluggable` as `Plugin` so users can do `use iron::Plugin`.
+pub use plugin::Pluggable as Plugin;
 
 // Expose modifiers.
 pub use modifier::Set;
@@ -88,7 +88,7 @@ pub mod prelude {
 
 /// Re-exports from the TypeMap crate.
 pub mod typemap {
-    pub use tmap::{TypeMap, Assoc};
+    pub use tmap::{TypeMap, Key};
 }
 
 /// Re-exports from the Modifier crate.
