@@ -1,6 +1,7 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128", html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256", html_root_url = "http://ironframework.io/core/iron")]
 #![deny(missing_docs)]
 #![deny(warnings)]
+#![allow(unstable)]
 
 #![feature(unboxed_closures, slicing_syntax)]
 
@@ -92,9 +93,7 @@ pub mod typemap {
 }
 
 /// Re-exports from the Modifier crate.
-pub mod modifier {
-    pub use modfier::{Set, Modifier};
-}
+pub mod modifier;
 
 /// Status Codes
 pub mod status {
@@ -113,6 +112,9 @@ pub mod middleware;
 
 // Response utilities
 pub mod response;
+
+// Request and Response Modifiers
+pub mod modifiers;
 
 // Internal modules
 mod request;

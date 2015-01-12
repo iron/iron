@@ -46,10 +46,10 @@ impl Show for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Request {{"));
 
-        try!(writeln!(f, "    url: {}", self.url));
-        try!(writeln!(f, "    method: {}", self.method));
-        try!(writeln!(f, "    remote_addr: {}", self.remote_addr));
-        try!(writeln!(f, "    body: {}", self.body));
+        try!(writeln!(f, "    url: {:?}", self.url));
+        try!(writeln!(f, "    method: {:?}", self.method));
+        try!(writeln!(f, "    remote_addr: {:?}", self.remote_addr));
+        try!(writeln!(f, "    body: {:?}", self.body));
 
         try!(write!(f, "}}"));
         Ok(())

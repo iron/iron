@@ -85,7 +85,7 @@ impl<H: Handler> ::hyper::server::Handler for Iron<H> {
             Ok(res) => res.write_back(http_res),
             Err(e) => {
                 // There is no Response, so create one.
-                error!("Error handling:\n{}\nError was: {}", req, e);
+                error!("Error handling:\n{:?}\nError was: {:?}", req, e);
                 *http_res.status_mut() = status::BadRequest;
 
                 let http_res = match http_res.start() {
