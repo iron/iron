@@ -2,12 +2,12 @@
 
 use url::{Host, RelativeSchemeData};
 use url::{whatwg_scheme_type_mapper};
-use url::{mod, SchemeData, SchemeType};
+use url::{self, SchemeData, SchemeType};
 use url::format::{PathFormatter, UserInfoFormatter};
-use std::fmt::{mod, Show};
+use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
-#[deriving(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Show)]
 pub struct Url {
     /// The lower-cased scheme of the URL, typically "http" or "https".
     pub scheme: String,
@@ -116,7 +116,7 @@ impl Url {
 
     /// Create a `rust-url` `Url` from a `Url`.
     pub fn into_generic_url(self) -> url::Url {
-        let default_port = whatwg_scheme_type_mapper(self.scheme[]).default_port();
+        let default_port = whatwg_scheme_type_mapper(&self.scheme[]).default_port();
 
         url::Url {
             scheme: self.scheme,
@@ -136,17 +136,17 @@ impl Url {
     }
 }
 
-impl Show for Url {
+impl fmt::String for Url {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         // Write the scheme.
         try!(self.scheme.fmt(formatter));
         try!("://".fmt(formatter));
 
         // Write the user info.
-        try!(UserInfoFormatter {
+        try!(write!(formatter, "{}", UserInfoFormatter {
             username: self.username.as_ref().map(|s| s.as_slice()).unwrap_or(""),
             password: self.password.as_ref().map(|s| s.as_slice())
-        }.fmt(formatter));
+        }));
 
         // Write the host.
         try!(self.host.fmt(formatter));
@@ -156,7 +156,7 @@ impl Show for Url {
         try!(self.port.fmt(formatter));
 
         // Write the path.
-        try!(PathFormatter { path: self.path.as_slice() }.fmt(formatter));
+        try!(write!(formatter, "{}", PathFormatter { path: self.path.as_slice() }));
 
         // Write the query.
         match self.query {

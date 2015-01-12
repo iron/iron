@@ -1,8 +1,7 @@
-#![feature(globs)]
 extern crate iron;
 
 use iron::prelude::*;
-use iron::response::modifiers::Redirect;
+use iron::modifiers::Redirect;
 use iron::{Url, status};
 
 fn main() {

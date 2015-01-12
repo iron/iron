@@ -1,5 +1,4 @@
-#![feature(globs)]
-
+#![allow(unstable)]
 extern crate iron;
 extern crate time;
 
@@ -12,11 +11,11 @@ use std::error::Error;
 struct ErrorHandler;
 struct ErrorProducer;
 
-#[deriving(Show)]
+#[derive(Show)]
 struct StringError(String);
 
 impl Error for StringError {
-    fn description(&self) -> &str { self.0.as_slice() }
+    fn description(&self) -> &str { &*self.0 }
 }
 
 impl Handler for ErrorHandler {
@@ -33,7 +32,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(box StringError("Error".to_string()) as IronError)
+        Err(Box::new(StringError("Error".to_string())) as IronError)
     }
 }
 

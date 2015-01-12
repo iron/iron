@@ -39,7 +39,7 @@ impl<H: Handler> Iron<H> {
     }
 
     /// Kick off the server process with X threads.
-    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: uint) -> IronResult<Listening> {
+    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: usize) -> IronResult<Listening> {
         let SocketAddr { ip, port } = try!(addr.to_socket_addr());
 
         Ok(try!(Server::http(ip, port).listen_threads(self, threads)))
@@ -85,7 +85,7 @@ impl<H: Handler> ::hyper::server::Handler for Iron<H> {
             Ok(res) => res.write_back(http_res),
             Err(e) => {
                 // There is no Response, so create one.
-                error!("Error handling:\n{}\nError was: {}", req, e);
+                error!("Error handling:\n{:?}\nError was: {:?}", req, e);
                 *http_res.status_mut() = status::BadRequest;
 
                 let http_res = match http_res.start() {

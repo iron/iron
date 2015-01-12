@@ -1,4 +1,3 @@
-#![feature(globs)]
 extern crate iron;
 extern crate time;
 
@@ -26,8 +25,8 @@ impl Logger {
     fn log(&self, req: &Request, res: Result<&Response, &IronError>, time: u64) {
         match self.mode {
             LoggerMode::Silent => {},
-            LoggerMode::Tiny => println!("Req: {}\nRes: {}\nTook: {}", req, res, time),
-            LoggerMode::Large => println!("Request: {}\nResponse: {}\nResponse-Time: {}", req, res, time)
+            LoggerMode::Tiny => println!("Req: {:?}\nRes: {:?}\nTook: {}", req, res, time),
+            LoggerMode::Large => println!("Request: {:?}\nResponse: {:?}\nResponse-Time: {}", req, res, time)
         }
     }
 }
@@ -43,10 +42,10 @@ impl<H: Handler> Handler for LoggerHandler<H> {
 
 impl AroundMiddleware for Logger {
     fn around(self, handler: Box<Handler + Send + Sync>) -> Box<Handler + Send + Sync> {
-        box LoggerHandler {
+        Box::new(LoggerHandler {
             logger: self,
             handler: handler
-        } as Box<Handler + Send + Sync>
+        }) as Box<Handler + Send + Sync>
     }
 }
 
@@ -55,9 +54,9 @@ fn hello_world(_: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    let tiny = Iron::new(Logger::new(LoggerMode::Tiny).around(box hello_world));
-    let silent = Iron::new(Logger::new(LoggerMode::Silent).around(box hello_world));
-    let large = Iron::new(Logger::new(LoggerMode::Large).around(box hello_world));
+    let tiny = Iron::new(Logger::new(LoggerMode::Tiny).around(Box::new(hello_world)));
+    let silent = Iron::new(Logger::new(LoggerMode::Silent).around(Box::new(hello_world)));
+    let large = Iron::new(Logger::new(LoggerMode::Large).around(Box::new(hello_world)));
 
     tiny.listen("localhost:2000").unwrap();
     silent.listen("localhost:3000").unwrap();

@@ -41,81 +41,63 @@ impl Modifier<Response> for Mime {
     }
 }
 
-/// A response modifier for setting the body of a response.
-pub struct Body<B: Bodyable>(pub B);
-
-impl<B: Bodyable> Modifier<Response> for B {
+impl Modifier<Response> for Box<Reader + Send> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        self.set_body(res);
-    }
-}
-
-/// Something that can be used to set the body of a response.
-pub trait Bodyable {
-    /// Set the body of this response, possibly also setting headers.
-    fn set_body(self, res: &mut Response);
-}
-
-impl Bodyable for Box<Reader + Send> {
-    #[inline]
-    fn set_body(self, res: &mut Response) {
         res.body = Some(self);
     }
 }
 
-impl Bodyable for String {
+impl Modifier<Response> for String {
     #[inline]
-    fn set_body(self, res: &mut Response) {
-        self.into_bytes().set_body(res);
+    fn modify(self, res: &mut Response) {
+        self.into_bytes().modify(res);
     }
 }
 
-impl Bodyable for Vec<u8> {
+impl Modifier<Response> for Vec<u8> {
     #[inline]
-    fn set_body(self, res: &mut Response) {
-        res.headers.set(headers::ContentLength(self.len()));
-        res.body = Some(box MemReader::new(self) as Box<Reader + Send>);
+    fn modify(self, res: &mut Response) {
+        res.headers.set(headers::ContentLength(self.len() as u64));
+        res.body = Some(Box::new(MemReader::new(self)) as Box<Reader + Send>);
     }
 }
 
-impl<'a> Bodyable for &'a str {
+impl<'a> Modifier<Response> for &'a str {
     #[inline]
-    fn set_body(self, res: &mut Response) {
-        self.to_string().set_body(res);
+    fn modify(self, res: &mut Response) {
+        self.to_string().modify(res);
     }
 }
 
-impl<'a> Bodyable for &'a [u8] {
+impl<'a> Modifier<Response> for &'a [u8] {
     #[inline]
-    fn set_body(self, res: &mut Response) {
-        self.to_vec().set_body(res);
+    fn modify(self, res: &mut Response) {
+        self.to_vec().modify(res);
     }
 }
 
-impl Bodyable for File {
+impl Modifier<Response> for File {
     #[inline]
-    fn set_body(self, res: &mut Response) {
+    fn modify(self, res: &mut Response) {
         // Also set the content type.
         // self.path().extension_str()
         //     .and_then(get_content_type)
-        //     .and_then(|ct| {
-        //         res.headers.set(headers::ContentType(ct))
-        //     });
-        res.body = Some(box self as Box<Reader + Send>);
+        //     .and_then(|ct| { res.set_mut(ct) });
+        res.body = Some(Box::new(self) as Box<Reader + Send>);
     }
 }
 
-impl Bodyable for Path {
+impl Modifier<Response> for Path {
     /// Set the body to the contents of the File at this path.
     ///
     /// ## Panics
     ///
     /// Panics if there is no file at the passed-in Path.
-    fn set_body(self, res: &mut Response) {
+    fn modify(self, res: &mut Response) {
         File::open(&self)
             .ok().expect(format!("No such file: {}", self.display()).as_slice())
-            .set_body(res);
+            .modify(res);
     }
 }
 
@@ -131,7 +113,7 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.set(headers::Location(url.to_string()));
+        res.headers.set(headers::Location(format!("{:?}", url)));
     }
 }
 
