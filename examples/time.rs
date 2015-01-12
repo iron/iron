@@ -1,4 +1,3 @@
-#![feature(globs)]
 extern crate iron;
 extern crate time;
 
@@ -8,18 +7,18 @@ use time::precise_time_ns;
 
 struct ResponseTime;
 
-impl typemap::Assoc<u64> for ResponseTime {}
+impl typemap::Key for ResponseTime { type Value = u64; }
 
 impl BeforeMiddleware for ResponseTime {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<ResponseTime, u64>(precise_time_ns());
+        req.extensions.insert::<ResponseTime>(precise_time_ns());
         Ok(())
     }
 }
 
 impl AfterMiddleware for ResponseTime {
     fn after(&self, req: &mut Request, _: &mut Response) -> IronResult<()> {
-        let delta = precise_time_ns() - *req.extensions.get::<ResponseTime, u64>().unwrap();
+        let delta = precise_time_ns() - *req.extensions.get::<ResponseTime>().unwrap();
         println!("Request took: {} ms", (delta as f64) / 1000000.0);
         Ok(())
     }

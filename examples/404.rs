@@ -1,4 +1,3 @@
-#![feature(globs)]
 extern crate iron;
 
 use iron::prelude::*;
