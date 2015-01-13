@@ -1,12 +1,12 @@
 use std::error::Error;
 use iron::{Handler, Response, Request, IronResult, IronError, Url};
-use iron::typemap::Assoc;
+use iron::typemap;
 use sequence_trie::SequenceTrie;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct OriginalUrl;
-impl Assoc<Url> for OriginalUrl {}
+impl typemap::Key for OriginalUrl { type Value = Url; }
 
 /// `Mount` is a simple mounting middleware.
 ///
@@ -25,11 +25,11 @@ pub struct Mount {
 
 struct Match {
     handler: Box<Handler + Send + Sync>,
-    length: uint
+    length: usize
 }
 
 /// The error returned by `Mount` when a request doesn't match any mounted handlers.
-#[deriving(Show)]
+#[derive(Show)]
 pub struct NoMatch;
 
 impl Error for NoMatch {
@@ -56,7 +56,7 @@ impl Mount {
 
         // Insert a match struct into the trie.
         self.inner.insert(key.as_slice(), Match {
-            handler: box handler as Box<Handler + Send + Sync>,
+            handler: Box::new(handler) as Box<Handler + Send + Sync>,
             length: key.len()
         });
         self
@@ -82,16 +82,16 @@ impl Handler for Mount {
             // Search the Trie for the nearest most specific match.
             match self.inner.get_ancestor(key) {
                 Some(matched) => matched,
-                None => return Err(box NoMatch as IronError)
+                None => return Err(Box::new(NoMatch) as IronError)
             }
         };
 
         // We have a match, so fire off the child.
         // If another mount middleware hasn't already, insert the unmodified url
         // into the extensions as the "original url".
-        let is_outer_mount = !req.extensions.contains::<OriginalUrl, Url>();
+        let is_outer_mount = !req.extensions.contains::<OriginalUrl>();
         if is_outer_mount {
-            req.extensions.insert::<OriginalUrl, Url>(req.url.clone());
+            req.extensions.insert::<OriginalUrl>(req.url.clone());
         }
 
         // Remove the prefix from the request's path before passing it to the mounted handler.
@@ -103,7 +103,7 @@ impl Handler for Mount {
         let res = matched.handler.call(req);
 
         // Reverse the URL munging, for future middleware.
-        req.url = match req.extensions.get::<OriginalUrl, Url>() {
+        req.url = match req.extensions.get::<OriginalUrl>() {
             Some(original) => original.clone(),
             None => panic!("OriginalUrl unexpectedly removed from req.extensions.")
         };
@@ -111,7 +111,7 @@ impl Handler for Mount {
         // If this mount middleware is the outermost mount middleware,
         // remove the original url from the extensions map to prevent leakage.
         if is_outer_mount {
-            req.extensions.remove::<OriginalUrl, Url>();
+            req.extensions.remove::<OriginalUrl>();
         }
 
         res
