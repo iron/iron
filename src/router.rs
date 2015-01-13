@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error::Error;
-use iron::{Request, Response, Handler, IronResult, IronError, Set};
+use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method};
-use iron::typemap::Assoc;
+use iron::typemap;
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
 
@@ -15,7 +15,7 @@ pub struct Router {
     error: Option<Box<Handler + Send + Sync>>
 }
 
-#[deriving(Show)]
+#[derive(Show)]
 /// The error thrown by router if there is no matching route.
 pub struct NoRoute;
 
@@ -47,9 +47,9 @@ impl Router {
     /// authorized for this route before handling it.
     pub fn route<H: Handler, S: Str>(&mut self, method: method::Method, glob: S, handler: H) -> &mut Router {
         match self.routers.entry(method) {
-            Vacant(entry)   => entry.set(Recognizer::new()),
+            Vacant(entry)   => entry.insert(Recognizer::new()),
             Occupied(entry) => entry.into_mut()
-        }.add(glob.as_slice(), box handler as Box<Handler + Send + Sync>);
+        }.add(glob.as_slice(), Box::new(handler) as Box<Handler + Send + Sync>);
         self
     }
 
@@ -90,7 +90,7 @@ impl Router {
 
     /// Add a Handler to be used for this Router's `catch` method.
     pub fn error<H: Handler>(&mut self, handler: H) -> &mut Router {
-        self.error = Some(box handler as Box<Handler + Send + Sync>);
+        self.error = Some(Box::new(handler) as Box<Handler + Send + Sync>);
         self
     }
 
@@ -100,17 +100,17 @@ impl Router {
     }
 }
 
-impl Assoc<Params> for Router {}
+impl typemap::Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn call(&self, req: &mut Request) -> IronResult<Response> {
         let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
             Some(matched) => matched,
             // No match.
-            None => return Err(box NoRoute as IronError)
+            None => return Err(Box::new(NoRoute) as IronError)
         };
 
-        req.extensions.insert::<Router, Params>(matched.params);
+        req.extensions.insert::<Router>(matched.params);
         matched.handler.call(req)
     }
 
