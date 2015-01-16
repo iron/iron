@@ -1,4 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
+#![allow(unstable)]
 #![deny(missing_docs)]
 
 //! A set of middleware for sharing data between requests in the Iron
@@ -8,13 +9,13 @@ extern crate iron;
 extern crate plugin;
 
 use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
-use iron::typemap::Assoc;
-use std::sync::{Arc, RWLock, Mutex};
-use plugin::{PluginFor, Phantom};
+use iron::typemap::Key;
+use std::sync::{Arc, RwLock, Mutex};
+use plugin::{Plugin, Phantom};
 
 /// Middleware for data that persists between requests with read and write capabilities.
 ///
-/// The data is stored behind a `RWLock`, so multiple read locks
+/// The data is stored behind a `RwLock`, so multiple read locks
 /// can be taken out concurrently.
 ///
 /// If most threads need to take out a write lock, you may want to
@@ -25,10 +26,10 @@ use plugin::{PluginFor, Phantom};
 /// extensions and it can be linked as an `AfterMiddleware` to add data to
 /// the `Response` extensions.
 ///
-/// `State` also implements `PluginFor`, so the data stored within can be
-/// accessed through `request.get::<State<P, D>>()` as an `Arc<RWLock<D>>`.
-pub struct State<P, D> {
-    data: Arc<RWLock<D>>
+/// `State` also implements `Plugin`, so the data stored within can be
+/// accessed through `request.get::<State<P>>()` as an `Arc<RwLock<P::Value>>`.
+pub struct State<P: Key> {
+    data: Arc<RwLock<P::Value>>
 }
 
 /// Middleware for data that persists between Requests with read-only capabilities.
@@ -40,10 +41,10 @@ pub struct State<P, D> {
 /// extensions and it can be linked as an `AfterMiddleware` to add data to
 /// the `Response` extensions.
 ///
-/// `Read` also implements `PluginFor`, so the data stored within can be
-/// accessed through `request.get::<Read<P, D>>()` as an `Arc<D>`.
-pub struct Read<P, D> {
-    data: Arc<D>
+/// `Read` also implements `Plugin`, so the data stored within can be
+/// accessed through `request.get::<Read<P>>()` as an `Arc<P::Value>`.
+pub struct Read<P: Key> {
+    data: Arc<P::Value>
 }
 
 /// Middleware for data that persists between Requests for data which mostly
@@ -57,109 +58,113 @@ pub struct Read<P, D> {
 /// extensions and it can be linked as an `AfterMiddleware` to add data to
 /// the `Response` extensions.
 ///
-/// `Write` also implements `PluginFor`, so the data stored within can be
-/// accessed through `request.get::<Write<P, D>>()` as an `Arc<Mutex<D>>`.
-pub struct Write<P, D> {
-    data: Arc<Mutex<D>>
+/// `Write` also implements `Plugin`, so the data stored within can be
+/// accessed through `request.get::<Write<P>>()` as an `Arc<Mutex<P::Value>>`.
+pub struct Write<P: Key> {
+    data: Arc<Mutex<P::Value>>
 }
 
-impl<P, D: Send + Sync> Clone for Read<P, D> {
-    fn clone(&self) -> Read<P, D> {
+macro_rules! impl_persistent {
+    ($name:ty, $out:ty, $param:ident) => {
+    }
+}
+
+impl<P: Key> Clone for Read<P> where P::Value: Send + Sync {
+    fn clone(&self) -> Read<P> {
         Read { data: self.data.clone() }
     }
 }
 
-impl<P, D: Send + Sync> Clone for State<P, D> {
-    fn clone(&self) -> State<P, D> {
+impl<P: Key> Clone for State<P> where P::Value: Send + Sync {
+    fn clone(&self) -> State<P> {
         State { data: self.data.clone() }
     }
 }
 
-impl<P, D: Send> Clone for Write<P, D> {
-    fn clone(&self) -> Write<P, D> {
+impl<P: Key> Clone for Write<P> where P::Value: Send {
+    fn clone(&self) -> Write<P> {
         Write { data: self.data.clone() }
     }
 }
 
-impl<P, D:'static> Assoc<Arc<RWLock<D>>> for State<P, D> where P: Assoc<D> {}
-impl<P, D:'static> Assoc<Arc<D>> for Read<P, D> where P: Assoc<D> {}
-impl<P, D:'static> Assoc<Arc<Mutex<D>>> for Write<P, D> where P: Assoc<D> {}
+impl<P: Key> Key for State<P> where P::Value: 'static {
+    type Value = Arc<RwLock<P::Value>>;
+}
 
-impl<P, D> PluginFor<Request, Arc<RWLock<D>>> for State<P, D>
-    where D: Send + Sync,
-          P: Assoc<D> {
-    fn eval(req: &mut Request, _: Phantom<State<P, D>>) -> Option<Arc<RWLock<D>>> {
-        req.extensions.get::<State<P, D>, Arc<RWLock<D>>>()
-            .map(|x| x.clone())
+impl<P: Key> Key for Read<P> where P::Value: 'static {
+    type Value = Arc<P::Value>;
+}
+
+impl<P: Key> Key for Write<P> where P::Value: 'static {
+    type Value = Arc<Mutex<P::Value>>;
+}
+
+impl<P: Key> Plugin<Request> for State<P> where P::Value: Send + Sync {
+    fn eval(req: &mut Request, _: Phantom<State<P>>) -> Option<Arc<RwLock<P::Value>>> {
+        req.extensions.get::<State<P>>().cloned()
     }
 }
 
-impl<P, D> PluginFor<Request, Arc<D>> for Read<P, D>
-    where D: Send + Sync,
-          P: Assoc<D> {
-    fn eval(req: &mut Request, _: Phantom<Read<P, D>>) -> Option<Arc<D>> {
-        req.extensions.get::<Read<P, D>, Arc<D>>()
-            .map(|x| x.clone())
+impl<P: Key> Plugin<Request> for Read<P> where P::Value: Send + Sync {
+    fn eval(req: &mut Request, _: Phantom<Read<P>>) -> Option<Arc<P::Value>> {
+        req.extensions.get::<Read<P>>().cloned()
     }
 }
 
-impl<P, D> PluginFor<Request, Arc<Mutex<D>>> for Write<P, D>
-    where D: Send,
-          P: Assoc<D> {
-    fn eval(req: &mut Request, _: Phantom<Write<P, D>>) -> Option<Arc<Mutex<D>>> {
-        req.extensions.get::<Write<P, D>, Arc<Mutex<D>>>()
-            .map(|x| x.clone())
+impl<P: Key> Plugin<Request> for Write<P> where P::Value: Send {
+    fn eval(req: &mut Request, _: Phantom<Write<P>>) -> Option<Arc<Mutex<P::Value>>> {
+        req.extensions.get::<Write<P>>().cloned()
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for State<P, D> {
+impl<P: Key> BeforeMiddleware for State<P> where P::Value: Send + Sync {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<State<P, D>, Arc<RWLock<D>>>(self.data.clone());
+        req.extensions.insert::<State<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for State<P, D> {
-    fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
-        res.extensions.insert::<State<P, D>, Arc<RWLock<D>>>(self.data.clone());
-        Ok(())
-    }
-}
-
-impl<D: Send + Sync, P: Assoc<D>> BeforeMiddleware for Read<P, D> {
+impl<P: Key> BeforeMiddleware for Read<P> where P::Value: Send + Sync {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<Read<P, D>, Arc<D>>(self.data.clone());
+        req.extensions.insert::<Read<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send + Sync, P: Assoc<D>> AfterMiddleware for Read<P, D> {
-    fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
-        res.extensions.insert::<Read<P, D>, Arc<D>>(self.data.clone());
-        Ok(())
-    }
-}
-
-impl<D: Send, P: Assoc<D>> BeforeMiddleware for Write<P, D> {
+impl<P: Key> BeforeMiddleware for Write<P> where P::Value: Send {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
+        req.extensions.insert::<Write<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<D: Send, P: Assoc<D>> AfterMiddleware for Write<P, D> {
+impl<P: Key> AfterMiddleware for State<P> where P::Value: Send + Sync {
     fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
-        res.extensions.insert::<Write<P, D>, Arc<Mutex<D>>>(self.data.clone());
+        res.extensions.insert::<State<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<P, D> State<P, D> where D: Send + Sync, P: Assoc<D> {
+impl<P: Key> AfterMiddleware for Read<P> where P::Value: Send + Sync {
+    fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
+        res.extensions.insert::<Read<P>>(self.data.clone());
+        Ok(())
+    }
+}
+
+impl<P: Key> AfterMiddleware for Write<P> where P::Value: Send {
+    fn after(&self, _: &mut Request, res: &mut Response) -> IronResult<()> {
+        res.extensions.insert::<Write<P>>(self.data.clone());
+        Ok(())
+    }
+}
+
+impl<P: Key> State<P> where P::Value: Send + Sync {
     /// Construct a new pair of `State` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: D) -> (State<P, D>, State<P, D>) {
-        let x = State { data: Arc::new(RWLock::new(start)) };
+    pub fn both(start: P::Value) -> (State<P>, State<P>) {
+        let x = State { data: Arc::new(RwLock::new(start)) };
         (x.clone(), x)
     }
 
@@ -167,16 +172,16 @@ impl<P, D> State<P, D> where D: Send + Sync, P: Assoc<D> {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: D) -> State<P, D> {
-        State { data: Arc::new(RWLock::new(start)) }
+    pub fn one(start: P::Value) -> State<P> {
+        State { data: Arc::new(RwLock::new(start)) }
     }
 }
 
-impl<P, D> Read<P, D> where D: Send + Sync, P: Assoc<D> {
+impl<P: Key> Read<P> where P::Value: Send + Sync {
     /// Construct a new pair of `Read` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: D) -> (Read<P, D>, Read<P, D>) {
+    pub fn both(start: P::Value) -> (Read<P>, Read<P>) {
         let x = Read { data: Arc::new(start) };
         (x.clone(), x)
     }
@@ -185,16 +190,16 @@ impl<P, D> Read<P, D> where D: Send + Sync, P: Assoc<D> {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: D) -> Read<P, D> {
+    pub fn one(start: P::Value) -> Read<P> {
         Read { data: Arc::new(start) }
     }
 }
 
-impl<P, D> Write<P, D> where D: Send, P: Assoc<D> {
+impl<P: Key> Write<P> where P::Value: Send {
     /// Construct a new pair of `Write` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: D) -> (Write<P, D>, Write<P, D>) {
+    pub fn both(start: P::Value) -> (Write<P>, Write<P>) {
         let x = Write { data: Arc::new(Mutex::new(start)) };
         (x.clone(), x)
     }
@@ -203,7 +208,7 @@ impl<P, D> Write<P, D> where D: Send, P: Assoc<D> {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: D) -> Write<P, D> {
+    pub fn one(start: P::Value) -> Write<P> {
         Write { data: Arc::new(Mutex::new(start)) }
     }
 }
