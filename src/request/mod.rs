@@ -14,7 +14,7 @@ pub use hyper::server::request::Request as HttpRequest;
 
 pub use self::url::Url;
 
-use {headers};
+use {Plugin, headers};
 
 mod url;
 
@@ -113,4 +113,6 @@ impl Extensible for Request {
         &mut self.extensions
     }
 }
+
+impl Plugin for Request {}
 

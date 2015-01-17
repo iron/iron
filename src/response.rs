@@ -10,7 +10,7 @@ use modifier::{Set, Modifier};
 use hyper::header::Headers;
 
 use status::{self, Status};
-use {headers};
+use {Plugin, headers};
 
 pub use hyper::server::response::Response as HttpResponse;
 use hyper::net::Fresh;
@@ -134,4 +134,6 @@ impl Extensible for Response {
     }
 }
 
+impl Plugin for Response {}
 impl Set for Response {}
+
