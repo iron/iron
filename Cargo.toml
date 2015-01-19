@@ -27,3 +27,6 @@ modifier = "*"
 error = "*"
 log = "*"
 
+[dev-dependencies]
+time = "*"
+
