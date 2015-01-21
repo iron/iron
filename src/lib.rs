@@ -51,7 +51,7 @@ pub use iron::Iron;
 pub use typemap::TypeMap;
 
 // Headers
-pub use hyper::header::common as headers;
+pub use hyper::header as headers;
 pub use hyper::header::Headers;
 
 // Expose `Pluggable` as `Plugin` so users can do `use iron::Plugin`.
