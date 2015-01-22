@@ -113,7 +113,7 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.set(headers::Location(format!("{:?}", url)));
+        res.headers.set(headers::Location(url.to_string()));
     }
 }
 
