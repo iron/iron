@@ -2,7 +2,6 @@
 //! `Iron` library.
 
 use std::io::net::ip::{ToSocketAddr, SocketAddr};
-use std::io::{Listener};
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
@@ -22,6 +21,9 @@ pub struct Iron<H> {
     /// Iron contains a `Handler`, which it uses to create responses for client
     /// requests.
     pub handler: H,
+
+    /// Once listening, the local address that this server is bound to.
+    pub addr: Option<SocketAddr>
 }
 
 impl<H: Handler> Iron<H> {
@@ -33,14 +35,14 @@ impl<H: Handler> Iron<H> {
     ///
     /// Defaults to a threadpool of size 100.
     pub fn listen<A: ToSocketAddr>(self, addr: A) -> IronResult<Listening> {
-        let SocketAddr { ip, port } = try!(addr.to_socket_addr());
-
-        Ok(try!(Server::http(ip, port).listen(self)))
+        self.listen_with(addr, 100)
     }
 
     /// Kick off the server process with X threads.
-    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: usize) -> IronResult<Listening> {
-        let SocketAddr { ip, port } = try!(addr.to_socket_addr());
+    pub fn listen_with<A: ToSocketAddr>(mut self, addr: A, threads: usize) -> IronResult<Listening> {
+        let sock_addr = try!(addr.to_socket_addr());
+        let SocketAddr { ip, port } = sock_addr.clone();
+        self.addr = Some(sock_addr);
 
         Ok(try!(Server::http(ip, port).listen_threads(self, threads)))
     }
@@ -50,14 +52,14 @@ impl<H: Handler> Iron<H> {
     /// This will create a new `Iron`, the base unit of the server, using the
     /// passed in `Handler`.
     pub fn new(handler: H) -> Iron<H> {
-        Iron { handler: handler }
+        Iron { handler: handler, addr: None }
     }
 }
 
 impl<H: Handler> ::hyper::server::Handler for Iron<H> {
     fn handle(&self, http_req: HttpRequest, mut http_res: HttpResponse<Fresh>) {
         // Create `Request` wrapper.
-        let mut req = match Request::from_http(http_req) {
+        let mut req = match Request::from_http(http_req, self.addr.clone().unwrap()) {
             Ok(req) => req,
             Err(e) => {
                 error!("Error creating request:\n    {}", e);
