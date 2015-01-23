@@ -33,8 +33,9 @@ extern crate hyper;
 extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate "modifier" as modfier;
-extern crate error;
+extern crate "error" as err;
 extern crate url;
+extern crate "replace-map" as rmap;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -62,14 +63,13 @@ pub use modifier::Set;
 
 // Errors
 pub use error::Error;
+pub use error::IronError;
 
 // Mime types
 pub use hyper::mime;
 
-// Return type of many methods
-
-/// The type of Errors inside and when using Iron.
-pub type IronError = Box<Error>;
+/// Iron's error type and associated utilities.
+pub mod error;
 
 /// The Result alias used throughout Iron and in clients of Iron.
 pub type IronResult<T> = Result<T, IronError>;
