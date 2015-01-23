@@ -43,7 +43,7 @@ pub use response::Response;
 
 // Middleware system
 pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain, ChainBuilder};
+                     Handler, Chain};
 
 // Server
 pub use iron::Iron;
