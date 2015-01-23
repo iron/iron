@@ -1,7 +1,7 @@
 [package]
 
 name = "iron"
-version = "0.0.17"
+version = "0.1.0"
 description = "Middleware-Oriented, Concurrency Focused Web Development in Rust."
 readme = "README.md"
 repository = "https://github.com/iron/iron"
@@ -26,6 +26,7 @@ plugin = "*"
 modifier = "*"
 error = "*"
 log = "*"
+replace-map = "*"
 
 [dev-dependencies]
 time = "*"
