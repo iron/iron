@@ -32,20 +32,20 @@ impl Logger {
 }
 
 impl<H: Handler> Handler for LoggerHandler<H> {
-    fn call(&self, req: &mut Request) -> IronResult<Response> {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let entry = ::time::precise_time_ns();
-        let res = self.handler.call(req);
+        let res = self.handler.handle(req);
         self.logger.log(req, res.as_ref(), ::time::precise_time_ns() - entry);
         res
     }
 }
 
 impl AroundMiddleware for Logger {
-    fn around(self, handler: Box<Handler + Send + Sync>) -> Box<Handler + Send + Sync> {
+    fn around(self, handler: Box<Handler>) -> Box<Handler> {
         Box::new(LoggerHandler {
             logger: self,
             handler: handler
-        }) as Box<Handler + Send + Sync>
+        }) as Box<Handler>
     }
 }
 
