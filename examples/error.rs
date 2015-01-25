@@ -7,12 +7,19 @@ use iron::{Handler, BeforeMiddleware, ChainBuilder};
 use iron::status;
 
 use std::error::Error;
+use std::fmt::{self, Debug};
 
 struct ErrorHandler;
 struct ErrorProducer;
 
-#[derive(Show)]
+#[derive(Debug)]
 struct StringError(String);
+
+impl fmt::Display for StringError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
 
 impl Error for StringError {
     fn description(&self) -> &str { &*self.0 }

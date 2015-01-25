@@ -338,7 +338,7 @@ mod helpers {
                 for (i, before) in befores.iter().enumerate() {
                     match before.before(req) {
                         Ok(_) => (),
-                        Err(err) => return run_befores(req, befores.slice_from(i), Some(err))
+                        Err(err) => return run_befores(req, &befores[i..], Some(err))
                     }
                 }
                 Ok(())
@@ -363,7 +363,7 @@ mod helpers {
                 for (i, after) in afters.iter().enumerate() {
                     match after.after(req, &mut res) {
                         Ok(_) => (),
-                        Err(err) => return run_afters(req, res, Some(err), afters.slice_from(i))
+                        Err(err) => return run_afters(req, res, Some(err), &afters[i..])
                     }
                 }
                 Ok(res)

@@ -7,7 +7,7 @@ use url::format::{PathFormatter, UserInfoFormatter};
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
-#[derive(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Url {
     /// The lower-cased scheme of the URL, typically "http" or "https".
     pub scheme: String,
@@ -136,7 +136,7 @@ impl Url {
     }
 }
 
-impl fmt::String for Url {
+impl fmt::Display for Url {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         // Write the scheme.
         try!(self.scheme.fmt(formatter));

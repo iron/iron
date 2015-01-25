@@ -1,7 +1,7 @@
 //! Iron's HTTP Response representation and associated methods.
 
 use std::io::{self, IoResult};
-use std::fmt::{self, Show};
+use std::fmt::{self, Debug};
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -107,7 +107,7 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
     res.end()
 }
 
-impl Show for Response {
+impl Debug for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "HTTP/1.1 {} {}\n{}",
             self.status.unwrap_or(status::NotFound),
@@ -117,9 +117,9 @@ impl Show for Response {
     }
 }
 
-impl fmt::String for Response {
+impl fmt::Display for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Show::fmt(self, f)
+        Debug::fmt(self, f)
     }
 }
 

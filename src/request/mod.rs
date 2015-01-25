@@ -1,7 +1,7 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
-use std::fmt::{self, Show};
+use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
 use hyper::header::Headers;
@@ -42,7 +42,7 @@ pub struct Request {
     pub extensions: TypeMap
 }
 
-impl Show for Request {
+impl Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Request {{"));
 
