@@ -198,7 +198,7 @@ and always nice to hear if someone is using the framework we've worked on.
 Jonathan Reem ([reem](https://github.com/reem)) is the core maintainer and
 author of Iron.
 
-Commit Distribution (as of some arbitrary point):
+Commit Distribution (as of `8e55759`):
 
 ```
 Jonathan Reem (415)
