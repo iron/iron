@@ -2,7 +2,7 @@
 
 name = "iron"
 version = "0.1.0"
-description = "Middleware-Oriented, Concurrency Focused Web Development in Rust."
+description = "Extensible, Concurrency Focused Web Development in Rust."
 readme = "README.md"
 repository = "https://github.com/iron/iron"
 documentation = "http://ironframework.io/doc/iron/"
@@ -10,6 +10,7 @@ license = "MIT"
 authors = [
     "Jonathan Reem <jonathan.reem@gmail.com>",
     "Zach Pomerantz <zmp@umich.edu>",
+    "Michael Sproul <micsproul@gmail.com>",
     "Patrick Tran <patrick.tran06@gmail.com>"
 ]
 
