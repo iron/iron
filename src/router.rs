@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error::Error;
+use std::fmt::{self, Debug};
 use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method};
 use iron::typemap;
@@ -15,9 +16,15 @@ pub struct Router {
     error: Option<Box<Handler + Send + Sync>>
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 /// The error thrown by router if there is no matching route.
 pub struct NoRoute;
+
+impl fmt::Display for NoRoute {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
 
 impl Error for NoRoute {
     fn description(&self) -> &str { "No Route" }
