@@ -16,9 +16,38 @@
 //! ```
 //!
 //! A request first travels through all BeforeMiddleware, then a Response is generated
-//! by the Handler, which can be an arbitrary nesting of AroundMiddleware, then all AfterMiddleware
-//! are called with both the Request and Response. After all AfterMiddleware have been fired,
-//! the response is written back to the client.
+//! by the Handler, which can be an arbitrary nesting of AroundMiddleware, then all
+//! AfterMiddleware are called with both the Request and Response. After all AfterMiddleware
+//! have been fired, the response is written back to the client.
+//!
+//! Iron's error handling system is pragmatic and focuses on tracking two pieces
+//! of information for error receivers (other middleware):
+//!   - The cause of the error
+//!   - The result (what to do about) the error.
+//!
+//! The cause of the error is represented simply by the error itself, and the result
+//! of the error, representing the action to take in response to the error, is a complete
+//! Response, which will be sent at the end of the error flow.
+//!
+//! When an error is thrown in Iron by any middleware or handler returning an `Err`
+//! variant with an `IronError`, the flow of the Request switches to the error flow,
+//! which proceeds to just call the `catch` method of middleware and sidesteps the
+//! `Handler` entirely, since there is already a Response in the error.
+//!
+//! Once a Request has entered the error flow, it is impossible to exit. It is therefore
+//! impossible to fully "handle" an error and return to the normal flow, since there is
+//! often no sensical place to return to and intermingling the two flows results in
+//! an extremely convoluted implementation and perplexing behavior.
+//!
+//! Generally speaking, returning a 5XX error code means that the error flow should be
+//! entered by raising an explicit error. Dealing with 4XX errors is trickier, since
+//! the server may not want to recognize an error that is entirely the clients fault;
+//! handling of 4XX error codes is up to to each application and middleware author.
+//!
+//! Middleware authors should be cognizant that while it is impossible for a user to
+//! turn a raised error into a normal flow, it is usually trivial to raise errors
+//! later. As a result, middleware should be very careful when it returns an error vs.
+//! when it just yields a Response with a 4XX or other something-went-wrong status.
 //!
 
 use {Request, Response, IronResult, IronError};
@@ -35,11 +64,13 @@ pub trait Handler: Send + Sync {
 /// the ability to change control-flow, such as authorization middleware, or for editing
 /// the request by modifying the headers.
 ///
-/// `BeforeMiddleware` only have access to the Request, if you need to modify or read a Response,
-/// you will need `AfterMiddleware`.
+/// `BeforeMiddleware` only have access to the Request, if you need to modify or read
+/// a Response, you will need `AfterMiddleware`. Middleware which wishes to send an
+/// early response that is not an error cannot be `BeforeMiddleware`, but should
+/// instead be `AroundMiddleware`.
 pub trait BeforeMiddleware: Send + Sync {
     /// Do whatever work this middleware should do with a `Request` object.
-    fn before(&self, &mut Request) -> IronResult<()>;
+    fn before(&self, _: &mut Request) -> IronResult<()> { Ok(()) };
 
     /// Try to catch an error thrown by a previous `BeforeMiddleware`.
     fn catch(&self, _: &mut Request, _: &mut IronError) { }
@@ -56,10 +87,12 @@ pub trait BeforeMiddleware: Send + Sync {
 /// adding headers or logging.
 pub trait AfterMiddleware: Send + Sync {
     /// Do whatever post-processing this middleware should do.
-    fn after(&self, &mut Request, Response) -> IronResult<Response>;
+    fn after(&self, _: &mut Request, res: Response) -> IronResult<Response> {
+        Ok(res)
+    }
 
-    /// Try to catch an error thrown by previous `AfterMiddleware`, the `Handler`, or a
-    /// previous `BeforeMiddleware`.
+    /// Respond to an error thrown by previous `AfterMiddleware`, the `Handler`,
+    /// or a `BeforeMiddleware`.
     fn catch(&self, _: &mut Request, _: &mut IronError) { }
 }
 
@@ -132,10 +165,15 @@ impl Chain {
         self.handler = Some(handler);
     }
 
+    // Enter the error flow from a before middleware, starting
+    // at the passed index.
+    //
+    // If the index is out of bounds for the before middleware Vec,
+    // this instead behaves the same as fail_from_handler.
     fn fail_from_before(&self, req: &mut Request, index: usize,
                         mut err: IronError) -> IronResult<Response> {
         // If this was the last before, yield to next phase.
-        if index == self.befores.len() { return self.fail_from_handler(req, err) }
+        if index >= self.befores.len() { return self.fail_from_handler(req, err) }
 
         for before in self.befores[index..].iter() {
             before.catch(req, &mut err);
@@ -145,11 +183,18 @@ impl Chain {
         self.fail_from_handler(req, err)
     }
 
+    // Enter the error flow from an errored handle, starting with the
+    // first AfterMiddleware.
     fn fail_from_handler(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
         // Yield to next phase, nothing to do here.
         self.fail_from_after(req, 0, err)
     }
 
+    // Enter the error flow from an errored after middleware, starting
+    // with the passed index.
+    //
+    // If the index is out of bounds for the after middleware Vec,
+    // this instead just returns the passed error.
     fn fail_from_after(&self, req: &mut Request, index: usize,
                        mut err: IronError) -> IronResult<Response> {
         // If this was the last after, we're done.
@@ -166,6 +211,7 @@ impl Chain {
 
 impl Handler for Chain {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        // Try all the before middleware.
         for (i, before) in self.befores.iter().enumerate() {
             match before.before(req) {
                 Ok(()) => {},
@@ -173,12 +219,15 @@ impl Handler for Chain {
             }
         }
 
-        // Handle safe because it's *always* Some
+        // Handle the request.
+        //
+        // unwrap is safe because it's always Some
         let mut res = match self.handler.as_ref().unwrap().handle(req) {
             Ok(res) => res,
             Err(err) => return self.fail_from_handler(req, err)
         };
 
+        // Try all the afters.
         for (i, after) in self.afters.iter().enumerate() {
             res = match after.after(req, res) {
                 Ok(res) => res,
@@ -186,7 +235,7 @@ impl Handler for Chain {
             }
         }
 
-        // We made it!
+        // If we made it this far, there were no errors.
         Ok(res)
     }
 }
