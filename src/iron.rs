@@ -52,7 +52,7 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddr>(self, addr: A, threads: usize) -> HttpResult<Listening> {
+    pub fn listen_with<A: ToSocketAddr>(mut self, addr: A, threads: usize) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addr()
             .ok().expect("Could not parse socket address.");
         let SocketAddr { ip, port } = sock_addr.clone();

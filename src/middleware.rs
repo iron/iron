@@ -70,7 +70,7 @@ pub trait Handler: Send + Sync {
 /// instead be `AroundMiddleware`.
 pub trait BeforeMiddleware: Send + Sync {
     /// Do whatever work this middleware should do with a `Request` object.
-    fn before(&self, _: &mut Request) -> IronResult<()> { Ok(()) };
+    fn before(&self, _: &mut Request) -> IronResult<()> { Ok(()) }
 
     /// Try to catch an error thrown by a previous `BeforeMiddleware`.
     fn catch(&self, _: &mut Request, _: &mut IronError) { }

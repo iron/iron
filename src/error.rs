@@ -1,4 +1,5 @@
 use std::error::Error as StdError;
+use std::fmt;
 
 use rmap::replace_map;
 
@@ -53,13 +54,15 @@ impl IronError {
     }
 }
 
+impl fmt::Display for IronError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(&*self.error, f)
+    }
+}
+
 impl StdError for IronError {
     fn description(&self) -> &str {
         self.error.description()
-    }
-
-    fn detail(&self) -> Option<String> {
-        self.error.detail()
     }
 
     fn cause(&self) -> Option<&StdError> {
