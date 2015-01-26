@@ -36,9 +36,9 @@ Router is a part of Iron's [core bundle](https://github.com/iron/core).
 If you're using cargo, just add router to your `Cargo.toml`.
 
 ```toml
-[dependencies.router]
+[dependencies]
 
-git = "https://github.com/iron/router.git"
+router = "*"
 ```
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
