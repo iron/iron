@@ -29,6 +29,9 @@ pub struct Request {
     /// The originating address of the request.
     pub remote_addr: SocketAddr,
 
+    /// The local address of the request.
+    pub local_addr: SocketAddr,
+
     /// The request headers.
     pub headers: Headers,
 
@@ -49,6 +52,7 @@ impl Debug for Request {
         try!(writeln!(f, "    url: {:?}", self.url));
         try!(writeln!(f, "    method: {:?}", self.method));
         try!(writeln!(f, "    remote_addr: {:?}", self.remote_addr));
+        try!(writeln!(f, "    local_addr: {:?}", self.local_addr));
         try!(writeln!(f, "    body: {:?}", self.body));
 
         try!(write!(f, "}}"));
@@ -60,7 +64,7 @@ impl Request {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(mut req: HttpRequest) -> Result<Request, String> {
+    pub fn from_http(mut req: HttpRequest, local_addr: SocketAddr) -> Result<Request, String> {
         let url = match req.uri {
             AbsoluteUri(ref url) => {
                 match Url::from_generic_url(url.clone()) {
@@ -74,7 +78,7 @@ impl Request {
                 // FIXME: HTTPS incompatible, update when Hyper gains HTTPS support.
                 let url_string = match req.headers.get::<headers::Host>() {
                     Some(ref host) => {
-                        format!("http://{}{}", host.hostname, path)
+                        format!("http://{}:{}{}", host.hostname, local_addr.port, path)
                     },
                     None => return Err("No host specified in request".to_string())
                 };
@@ -95,6 +99,7 @@ impl Request {
         Ok(Request {
             url: url,
             remote_addr: req.remote_addr,
+            local_addr: local_addr,
             headers: req.headers,
             body: body,
             method: req.method,
