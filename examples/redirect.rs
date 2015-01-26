@@ -5,9 +5,10 @@ use iron::modifiers::Redirect;
 use iron::{Url, status};
 
 fn main() {
-    Iron::new(|&: _: &mut Request | {
-        let url = Url::parse("http://rust-lang.org").unwrap();
-        Ok(Response::with((status::Ok, Redirect(url))))
+    let url = Url::parse("http://rust-lang.org").unwrap();
+
+    Iron::new(move |&: _: &mut Request | {
+        Ok(Response::with((status::Found, Redirect(url.clone()))))
     }).listen("localhost:3000").unwrap();
     println!("On 3000");
 }
