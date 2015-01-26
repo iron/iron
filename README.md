@@ -61,9 +61,9 @@ resolution algorithm by swapping in your own `Chain`.
 If you're using `Cargo`, just add Iron to your `Cargo.toml`:
 
 ```toml
-[dependencies.iron]
+[dependencies]
 
-git = "https://github.com/iron/iron.git"
+iron = "*"
 ```
 
 Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `target` directory.
