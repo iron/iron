@@ -63,7 +63,7 @@ If you're using `Cargo`, just add Iron to your `Cargo.toml`:
 ```toml
 [dependencies]
 
-iron = "0.0.17"
+iron = "*"
 ```
 
 Otherwise, just clone this repo, `cargo build`, and the rlib will be in your `target` directory.
