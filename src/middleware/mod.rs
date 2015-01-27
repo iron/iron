@@ -279,7 +279,7 @@ impl Chain {
         for (i, after) in self.afters[index..].iter().enumerate() {
             res = match after.after(req, res) {
                 Ok(r) => r,
-                Err(err) => return self.fail_from_before(req, index + i + 1, err)
+                Err(err) => return self.fail_from_after(req, index + i + 1, err)
             }
         }
 
@@ -308,10 +308,33 @@ where F: Send + Sync + Fn(&mut Request) -> IronResult<()> {
     }
 }
 
+impl BeforeMiddleware for Box<BeforeMiddleware> {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        (**self).before(req)
+    }
+
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<()> {
+        (**self).catch(req, err)
+    }
+}
+
 impl<F> AfterMiddleware for F
 where F: Send + Sync + Fn(&mut Request, Response) -> IronResult<Response> {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
         (*self)(req, res)
     }
 }
+
+impl AfterMiddleware for Box<AfterMiddleware> {
+    fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
+        (**self).after(req, res)
+    }
+
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
+        (**self).catch(req, err)
+    }
+}
+
+#[cfg(test)]
+mod test;
 
