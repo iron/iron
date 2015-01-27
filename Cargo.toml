@@ -27,7 +27,6 @@ plugin = "*"
 modifier = "*"
 error = "*"
 log = "*"
-replace-map = "*"
 
 [dev-dependencies]
 time = "*"

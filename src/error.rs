@@ -1,8 +1,6 @@
 use std::error::Error as StdError;
 use std::fmt;
 
-use rmap::replace_map;
-
 use modifier::Modifier;
 use {Response};
 
@@ -42,15 +40,6 @@ impl IronError {
             error: Box::new(e),
             response: Response::with(m)
         }
-    }
-
-    /// Use the provided function to wrap the error field.
-    ///
-    /// Can be used to move the error into another error for cause
-    /// chaining.
-    pub fn wrap<F>(&mut self, wrapper: F)
-    where F: FnOnce(Box<Error>) -> Box<Error> {
-        replace_map(&mut self.error, wrapper);
     }
 }
 

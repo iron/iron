@@ -34,20 +34,20 @@
 //! which proceeds to just call the `catch` method of middleware and sidesteps the
 //! `Handler` entirely, since there is already a Response in the error.
 //!
-//! Once a Request has entered the error flow, it is impossible to exit. It is therefore
-//! impossible to fully "handle" an error and return to the normal flow, since there is
-//! often no sensical place to return to and intermingling the two flows results in
-//! an extremely convoluted implementation and perplexing behavior.
+//! A Request can exit the error flow by returning an Ok from any of the catch methods.
+//! This resumes the flow at the middleware immediately following the middleware which
+//! handled the error. It is impossible to "go back" to an earlier middleware that was
+//! skipped.
 //!
 //! Generally speaking, returning a 5XX error code means that the error flow should be
 //! entered by raising an explicit error. Dealing with 4XX errors is trickier, since
 //! the server may not want to recognize an error that is entirely the clients fault;
 //! handling of 4XX error codes is up to to each application and middleware author.
 //!
-//! Middleware authors should be cognizant that while it is impossible for a user to
-//! turn a raised error into a normal flow, it is usually trivial to raise errors
-//! later. As a result, middleware should be very careful when it returns an error vs.
-//! when it just yields a Response with a 4XX or other something-went-wrong status.
+//! Middleware authors should be cognizant that their middleware may be skipped during
+//! the error flow. Anything that *must* be done to each Request or Response should
+//! be run during both the normal and error flow by implementing the `catch` method to
+//! also do the necessary action.
 //!
 
 use {Request, Response, IronResult, IronError};
@@ -72,8 +72,12 @@ pub trait BeforeMiddleware: Send + Sync {
     /// Do whatever work this middleware should do with a `Request` object.
     fn before(&self, _: &mut Request) -> IronResult<()> { Ok(()) }
 
-    /// Try to catch an error thrown by a previous `BeforeMiddleware`.
-    fn catch(&self, _: &mut Request, _: &mut IronError) { }
+    /// Respond to an error thrown by a previous `BeforeMiddleware`.
+    ///
+    /// Returning a `Ok` will cause the request to resume the normal flow at the
+    /// next `BeforeMiddleware`, or if this was the last `BeforeMiddleware`,
+    /// at the `Handler`.
+    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<()> { Err(err) }
 }
 
 /// `AfterMiddleware` are fired after a `Handler` is called inside of a Chain.
@@ -93,7 +97,12 @@ pub trait AfterMiddleware: Send + Sync {
 
     /// Respond to an error thrown by previous `AfterMiddleware`, the `Handler`,
     /// or a `BeforeMiddleware`.
-    fn catch(&self, _: &mut Request, _: &mut IronError) { }
+    ///
+    /// Returning `Ok` will cause the request to resume the normal flow at the
+    /// next `AfterMiddleware`.
+    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<Response> {
+        Err(err)
+    }
 }
 
 /// AroundMiddleware are used to wrap and replace the `Handler` in a `Chain`.
@@ -164,6 +173,18 @@ impl Chain {
         handler = around.around(handler);
         self.handler = Some(handler);
     }
+}
+
+impl Handler for Chain {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        // Kick off at befores, which will continue into handler
+        // then afters.
+        self.continue_from_before(req, 0)
+    }
+}
+
+impl Chain {
+    ///////////////// Implementation Helpers /////////////////
 
     // Enter the error flow from a before middleware, starting
     // at the passed index.
@@ -173,10 +194,15 @@ impl Chain {
     fn fail_from_before(&self, req: &mut Request, index: usize,
                         mut err: IronError) -> IronResult<Response> {
         // If this was the last before, yield to next phase.
-        if index >= self.befores.len() { return self.fail_from_handler(req, err) }
+        if index >= self.befores.len() {
+            return self.fail_from_handler(req, err)
+        }
 
-        for before in self.befores[index..].iter() {
-            before.catch(req, &mut err);
+        for (i, before) in self.befores[index..].iter().enumerate() {
+            err = match before.catch(req, err) {
+                Err(err) => err,
+                Ok(()) => return self.continue_from_before(req, index + i + 1)
+            };
         }
 
         // Next phase
@@ -185,7 +211,8 @@ impl Chain {
 
     // Enter the error flow from an errored handle, starting with the
     // first AfterMiddleware.
-    fn fail_from_handler(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
+    fn fail_from_handler(&self, req: &mut Request,
+                         err: IronError) -> IronResult<Response> {
         // Yield to next phase, nothing to do here.
         self.fail_from_after(req, 0, err)
     }
@@ -200,42 +227,63 @@ impl Chain {
         // If this was the last after, we're done.
         if index == self.afters.len() { return Err(err) }
 
-        for after in self.afters[index..].iter() {
-            after.catch(req, &mut err);
+        for (i, after) in self.afters[index..].iter().enumerate() {
+            err = match after.catch(req, err) {
+                Err(err) => err,
+                Ok(res) => return self.continue_from_after(req, index + i + 1, res)
+            }
         }
 
         // Done
         Err(err)
     }
-}
 
-impl Handler for Chain {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        // Try all the before middleware.
-        for (i, before) in self.befores.iter().enumerate() {
+    // Enter the normal flow in the before middleware, starting with the passed
+    // index.
+    fn continue_from_before(&self, req: &mut Request,
+                            index: usize) -> IronResult<Response> {
+        // If this was the last beforemiddleware, start at the handler.
+        if index >= self.befores.len() {
+            return self.continue_from_handler(req)
+        }
+
+        for (i, before) in self.befores[index..].iter().enumerate() {
             match before.before(req) {
                 Ok(()) => {},
-                Err(err) => return self.fail_from_before(req, i + 1, err)
+                Err(err) => return self.fail_from_before(req, index + i + 1, err)
             }
         }
 
-        // Handle the request.
-        //
+        // Yield to next phase.
+        self.continue_from_handler(req)
+    }
+
+    // Enter the normal flow at the handler.
+    fn continue_from_handler(&self, req: &mut Request) -> IronResult<Response> {
         // unwrap is safe because it's always Some
-        let mut res = match self.handler.as_ref().unwrap().handle(req) {
-            Ok(res) => res,
-            Err(err) => return self.fail_from_handler(req, err)
-        };
+        match self.handler.as_ref().unwrap().handle(req) {
+            Ok(res) => self.continue_from_after(req, 0, res),
+            Err(err) => self.fail_from_handler(req, err)
+        }
+    }
 
-        // Try all the afters.
-        for (i, after) in self.afters.iter().enumerate() {
+    // Enter the normal flow in the after middleware, starting with the passed
+    // index.
+    fn continue_from_after(&self, req: &mut Request, index: usize,
+                            mut res: Response) -> IronResult<Response> {
+        // If this was the last after middleware, we're done.
+        if index >= self.afters.len() {
+            return Ok(res);
+        }
+
+        for (i, after) in self.afters[index..].iter().enumerate() {
             res = match after.after(req, res) {
-                Ok(res) => res,
-                Err(err) => return self.fail_from_after(req, i + 1, err)
+                Ok(r) => r,
+                Err(err) => return self.fail_from_before(req, index + i + 1, err)
             }
         }
 
-        // If we made it this far, there were no errors.
+        // We made it with no error!
         Ok(res)
     }
 }

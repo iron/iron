@@ -35,7 +35,6 @@ extern crate plugin;
 extern crate "modifier" as modfier;
 extern crate "error" as err;
 extern crate url;
-extern crate "replace-map" as rmap;
 
 // Request + Response
 pub use request::{Request, Url};
