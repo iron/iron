@@ -2,6 +2,7 @@ use std::error::Error;
 use iron::{Handler, Response, Request, IronResult, IronError, Url};
 use iron::typemap;
 use sequence_trie::SequenceTrie;
+use std::fmt;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
 #[derive(Copy)]
@@ -29,11 +30,17 @@ struct Match {
 }
 
 /// The error returned by `Mount` when a request doesn't match any mounted handlers.
-#[derive(Show)]
+#[derive(Debug)]
 pub struct NoMatch;
 
 impl Error for NoMatch {
     fn description(&self) -> &'static str { "No Match" }
+}
+
+impl fmt::Display for NoMatch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.description())
+    }
 }
 
 impl Mount {
@@ -75,7 +82,7 @@ impl Handler for Mount {
             // Path::str_components ignores trailing slashes and will never create routes
             // ending in "".
             let key = match path.last() {
-                Some(s) if s.is_empty() => path.slice_to(path.len() - 1),
+                Some(s) if s.is_empty() => &path[..path.len() - 1],
                 _ => path
             };
 
@@ -98,7 +105,7 @@ impl Handler for Mount {
         // If the prefix is entirely removed and no trailing slash was present, the new path
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
-        req.url.path = req.url.path.as_slice().slice_from(matched.length).to_vec();
+        req.url.path = req.url.path.as_slice()[matched.length..].to_vec();
 
         let res = matched.handler.call(req);
 

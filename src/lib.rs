@@ -6,7 +6,6 @@
 //! `Mount` provides mounting middleware for the Iron framework.
 
 extern crate iron;
-extern crate regex;
 extern crate url;
 extern crate sequence_trie;
 
