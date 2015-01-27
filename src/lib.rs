@@ -6,6 +6,7 @@
 #![allow(unstable)]
 
 #![feature(unboxed_closures, slicing_syntax)]
+#![cfg_attr(test, feature(box_syntax))]
 
 //! The main crate for the Iron library.
 //!
