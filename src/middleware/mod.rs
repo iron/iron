@@ -22,8 +22,8 @@
 //!
 //! Iron's error handling system is pragmatic and focuses on tracking two pieces
 //! of information for error receivers (other middleware):
-//!   - The cause of the error
-//!   - The result (what to do about) the error.
+//!   * The cause of the error
+//!   * The result (what to do about) the error.
 //!
 //! The cause of the error is represented simply by the error itself, and the result
 //! of the error, representing the action to take in response to the error, is a complete
