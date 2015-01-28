@@ -6,23 +6,66 @@
 #![allow(unstable)]
 
 #![feature(unboxed_closures, slicing_syntax)]
+#![cfg_attr(test, feature(box_syntax))]
 
-//! The main crate for the Iron library.
+//! The main crate for Iron.
 //!
-//! Iron is a high level web framework built in and for Rust.
+//! ## Overview
 //!
-//! Iron provides a robust and efficient framework
-//! for creating and plugging in middleware.
+//! Iron is a high level web framework built in and for Rust, built on
+//! [hyper](https://github.com/hyperium/hyper). Iron is designed to take advantage
+//! of Rust's greatest features - it's excellent type system and its principled
+//! approach to ownership in both single threaded and multi threaded contexts.
 //!
-//! Obligatory Hello World:
+//! Iron is highly concurrent and can scale horizontally on more machines behind a
+//! load balancer or by running more threads on a more powerful machine. Iron
+//! avoids the bottlenecks encountered in highly concurrent code by avoiding shared
+//! writes and locking in the core framework.
 //!
-//! ```ignore
-//! fn hello_world(req: &mut Request) -> IronResult<Response> {
-//!   Response::new().set(Status(status::Ok)).set(Body("Hello World!"))
-//! }
+//! Iron is 100% safe code:
 //!
-//! Iron::new(hello_world).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+//! ```sh
+//! $ ack unsafe src | wc
+//!        0       0       0
 //! ```
+//!
+//! ## Hello World
+//!
+//! ```no_run
+//! # use iron::prelude::*;
+//! # use iron::status;
+//! Iron::new(|&: req: &mut Request| {
+//!     Ok(Response::with((status::Ok, "Hello World!")))
+//! }).listen("localhost:3000").unwrap();
+//! ```
+//!
+//! ## Design Philosophy
+//!
+//! Iron is meant to be as extensible and pluggable as possible; Iron's core is
+//! concentrated and avoids unnecessary features by leaving them to middleware,
+//! plugins, and modifiers.
+//!
+//! Middleware, Plugins, and Modifiers are the main ways to extend Iron with new
+//! functionality. Most extensions that would be provided by middleware in other
+//! web frameworks are instead addressed by the much simpler Modifier and Plugin
+//! systems.
+//!
+//! Modifiers allow external code to manipulate Requests and Response in an ergonomic
+//! fashion, allowing third-party extensions to get the same treatment as modifiers
+//! defined in Iron itself. Plugins allow for lazily-evaluated, automically cached
+//! extensions to Requests and Responses, perfect for parsing, accessing, and
+//! otherwise lazily manipulating an http connection.
+//!
+//! Middleware are only used when it is necessary to modify the control flow of a
+//! Request flow, hijack the entire handling of a Request, check an incoming
+//! Request, or to do final post-processing. This covers areas such as routing,
+//! mounting, static asset serving, final template rendering, authentication, and
+//! logging.
+//!
+//! Iron comes with only basic modifiers for setting the status, body, and various
+//! headers, and the infrastructure for creating modifiers, plugins, and
+//! middleware. No plugins or middleware are bundled with Iron.
+//!
 
 // Stdlib dependencies
 #[macro_use] extern crate log;
@@ -33,7 +76,7 @@ extern crate hyper;
 extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate "modifier" as modfier;
-extern crate error;
+extern crate "error" as err;
 extern crate url;
 
 // Request + Response
@@ -42,7 +85,7 @@ pub use response::Response;
 
 // Middleware system
 pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain, ChainBuilder};
+                     Handler, Chain};
 
 // Server
 pub use iron::Iron;
@@ -62,22 +105,20 @@ pub use modifier::Set;
 
 // Errors
 pub use error::Error;
+pub use error::IronError;
 
 // Mime types
 pub use hyper::mime;
 
-// Return type of many methods
-
-/// The type of Errors inside and when using Iron.
-pub type IronError = Box<Error>;
+/// Iron's error type and associated utilities.
+pub mod error;
 
 /// The Result alias used throughout Iron and in clients of Iron.
 pub type IronResult<T> = Result<T, IronError>;
 
 /// A module meant to be glob imported when using Iron, for instance:
 ///
-/// ```{ignore}
-/// #![feature(globs)]
+/// ```
 /// use iron::prelude::*;
 /// ```
 ///

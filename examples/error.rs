@@ -3,7 +3,7 @@ extern crate iron;
 extern crate time;
 
 use iron::prelude::*;
-use iron::{Handler, BeforeMiddleware, ChainBuilder};
+use iron::{Handler, BeforeMiddleware};
 use iron::status;
 
 use std::error::Error;
@@ -26,26 +26,20 @@ impl Error for StringError {
 }
 
 impl Handler for ErrorHandler {
-    fn call(&self, _: &mut Request) -> IronResult<Response> {
+    fn handle(&self, _: &mut Request) -> IronResult<Response> {
         Ok(Response::new())
     }
-
-    fn catch(&self, _: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        (Response::with((status::InternalServerError, "Internal Server Error.")),
-         Err(err))
-    }
-
 }
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(Box::new(StringError("Error".to_string())) as IronError)
+        Err(IronError::new(StringError("Error".to_string()), status::Ok))
     }
 }
 
 fn main() {
     // Handler is attached here.
-    let mut chain = ChainBuilder::new(ErrorHandler);
+    let mut chain = Chain::new(ErrorHandler);
 
     // Link our error maker.
     chain.link_before(ErrorProducer);
