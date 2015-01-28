@@ -1,7 +1,7 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-use std::io::net::ip::{ToSocketAddr, SocketAddr};
+use std::old_io::net::ip::{ToSocketAddr, SocketAddr};
 use std::os;
 
 pub use hyper::server::Listening;

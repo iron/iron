@@ -1,5 +1,5 @@
-use std::io::net::ip::ToSocketAddr;
-use std::io::util::NullReader;
+use std::old_io::net::ip::ToSocketAddr;
+use std::old_io::util::NullReader;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;

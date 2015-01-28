@@ -27,3 +27,4 @@ rusti.sh
 /examples/*
 !/examples/*.rs
 Cargo.lock
+.cargo

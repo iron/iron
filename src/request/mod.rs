@@ -1,7 +1,7 @@
 //! Iron's HTTP Request representation and associated methods.
 
-use std::io::net::ip::SocketAddr;
-use std::io::IoResult;
+use std::old_io::net::ip::SocketAddr;
+use std::old_io::IoResult;
 use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
