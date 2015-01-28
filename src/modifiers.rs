@@ -29,7 +29,7 @@
 //! For more information about the modifier system, see
 //! [rust-modifier](https://github.com/reem/rust-modifier).
 
-use std::io::{File, MemReader};
+use std::old_io::{File, MemReader};
 use std::path::Path;
 
 use modifier::Modifier;

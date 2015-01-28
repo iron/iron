@@ -1,6 +1,6 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{self, IoResult};
+use std::old_io::{self, IoResult};
 use std::fmt::{self, Debug};
 
 use typemap::TypeMap;
@@ -89,7 +89,7 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
 
     let mut res = try!(res.start());
 
-    // FIXME: Manually inlined io::util::copy
+    // FIXME: Manually inlined old_io::util::copy
     // because Box<Reader + Send> does not impl Reader.
     //
     // Tracking issue: rust-lang/rust#18542
@@ -97,11 +97,11 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
     loop {
         let len = match body.read(buf) {
             Ok(len) => len,
-            Err(ref e) if e.kind == io::EndOfFile => break,
+            Err(ref e) if e.kind == old_io::EndOfFile => break,
             Err(e) => { return Err(e) },
         };
 
-        try!(res.write(&buf[..len]))
+        try!(res.write_all(&buf[..len]))
     }
 
     res.end()
