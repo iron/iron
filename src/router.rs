@@ -6,14 +6,10 @@ use std::fmt;
 use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method, headers};
 use iron::typemap::Key;
+use iron::modifiers::Redirect;
 
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
-
-static METHODS: &'static [method::Method] =
-    &[method::Get, method::Post, method::Post,
-      method::Put, method::Delete, method::Head,
-      method::Patch];
 
 /// `Router` provides an interface for creating complex routes as middleware
 /// for the Iron framework.
@@ -22,23 +18,19 @@ pub struct Router {
     routers: HashMap<method::Method, Recognizer<Box<Handler>>>
 }
 
-#[derive(Debug)]
-/// The error thrown by router if there is no matching route.
-pub struct NoRoute;
-
-impl fmt::Display for NoRoute {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("No matching route found.")
-    }
-}
-
-impl Error for NoRoute {
-    fn description(&self) -> &str { "No Route" }
-}
-
 impl Router {
-    /// `new` constructs a new, blank `Router`.
-    pub fn new() -> Router { Router { routers: HashMap::new() } }
+    /// Construct a new, empty `Router`.
+    ///
+    /// ```
+    /// # use router::Router;
+    /// let router = Router::new();
+    /// ```
+    pub fn new() -> Router {
+        Router {
+            routers: HashMap::new()
+        }
+    }
+
     /// Add a new route to a `Router`, matching both a method and glob pattern.
     ///
     /// `route` supports glob patterns: `*` for a single wildcard segment and
@@ -111,6 +103,10 @@ impl Router {
     }
 
     fn handle_options(&self, req: &mut Request, path: &str) -> IronResult<Response> {
+        static METHODS: &'static [method::Method] =
+            &[method::Get, method::Post, method::Post, method::Put,
+              method::Delete, method::Head, method::Patch];
+
         // If there is an override, use it.
         if let Some(matched) = self.recognize(&method::Options, path) {
             req.extensions.insert::<Router>(matched.params);
@@ -132,19 +128,20 @@ impl Router {
         res.headers.set(headers::Allow(options));
         Ok(res)
     }
-}
 
-impl Key for Router { type Value = Params; }
+    fn handle_trailing_slash(&self, req: &mut Request) -> IronResult<Response> {
+        let mut url_no_trailing_slash = req.url.clone();
+        url_no_trailing_slash.path.pop();
 
-impl Handler for Router {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let path_string = req.url.path.connect("/");
-        let path = path_string.trim_right_matches('/');
+        Err(IronError {
+            error: Box::new(TrailingSlash),
+            response: Response::with(
+                (status::MovedPermanently, Redirect(url_no_trailing_slash))
+            )
+        })
+    }
 
-        if let method::Options = req.method {
-            return self.handle_options(req, path);
-        }
-
+    fn handle_method(&self, req: &mut Request, path: &str) -> IronResult<Response> {
         let matched = match self.recognize(&req.method, path) {
             Some(matched) => matched,
             // No match.
@@ -157,5 +154,54 @@ impl Handler for Router {
         req.extensions.insert::<Router>(matched.params);
         matched.handler.handle(req)
     }
+}
+
+impl Key for Router { type Value = Params; }
+
+impl Handler for Router {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        if req.url.path.len() != 1 && Some(&String::new()) == req.url.path.last() {
+            return self.handle_trailing_slash(req);
+        }
+
+        // No trailing slash
+        let path = req.url.path.connect("/");
+
+        if let method::Options = req.method {
+            return self.handle_options(req, &*path);
+        }
+
+        self.handle_method(req, &*path)
+    }
+}
+
+/// The error thrown by router if there is no matching route,
+/// it is always accompanied by a NotFound response.
+#[derive(Debug)]
+pub struct NoRoute;
+
+impl fmt::Display for NoRoute {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("No matching route found.")
+    }
+}
+
+impl Error for NoRoute {
+    fn description(&self) -> &str { "No Route" }
+}
+
+/// The error thrown by router if the request had a trailing slash,
+/// it is always accompanied by a redirect.
+#[derive(Debug)]
+pub struct TrailingSlash;
+
+impl fmt::Display for TrailingSlash {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("The request had a trailing slash.")
+    }
+}
+
+impl Error for TrailingSlash {
+    fn description(&self) -> &str { "Trailing Slash" }
 }
 
