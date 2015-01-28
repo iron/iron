@@ -1,20 +1,21 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::io::net::ip::SocketAddr;
+use std::io::IoResult;
 use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
-use hyper::header::Headers;
-use hyper::method::Method;
+use hyper::http::HttpReader;
 
 use typemap::TypeMap;
 use plugin::Extensible;
+use method::Method;
 
 pub use hyper::server::request::Request as HttpRequest;
 
 pub use self::url::Url;
 
-use {Plugin, headers};
+use {Plugin, Headers, headers};
 
 mod url;
 
@@ -22,7 +23,7 @@ mod url;
 ///
 /// Stores all the properties of the client's request plus
 /// an `TypeMap` for data communication between middleware.
-pub struct Request {
+pub struct Request<'a> {
     /// The requested URL.
     pub url: Url,
 
@@ -35,8 +36,8 @@ pub struct Request {
     /// The request headers.
     pub headers: Headers,
 
-    /// The request body.
-    pub body: Vec<u8>,
+    /// The request body as a reader.
+    pub body: Body<'a>,
 
     /// The request method.
     pub method: Method,
@@ -45,7 +46,7 @@ pub struct Request {
     pub extensions: TypeMap
 }
 
-impl Debug for Request {
+impl<'a> Debug for Request<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Request {{"));
 
@@ -53,19 +54,20 @@ impl Debug for Request {
         try!(writeln!(f, "    method: {:?}", self.method));
         try!(writeln!(f, "    remote_addr: {:?}", self.remote_addr));
         try!(writeln!(f, "    local_addr: {:?}", self.local_addr));
-        try!(writeln!(f, "    body: {:?}", self.body));
 
         try!(write!(f, "}}"));
         Ok(())
     }
 }
 
-impl Request {
+impl<'a> Request<'a> {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(mut req: HttpRequest, local_addr: SocketAddr) -> Result<Request, String> {
-        let url = match req.uri {
+    pub fn from_http(req: HttpRequest<'a>, local_addr: SocketAddr) -> Result<Request<'a>, String> {
+        let (addr, method, headers, uri, _, reader) = req.deconstruct();
+
+        let url = match uri {
             AbsoluteUri(ref url) => {
                 match Url::from_generic_url(url.clone()) {
                     Ok(url) => url,
@@ -76,7 +78,7 @@ impl Request {
             AbsolutePath(ref path) => {
                 // Attempt to prepend the Host header (mandatory in HTTP/1.1)
                 // FIXME: HTTPS incompatible, update when Hyper gains HTTPS support.
-                let url_string = match req.headers.get::<headers::Host>() {
+                let url_string = match headers.get::<headers::Host>() {
                     Some(ref host) => {
                         format!("http://{}:{}{}", host.hostname, local_addr.port, path)
                     },
@@ -91,25 +93,36 @@ impl Request {
             _ => return Err("Unsupported request URI".to_string())
         };
 
-        let body = match req.read_to_end() {
-            Ok(body) => body,
-            Err(e) => return Err(format!("Couldn't read request body: {}", e))
-        };
-
         Ok(Request {
             url: url,
-            remote_addr: req.remote_addr,
+            remote_addr: addr,
             local_addr: local_addr,
-            headers: req.headers,
-            body: body,
-            method: req.method,
+            headers: headers,
+            body: Body::new(reader),
+            method: method,
             extensions: TypeMap::new()
         })
     }
 }
 
+/// The body of an Iron request,
+pub struct Body<'a>(HttpReader<&'a mut (Reader + 'a)>);
+
+impl<'a> Body<'a> {
+    /// Create a new reader for use in an Iron request from a hyper HttpReader.
+    pub fn new(reader: HttpReader<&'a mut (Reader + 'a)>) -> Body<'a> {
+        Body(reader)
+    }
+}
+
+impl<'a> Reader for Body<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+        self.0.read(buf)
+    }
+}
+
 // Allow plugins to attach to requests.
-impl Extensible for Request {
+impl<'a> Extensible for Request<'a> {
     fn extensions(&self) -> &TypeMap {
         &self.extensions
     }
@@ -119,5 +132,5 @@ impl Extensible for Request {
     }
 }
 
-impl Plugin for Request {}
+impl<'a> Plugin for Request<'a> {}
 
