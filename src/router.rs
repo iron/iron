@@ -42,7 +42,7 @@ impl Router {
     /// the exposed Params object:
     ///
     /// ```ignore
-    /// # use iron::method;
+    /// let mut router = Router::new();
     /// router.route(method::Get, "/users/:userid/:friendid", controller);
     /// ```
     ///
@@ -130,25 +130,21 @@ impl Router {
     }
 
     fn handle_trailing_slash(&self, req: &mut Request) -> IronResult<Response> {
-        let mut url_no_trailing_slash = req.url.clone();
-        url_no_trailing_slash.path.pop();
+        let mut url = req.url.clone();
 
-        Err(IronError {
-            error: Box::new(TrailingSlash),
-            response: Response::with(
-                (status::MovedPermanently, Redirect(url_no_trailing_slash))
-            )
-        })
+        // Pull off as many trailing slashes as possible.
+        while url.path.len() != 1 && url.path.last() == Some(&String::new()) {
+            url.path.pop();
+        }
+
+        Err(IronError::new(TrailingSlash, (status::MovedPermanently, Redirect(url))))
     }
 
     fn handle_method(&self, req: &mut Request, path: &str) -> IronResult<Response> {
         let matched = match self.recognize(&req.method, path) {
             Some(matched) => matched,
             // No match.
-            None => return Err(IronError {
-                error: Box::new(NoRoute),
-                response: Response::with(status::NotFound)
-            })
+            None => return Err(IronError::new(NoRoute, status::NotFound))
         };
 
         req.extensions.insert::<Router>(matched.params);
