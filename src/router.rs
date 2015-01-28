@@ -1,19 +1,25 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error::Error;
-use std::fmt::{self, Debug};
+use std::fmt;
+
 use iron::{Request, Response, Handler, IronResult, IronError};
-use iron::{status, method};
-use iron::typemap;
+use iron::{status, method, headers};
+use iron::typemap::Key;
+
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
+
+static METHODS: &'static [method::Method] =
+    &[method::Get, method::Post, method::Post,
+      method::Put, method::Delete, method::Head,
+      method::Patch];
 
 /// `Router` provides an interface for creating complex routes as middleware
 /// for the Iron framework.
 pub struct Router {
     // The routers, specialized by method.
-    routers: HashMap<method::Method, Recognizer<Box<Handler + Send + Sync>>>,
-    error: Option<Box<Handler + Send + Sync>>
+    routers: HashMap<method::Method, Recognizer<Box<Handler>>>
 }
 
 #[derive(Debug)]
@@ -22,7 +28,7 @@ pub struct NoRoute;
 
 impl fmt::Display for NoRoute {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(self, f)
+        f.write_str("No matching route found.")
     }
 }
 
@@ -32,7 +38,7 @@ impl Error for NoRoute {
 
 impl Router {
     /// `new` constructs a new, blank `Router`.
-    pub fn new() -> Router { Router { routers: HashMap::new(), error: None } }
+    pub fn new() -> Router { Router { routers: HashMap::new() } }
     /// Add a new route to a `Router`, matching both a method and glob pattern.
     ///
     /// `route` supports glob patterns: `*` for a single wildcard segment and
@@ -44,7 +50,8 @@ impl Router {
     /// the exposed Params object:
     ///
     /// ```ignore
-    /// router.route(iron::method::Method::Get, "/users/:userid/:friendid", controller);
+    /// # use iron::method;
+    /// router.route(method::Get, "/users/:userid/:friendid", controller);
     /// ```
     ///
     /// The controller provided to route can be any `Handler`, which allows
@@ -52,11 +59,13 @@ impl Router {
     /// a `Chain`, a `Handler`, which contains an authorization middleware and
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
-    pub fn route<H: Handler, S: Str>(&mut self, method: method::Method, glob: S, handler: H) -> &mut Router {
+    pub fn route<H, S>(&mut self, method: method::Method,
+                       glob: S, handler: H) -> &mut Router
+    where H: Handler, S: Str {
         match self.routers.entry(method) {
             Vacant(entry)   => entry.insert(Recognizer::new()),
             Occupied(entry) => entry.into_mut()
-        }.add(glob.as_slice(), Box::new(handler) as Box<Handler + Send + Sync>);
+        }.add(glob.as_slice(), Box::new(handler) as Box<Handler>);
         self
     }
 
@@ -95,37 +104,56 @@ impl Router {
         self.route(method::Options, glob, handler)
     }
 
-    /// Add a Handler to be used for this Router's `catch` method.
-    pub fn error<H: Handler>(&mut self, handler: H) -> &mut Router {
-        self.error = Some(Box::new(handler) as Box<Handler + Send + Sync>);
-        self
+    fn recognize<'a>(&'a self, method: &method::Method, path: &str)
+                     -> Option<Match<&'a Box<Handler>>> {
+        self.routers.get(method).and_then(|router| router.recognize(path).ok())
     }
 
-    fn recognize<'a>(&'a self, method: &method::Method, path: &str)
-                     -> Option<Match<&'a Box<Handler + Send + Sync>>> {
-        self.routers.get(method).and_then(|router| router.recognize(path).ok())
+    fn handle_options(&self, req: &mut Request, path: &str) -> IronResult<Response> {
+        // If there is an override, use it.
+        if let Some(matched) = self.recognize(&method::Options, path) {
+            req.extensions.insert::<Router>(matched.params);
+            return matched.handler.handle(req);
+        }
+
+        // Else, get all the available methods and return them.
+        let mut options = vec![];
+
+        for method in METHODS.iter() {
+            self.routers.get(method).map(|router| {
+                if let Some(_) = router.recognize(path).ok() {
+                    options.push(method.clone());
+                }
+            });
+        }
+
+        let mut res = Response::with(status::Ok);
+        res.headers.set(headers::Allow(options));
+        Ok(res)
     }
 }
 
-impl typemap::Key for Router { type Value = Params; }
+impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
-    fn call(&self, req: &mut Request) -> IronResult<Response> {
-        let matched = match self.recognize(&req.method, req.url.path.connect("/").as_slice()) {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        let path = req.url.path.connect("/");
+
+        if let method::Options = req.method {
+            return self.handle_options(req, &path[]);
+        }
+
+        let matched = match self.recognize(&req.method, &path[]) {
             Some(matched) => matched,
             // No match.
-            None => return Err(Box::new(NoRoute) as IronError)
+            None => return Err(IronError {
+                error: Box::new(NoRoute),
+                response: Response::with(status::NotFound)
+            })
         };
 
         req.extensions.insert::<Router>(matched.params);
-        matched.handler.call(req)
-    }
-
-    fn catch(&self, req: &mut Request, err: IronError) -> (Response, IronResult<()>) {
-        match self.error {
-            Some(ref error_handler) => error_handler.catch(req, err),
-            // Error that is not caught by anything!
-            None => (Response::with(status::InternalServerError), Err(err))
-        }
+        matched.handler.handle(req)
     }
 }
+
