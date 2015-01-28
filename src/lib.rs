@@ -118,8 +118,7 @@ pub type IronResult<T> = Result<T, IronError>;
 
 /// A module meant to be glob imported when using Iron, for instance:
 ///
-/// ```{ignore}
-/// #![feature(globs)]
+/// ```
 /// use iron::prelude::*;
 /// ```
 ///

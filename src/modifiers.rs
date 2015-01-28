@@ -12,10 +12,14 @@
 //! redirect response, we provide a `Redirect` modifier, so you
 //! can just do:
 //!
-//! ```rust,ignore
-//! Response::new()
-//!     .set(status)
-//!     .set(Redirect(url));
+//! ```
+//! # use iron::prelude::*;
+//! # use iron::status;
+//! # use iron::modifiers::Redirect;
+//! # use iron::Url;
+//!
+//! let url = Url::parse("http://doc.rust-lang.org").unwrap();
+//! Response::with((status::Found, Redirect(url)));
 //! ```
 //!
 //! This is more extensible as it allows you to combine

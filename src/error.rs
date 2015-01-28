@@ -10,8 +10,9 @@ pub use hyper::{HttpResult, HttpError};
 /// The type of Errors inside and when using Iron.
 ///
 /// IronError informs its receivers of two things:
-///   - What went wrong
-///   - What to do about it
+///
+/// * What went wrong
+/// * What to do about it
 ///
 /// The `error` field is responsible for informing receivers of which
 /// error occured, and receivers may also modify the error field by layering
