@@ -65,7 +65,8 @@ impl Router {
         match self.routers.entry(method) {
             Vacant(entry)   => entry.insert(Recognizer::new()),
             Occupied(entry) => entry.into_mut()
-        }.add(glob.as_slice(), Box::new(handler) as Box<Handler>);
+        }.add(glob.as_slice().trim_right_matches('/'),
+              Box::new(handler) as Box<Handler>);
         self
     }
 
@@ -137,13 +138,14 @@ impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let path = req.url.path.connect("/");
+        let path_string = req.url.path.connect("/");
+        let path = path_string.trim_right_matches('/');
 
         if let method::Options = req.method {
-            return self.handle_options(req, &path[]);
+            return self.handle_options(req, path);
         }
 
-        let matched = match self.recognize(&req.method, &path[]) {
+        let matched = match self.recognize(&req.method, path) {
             Some(matched) => matched,
             // No match.
             None => return Err(IronError {
