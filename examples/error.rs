@@ -45,6 +45,5 @@ fn main() {
     chain.link_before(ErrorProducer);
 
     Iron::new(chain).listen("localhost:3000").unwrap();
-    println!("On 3000");
 }
 
