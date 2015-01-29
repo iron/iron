@@ -10,6 +10,5 @@ fn main() {
     Iron::new(move |&: _: &mut Request | {
         Ok(Response::with((status::Found, Redirect(url.clone()))))
     }).listen("localhost:3000").unwrap();
-    println!("On 3000");
 }
 

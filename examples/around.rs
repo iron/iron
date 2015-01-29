@@ -58,10 +58,11 @@ fn main() {
     let silent = Iron::new(Logger::new(LoggerMode::Silent).around(Box::new(hello_world)));
     let large = Iron::new(Logger::new(LoggerMode::Large).around(Box::new(hello_world)));
 
+    println!("Starting servers on 2000, 3000, and 4000");
+    
     tiny.listen("localhost:2000").unwrap();
     silent.listen("localhost:3000").unwrap();
     large.listen("localhost:4000").unwrap();
 
-    println!("Servers listening on 2000, 3000, and 4000");
 }
 

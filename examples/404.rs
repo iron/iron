@@ -7,6 +7,5 @@ fn main() {
     Iron::new(|&: _: &mut Request| {
         Ok(Response::with(status::NotFound))
     }).listen("localhost:3000").unwrap();
-    println!("On 3000");
 }
 
