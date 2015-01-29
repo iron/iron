@@ -1,11 +1,10 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128", html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256", html_root_url = "http://ironframework.io/core/iron")]
 
 #![cfg_attr(test, deny(warnings))]
+#![cfg_attr(test, feature(test))]
 #![deny(missing_docs)]
 
-#![allow(unstable)]
-
-#![feature(unboxed_closures, slicing_syntax)]
+#![feature(unboxed_closures, slicing_syntax, core, collections, os, io)]
 #![cfg_attr(test, feature(box_syntax))]
 
 //! The main crate for Iron.

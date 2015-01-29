@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(core, collections)]
 extern crate iron;
 extern crate time;
 
