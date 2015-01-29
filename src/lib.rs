@@ -156,10 +156,11 @@ pub mod middleware;
 // Response utilities
 pub mod response;
 
+// Request utilities
+pub mod request;
+
 // Request and Response Modifiers
 pub mod modifiers;
 
-// Internal modules
-mod request;
 mod iron;
 
