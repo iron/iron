@@ -1,8 +1,8 @@
-#![deny(missing_docs, warnings)]
-#![feature(core)]
-#![feature(std_misc)]
+#![deny(missing_docs)]
+#![feature(core, std_misc)]
+#![cfg_attr(test, deny(warnings))]
 
-//! `Router` provides a fast router handler for the Iron web framework.
+//! `Router` provides fast and flexible routing for Iron.
 
 extern crate iron;
 extern crate "route-recognizer" as recognizer;
