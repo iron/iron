@@ -20,7 +20,7 @@ pub use hyper::{HttpResult, HttpError};
 ///
 /// The `response` field provides a tangible action to be taken if this error
 /// is not otherwise handled.
-#[derive(Show)]
+#[derive(Debug)]
 pub struct IronError {
     /// The underlying error
     ///
