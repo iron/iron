@@ -30,7 +30,7 @@
 //! [rust-modifier](https://github.com/reem/rust-modifier).
 
 use std::old_io::{File, MemReader};
-use std::path::Path;
+use std::old_path::Path;
 
 use modifier::Modifier;
 
