@@ -1,6 +1,7 @@
 #![crate_name = "mount"]
 #![deny(missing_docs)]
-#![deny(warnings)]
+#![cfg_attr(test, deny(warnings))]
+#![feature(core, path)]
 
 //! `Mount` provides mounting middleware for the Iron framework.
 
@@ -11,3 +12,4 @@ extern crate sequence_trie;
 pub use mount::{Mount, OriginalUrl};
 
 mod mount;
+
