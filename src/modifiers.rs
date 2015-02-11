@@ -37,7 +37,13 @@ use modifier::Modifier;
 
 use hyper::mime::Mime;
 
-use {status, headers, Request, Response, Url};
+use {status, headers, Request, Response, Set, Url};
+
+use mime_types;
+
+lazy_static! {
+    static ref MIME_TYPES: mime_types::Types = mime_types::Types::new().unwrap();
+}
 
 impl Modifier<Response> for Mime {
     #[inline]
@@ -83,12 +89,12 @@ impl<'a> Modifier<Response> for &'a [u8] {
 }
 
 impl Modifier<Response> for File {
-    #[inline]
     fn modify(self, res: &mut Response) {
-        // Also set the content type.
-        // self.path().extension_str()
-        //     .and_then(get_content_type)
-        //     .and_then(|ct| { res.set_mut(ct) });
+        // Set the content type based on the file extension if a path is available.
+        if let Some(path) = self.path() {
+            let mime_str = MIME_TYPES.mime_for_path(path);
+            let _ = mime_str.parse().map(|mime: Mime| res.set_mut(mime));
+        }
 
         if let Ok(metadata) = self.metadata() {
             res.headers.set(headers::ContentLength(metadata.len()));
