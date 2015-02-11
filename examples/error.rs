@@ -44,6 +44,6 @@ fn main() {
     // Link our error maker.
     chain.link_before(ErrorProducer);
 
-    Iron::new(chain).listen("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000").unwrap();
 }
 
