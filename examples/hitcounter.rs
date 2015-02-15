@@ -5,7 +5,7 @@ use iron::prelude::*;
 
 use persistent::Write;
 use iron::typemap::Key;
-use iron::{ChainBuilder, status};
+use iron::{status};
 
 #[derive(Copy)]
 pub struct HitCounter;
@@ -13,7 +13,7 @@ pub struct HitCounter;
 impl Key for HitCounter { type Value = usize; }
 
 fn serve_hits(req: &mut Request) -> IronResult<Response> {
-    let mutex = req.get::<Write<HitCounter>>().unwrap();
+    let mutex = req.get::<Write<HitCounter>>().ok().unwrap();
     let mut count = mutex.lock().unwrap();
 
     *count += 1;
@@ -21,7 +21,7 @@ fn serve_hits(req: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    let mut chain = ChainBuilder::new(serve_hits);
+    let mut chain = Chain::new(serve_hits);
     chain.link(Write::<HitCounter>::both(0));
     Iron::new(chain).listen("localhost:3000").unwrap();
 }
