@@ -35,7 +35,7 @@
 //! # use iron::status;
 //! Iron::new(|&: req: &mut Request| {
 //!     Ok(Response::with((status::Ok, "Hello World!")))
-//! }).listen("localhost:3000").unwrap();
+//! }).http("localhost:3000").unwrap();
 //! ```
 //!
 //! ## Design Philosophy
@@ -87,7 +87,7 @@ pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
                      Handler, Chain};
 
 // Server
-pub use iron::Iron;
+pub use iron::{Iron, Protocol};
 
 // Extensions
 pub use typemap::TypeMap;

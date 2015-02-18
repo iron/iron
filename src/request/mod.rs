@@ -15,7 +15,7 @@ pub use hyper::server::request::Request as HttpRequest;
 
 pub use self::url::Url;
 
-use {Plugin, Headers, Set, headers};
+use {Protocol, Plugin, Headers, Set, headers};
 
 mod url;
 
@@ -64,7 +64,8 @@ impl<'a> Request<'a> {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest<'a>, local_addr: SocketAddr) -> Result<Request<'a>, String> {
+    pub fn from_http(req: HttpRequest<'a>, local_addr: SocketAddr, protocol: &Protocol)
+                     -> Result<Request<'a>, String> {
         let (addr, method, headers, uri, _, reader) = req.deconstruct();
 
         let url = match uri {
@@ -77,10 +78,10 @@ impl<'a> Request<'a> {
 
             AbsolutePath(ref path) => {
                 // Attempt to prepend the Host header (mandatory in HTTP/1.1)
-                // FIXME: HTTPS incompatible, update when Hyper gains HTTPS support.
                 let url_string = match headers.get::<headers::Host>() {
                     Some(ref host) => {
-                        format!("http://{}:{}{}", host.hostname, local_addr.port, path)
+                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port,
+                                path)
                     },
                     None => return Err("No host specified in request".to_string())
                 };

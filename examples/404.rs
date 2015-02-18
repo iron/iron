@@ -6,6 +6,6 @@ use iron::status;
 fn main() {
     Iron::new(|&: _: &mut Request| {
         Ok(Response::with(status::NotFound))
-    }).listen("localhost:3000").unwrap();
+    }).http("localhost:3000").unwrap();
 }
 

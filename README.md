@@ -50,7 +50,7 @@ fn main() {
     chain.link((ResponseTime, ResponseTime));
 
     // Kick off serving.
-    Iron::new(chain).listen("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000").unwrap();
 }
 ```
 
