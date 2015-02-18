@@ -62,7 +62,7 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.set(headers::ContentLength(self.len() as u64));
+        (self.len() as u64).modify(res);
         res.body = Some(Box::new(MemReader::new(self)) as Box<Reader + Send>);
     }
 }
@@ -81,6 +81,13 @@ impl<'a> Modifier<Response> for &'a [u8] {
     }
 }
 
+impl Modifier<Response> for u64 {
+    #[inline]
+    fn modify(self, res: &mut Response) {
+        res.headers.set(headers::ContentLength(self));
+    }
+}
+
 impl Modifier<Response> for File {
     #[inline]
     fn modify(self, res: &mut Response) {
@@ -88,6 +95,11 @@ impl Modifier<Response> for File {
         // self.path().extension_str()
         //     .and_then(get_content_type)
         //     .and_then(|ct| { res.set_mut(ct) });
+
+        if let Ok(stat) = self.stat() {
+            stat.size.modify(res);
+        }
+
         res.body = Some(Box::new(self) as Box<Reader + Send>);
     }
 }
