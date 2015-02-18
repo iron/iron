@@ -58,7 +58,7 @@ fn main() {
 
 Iron is a high level web framework built in and for Rust, built on
 [hyper](https://github.com/hyperium/hyper). Iron is designed to take advantage
-of Rust's greatest features - it's excellent type system and its principled
+of Rust's greatest features - its excellent type system and its principled
 approach to ownership in both single threaded and multi threaded contexts.
 
 Iron is highly concurrent and can scale horizontally on more machines behind a
