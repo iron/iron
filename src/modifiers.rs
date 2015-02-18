@@ -88,6 +88,11 @@ impl Modifier<Response> for File {
         // self.path().extension_str()
         //     .and_then(get_content_type)
         //     .and_then(|ct| { res.set_mut(ct) });
+
+        if let Ok(stat) = self.stat() {
+            res.headers.set(headers::ContentLength(stat.size));
+        }
+
         res.body = Some(Box::new(self) as Box<Reader + Send>);
     }
 }
