@@ -69,7 +69,7 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn http<A: ToSocketAddr>(self, addr: A) -> HttpResult<Listening> {
+    pub fn http<A: ToSocketAddr + 'static>(self, addr: A) -> HttpResult<Listening> {
         self.listen_with(addr, 2 * os::num_cpus(), Protocol::Http)
     }
 
@@ -85,8 +85,8 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn https<A: ToSocketAddr>(self, addr: A, certificate: Path, key: Path)
-                                  -> HttpResult<Listening> {
+    pub fn https<A: ToSocketAddr + 'static>(self, addr: A, certificate: Path, key: Path)
+                                            -> HttpResult<Listening> {
         self.listen_with(addr, 2 * os::num_cpus(),
                          Protocol::Https { certificate: certificate, key: key })
     }
@@ -97,8 +97,8 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddr>(mut self, addr: A, threads: usize, protocol: Protocol)
-                                        -> HttpResult<Listening> {
+    pub fn listen_with<A: ToSocketAddr + 'static>(mut self, addr: A, threads: usize,
+                                                  protocol: Protocol) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addr()
             .ok().expect("Could not parse socket address.");
         let SocketAddr { ip, port } = sock_addr.clone();
