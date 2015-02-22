@@ -116,7 +116,7 @@ impl Url {
 
     /// Create a `rust-url` `Url` from a `Url`.
     pub fn into_generic_url(self) -> url::Url {
-        let default_port = whatwg_scheme_type_mapper(&self.scheme[]).default_port();
+        let default_port = whatwg_scheme_type_mapper(&self.scheme).default_port();
 
         url::Url {
             scheme: self.scheme,
