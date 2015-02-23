@@ -36,7 +36,7 @@ use modifier::Modifier;
 
 use hyper::mime::Mime;
 
-use {status, headers, Response, Url};
+use {status, headers, Request, Response, Url};
 
 impl Modifier<Response> for Mime {
     #[inline]
@@ -113,6 +113,23 @@ impl Modifier<Response> for Path {
 impl Modifier<Response> for status::Status {
     fn modify(self, res: &mut Response) {
         res.status = Some(self);
+    }
+}
+
+/// A modifier for changing headers on requests and responses.
+pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
+
+impl<H> Modifier<Response> for Header<H>
+where H: headers::Header + headers::HeaderFormat {
+    fn modify(self, res: &mut Response) {
+        res.headers.set(self.0);
+    }
+}
+
+impl<'a, H> Modifier<Request<'a>> for Header<H>
+where H: headers::Header + headers::HeaderFormat {
+    fn modify(self, res: &mut Request) {
+        res.headers.set(self.0);
     }
 }
 
