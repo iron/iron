@@ -1,11 +1,10 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128", html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256", html_root_url = "http://ironframework.io/core/iron")]
 
 #![cfg_attr(test, deny(warnings))]
-#![cfg_attr(test, feature(test))]
-#![deny(missing_docs)]
+#![cfg_attr(test, feature(test, box_syntax))]
 
+#![deny(missing_docs)]
 #![feature(unboxed_closures, core, os, old_io, old_path)]
-#![cfg_attr(test, feature(box_syntax))]
 
 //! The main crate for Iron.
 //!
@@ -74,7 +73,6 @@
 extern crate hyper;
 extern crate "typemap" as tmap;
 extern crate plugin;
-extern crate "modifier" as modfier;
 extern crate "error" as err;
 extern crate url;
 
@@ -135,7 +133,10 @@ pub mod typemap {
 }
 
 /// Re-exports from the Modifier crate.
-pub mod modifier;
+pub mod modifier {
+    extern crate "modifier" as modfier;
+    pub use self::modfier::*;
+}
 
 /// Status Codes
 pub mod status {
