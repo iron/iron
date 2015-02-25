@@ -18,6 +18,9 @@ pub struct Router {
     routers: HashMap<method::Method, Recognizer<Box<Handler>>>
 }
 
+unsafe impl Send for Router {}
+unsafe impl Sync for Router {}
+
 impl Router {
     /// Construct a new, empty `Router`.
     ///
