@@ -1,8 +1,9 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-use std::old_io::net::ip::{ToSocketAddr, SocketAddr};
+use std::net::{ToSocketAddrs, SocketAddr};
 use std::os;
+use std::path::PathBuf;
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
@@ -34,15 +35,16 @@ pub struct Iron<H> {
 
 /// Protocol used to serve content. Future versions of Iron may add new protocols
 /// to this enum. Thus you should not exhaustively match on its variants.
+#[derive(Clone)]
 pub enum Protocol {
     /// Plaintext HTTP/1
     Http,
     /// HTTP/1 over SSL/TLS
     Https {
         /// Path to SSL certificate file
-        certificate: Path,
+        certificate: PathBuf,
         /// Path to SSL private key file
-        key: Path
+        key: PathBuf
     }
 }
 
@@ -68,8 +70,8 @@ impl<H: Handler> Iron<H> {
     /// ## Panics
     ///
     /// Panics if the provided address does not parse. To avoid this
-    /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn http<A: ToSocketAddr + 'static>(self, addr: A) -> HttpResult<Listening> {
+    /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
+    pub fn http<A: ToSocketAddrs + 'static>(self, addr: A) -> HttpResult<Listening> {
         self.listen_with(addr, 2 * os::num_cpus(), Protocol::Http)
     }
 
@@ -84,8 +86,8 @@ impl<H: Handler> Iron<H> {
     /// ## Panics
     ///
     /// Panics if the provided address does not parse. To avoid this
-    /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn https<A: ToSocketAddr + 'static>(self, addr: A, certificate: Path, key: Path)
+    /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
+    pub fn https<A: ToSocketAddrs + 'static>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                             -> HttpResult<Listening> {
         self.listen_with(addr, 2 * os::num_cpus(),
                          Protocol::Https { certificate: certificate, key: key })
@@ -96,23 +98,24 @@ impl<H: Handler> Iron<H> {
     /// ## Panics
     ///
     /// Panics if the provided address does not parse. To avoid this
-    /// call `to_socket_addr` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddr + 'static>(mut self, addr: A, threads: usize,
+    /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
+    pub fn listen_with<A: ToSocketAddrs + 'static>(mut self, addr: A, threads: usize,
                                                   protocol: Protocol) -> HttpResult<Listening> {
-        let sock_addr = addr.to_socket_addr()
-            .ok().expect("Could not parse socket address.");
-        let SocketAddr { ip, port } = sock_addr.clone();
+        let sock_addr = addr.to_socket_addrs()
+            .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
+        let ip = sock_addr.ip();
+        let port = sock_addr.port();
         self.addr = Some(sock_addr);
 
         let server = match protocol {
-            Protocol::Http => Server::http(ip, port),
+            Protocol::Http => Server::http(self),
             Protocol::Https { ref certificate, ref key } =>
-                Server::https(ip, port, certificate.clone(), key.clone())
+                Server::https(self, certificate, key)
         };
 
-        self.protocol = Some(protocol);
+        self.protocol = Some(protocol.clone());
 
-        Ok(try!(server.listen_threads(self, threads)))
+        Ok(try!(server.listen_threads(ip, port, threads)))
     }
 
     /// Instantiate a new instance of `Iron`.

@@ -29,8 +29,9 @@
 //! For more information about the modifier system, see
 //! [rust-modifier](https://github.com/reem/rust-modifier).
 
-use std::old_io::{File, MemReader};
-use std::old_path::Path;
+use std::io::{Read, Cursor};
+use std::fs::File;
+use std::path::PathBuf;
 
 use modifier::Modifier;
 
@@ -45,7 +46,7 @@ impl Modifier<Response> for Mime {
     }
 }
 
-impl Modifier<Response> for Box<Reader + Send> {
+impl Modifier<Response> for Box<Read + Send> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.body = Some(self);
@@ -63,7 +64,7 @@ impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.headers.set(headers::ContentLength(self.len() as u64));
-        res.body = Some(Box::new(MemReader::new(self)) as Box<Reader + Send>);
+        res.body = Some(Box::new(Cursor::new(self)) as Box<Read + Send>);
     }
 }
 
@@ -89,15 +90,15 @@ impl Modifier<Response> for File {
         //     .and_then(get_content_type)
         //     .and_then(|ct| { res.set_mut(ct) });
 
-        if let Ok(stat) = self.stat() {
-            res.headers.set(headers::ContentLength(stat.size));
+        if let Ok(metadata) = self.metadata() {
+            res.headers.set(headers::ContentLength(metadata.len()));
         }
 
-        res.body = Some(Box::new(self) as Box<Reader + Send>);
+        res.body = Some(Box::new(self) as Box<Read + Send>);
     }
 }
 
-impl Modifier<Response> for Path {
+impl Modifier<Response> for PathBuf {
     /// Set the body to the contents of the File at this path.
     ///
     /// ## Panics

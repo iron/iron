@@ -1,7 +1,7 @@
 //! Iron's HTTP Request representation and associated methods.
 
-use std::old_io::net::ip::SocketAddr;
-use std::old_io::IoResult;
+use std::io::{self, Read};
+use std::net::SocketAddr;
 use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
@@ -80,7 +80,7 @@ impl<'a> Request<'a> {
                 // Attempt to prepend the Host header (mandatory in HTTP/1.1)
                 let url_string = match headers.get::<headers::Host>() {
                     Some(ref host) => {
-                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port,
+                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(),
                                 path)
                     },
                     None => return Err("No host specified in request".to_string())
@@ -107,17 +107,17 @@ impl<'a> Request<'a> {
 }
 
 /// The body of an Iron request,
-pub struct Body<'a>(HttpReader<&'a mut (Reader + 'a)>);
+pub struct Body<'a>(HttpReader<&'a mut (Read + 'a)>);
 
 impl<'a> Body<'a> {
     /// Create a new reader for use in an Iron request from a hyper HttpReader.
-    pub fn new(reader: HttpReader<&'a mut (Reader + 'a)>) -> Body<'a> {
+    pub fn new(reader: HttpReader<&'a mut (Read + 'a)>) -> Body<'a> {
         Body(reader)
     }
 }
 
-impl<'a> Reader for Body<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+impl<'a> Read for Body<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.read(buf)
     }
 }
