@@ -107,13 +107,13 @@ impl<H: Handler> Iron<H> {
         let port = sock_addr.port();
         self.addr = Some(sock_addr);
 
+        self.protocol = Some(protocol.clone());
+
         let server = match protocol {
             Protocol::Http => Server::http(self),
             Protocol::Https { ref certificate, ref key } =>
                 Server::https(self, certificate, key)
         };
-
-        self.protocol = Some(protocol.clone());
 
         Ok(try!(server.listen_threads(ip, port, threads)))
     }
