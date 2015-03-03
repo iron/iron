@@ -207,14 +207,14 @@ fn to_chain(counters: &ChainLike<Twice<Arc<AtomicBool>>>,
 
     let befores = befores.into_iter().zip(beforec.iter())
         .map(into_middleware)
-        .map(|&: m| box m as Box<BeforeMiddleware>)
+        .map(|m| box m as Box<BeforeMiddleware>)
         .collect::<Vec<_>>();
 
     let handler = into_middleware((handler, handlerc));
 
     let afters = afters.into_iter().zip(afterc.iter())
         .map(into_middleware)
-        .map(|&: m| box m as Box<AfterMiddleware>)
+        .map(|m| box m as Box<AfterMiddleware>)
         .collect::<Vec<_>>();
 
     Chain {
