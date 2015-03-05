@@ -1,5 +1,5 @@
-use std::old_io::net::ip::ToSocketAddr;
-use std::old_io::util::NullReader;
+use std::net::ToSocketAddrs;
+use std::io::{self, Read};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;
@@ -138,13 +138,13 @@ impl AfterMiddleware for Middleware {
 }
 
 // Stub request
-fn request(reader: &mut NullReader) -> Request {
+fn request(reader: &mut io::Empty) -> Request {
     Request {
         url: Url::parse("http://www.rust-lang.org").unwrap(),
-        remote_addr: "localhost:3000".to_socket_addr().unwrap(),
-        local_addr: "localhost:3000".to_socket_addr().unwrap(),
+        remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+        local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
         headers: headers::Headers::new(),
-        body: Body::new(HttpReader::EmptyReader(reader as &mut Reader)),
+        body: Body::new(HttpReader::EmptyReader(reader as &mut Read)),
         method: method::Get,
         extensions: TypeMap::new()
     }
@@ -207,14 +207,14 @@ fn to_chain(counters: &ChainLike<Twice<Arc<AtomicBool>>>,
 
     let befores = befores.into_iter().zip(beforec.iter())
         .map(into_middleware)
-        .map(|&: m| box m as Box<BeforeMiddleware>)
+        .map(|m| box m as Box<BeforeMiddleware>)
         .collect::<Vec<_>>();
 
     let handler = into_middleware((handler, handlerc));
 
     let afters = afters.into_iter().zip(afterc.iter())
         .map(into_middleware)
-        .map(|&: m| box m as Box<AfterMiddleware>)
+        .map(|m| box m as Box<AfterMiddleware>)
         .collect::<Vec<_>>();
 
     Chain {
@@ -244,7 +244,7 @@ fn test_chain(chain: ChainLike<Kind>, expected: ChainLike<Kind>) {
     let chain = to_chain(&actual, chain);
 
     // Run the chain
-    let _ = chain.handle(&mut request(&mut NullReader));
+    let _ = chain.handle(&mut request(&mut io::empty()));
 
     // Get all the results
     let outbefores = actual.0.into_iter()

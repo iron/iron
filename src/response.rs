@@ -1,6 +1,6 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::old_io::{self, IoResult};
+use std::io::{self, Read, Write};
 use std::fmt::{self, Debug};
 
 use typemap::TypeMap;
@@ -33,7 +33,7 @@ pub struct Response {
     /// be sent using either `serve` or `serve_file`.
     ///
     /// Arbitrary Readers can be sent by assigning to body.
-    pub body: Option<Box<Reader + Send>>
+    pub body: Option<Box<Read + Send>>
 }
 
 impl Response {
@@ -81,7 +81,7 @@ impl Response {
     }
 }
 
-fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -> IoResult<()> {
+fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Read + Send>) -> io::Result<()> {
     let content_type = res.headers().get::<headers::ContentType>()
                            .map(|cx| cx.clone())
                            .unwrap_or_else(|| headers::ContentType("text/plain".parse().unwrap()));
@@ -96,8 +96,8 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Reader + Send>) -
     let mut buf = &mut [0; 1024 * 64];
     loop {
         let len = match body.read(buf) {
+            Ok(0) => break,
             Ok(len) => len,
-            Err(ref e) if e.kind == old_io::EndOfFile => break,
             Err(e) => { return Err(e) },
         };
 

@@ -4,7 +4,7 @@
 #![cfg_attr(test, feature(test, box_syntax))]
 
 #![deny(missing_docs)]
-#![feature(unboxed_closures, core, os, old_io, old_path)]
+#![feature(unboxed_closures, core, os, io, net, fs, path)]
 
 //! The main crate for Iron.
 //!
@@ -32,7 +32,7 @@
 //! ```no_run
 //! # use iron::prelude::*;
 //! # use iron::status;
-//! Iron::new(|&: req: &mut Request| {
+//! Iron::new(|req: &mut Request| {
 //!     Ok(Response::with((status::Ok, "Hello World!")))
 //! }).http("localhost:3000").unwrap();
 //! ```
