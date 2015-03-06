@@ -31,7 +31,7 @@
 
 use std::io::{Read, Cursor};
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use modifier::Modifier;
 
@@ -95,6 +95,19 @@ impl Modifier<Response> for File {
         }
 
         res.body = Some(Box::new(self) as Box<Read + Send>);
+    }
+}
+
+impl<'a> Modifier<Response> for &'a Path {
+    /// Set the body to the contents of the File at this path.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if there is no file at the passed-in Path.
+    fn modify(self, res: &mut Response) {
+        File::open(self)
+            .ok().expect(format!("No such file: {}", self.display()).as_slice())
+            .modify(res);
     }
 }
 
