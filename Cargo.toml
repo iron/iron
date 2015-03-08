@@ -27,6 +27,8 @@ plugin = "*"
 modifier = "*"
 error = "*"
 log = "*"
+conduit-mime-types = "*"
+lazy_static = "*"
 
 [dev-dependencies]
 time = "*"

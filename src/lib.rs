@@ -4,7 +4,7 @@
 #![cfg_attr(test, feature(test, box_syntax))]
 
 #![deny(missing_docs)]
-#![feature(unboxed_closures, core, os, io, net, path)]
+#![feature(unboxed_closures, core, os, io, net, path, file_path)]
 
 //! The main crate for Iron.
 //!
@@ -75,6 +75,9 @@ extern crate "typemap" as tmap;
 extern crate plugin;
 extern crate "error" as err;
 extern crate url;
+extern crate "conduit-mime-types" as mime_types;
+#[macro_use]
+extern crate lazy_static;
 
 // Request + Response
 pub use request::{Request, Url};
