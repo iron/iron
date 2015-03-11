@@ -20,13 +20,6 @@
 //! avoids the bottlenecks encountered in highly concurrent code by avoiding shared
 //! writes and locking in the core framework.
 //!
-//! Iron is 100% safe code:
-//!
-//! ```sh
-//! $ ack unsafe src | wc
-//!        0       0       0
-//! ```
-//!
 //! ## Hello World
 //!
 //! ```no_run
