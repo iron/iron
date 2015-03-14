@@ -1,6 +1,8 @@
 Iron [![Build Status](https://secure.travis-ci.org/iron/iron.png?branch=master)](https://travis-ci.org/iron/iron)
 ====
 
+[![Join the chat at https://gitter.im/iron/iron](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/iron/iron?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 > Extensible, Concurrency Focused Web Development in Rust.
 
 ## Response Timer Example
