@@ -29,6 +29,7 @@ error = "*"
 log = "*"
 conduit-mime-types = "*"
 lazy_static = "*"
+num_cpus = "*"
 
 [dev-dependencies]
 time = "*"

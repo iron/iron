@@ -2,7 +2,6 @@
 //! `Iron` library.
 
 use std::net::{ToSocketAddrs, SocketAddr};
-use std::os;
 use std::path::PathBuf;
 
 pub use hyper::server::Listening;
@@ -72,7 +71,7 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn http<A: ToSocketAddrs + 'static>(self, addr: A) -> HttpResult<Listening> {
-        self.listen_with(addr, 2 * os::num_cpus(), Protocol::Http)
+        self.listen_with(addr, 2 * ::num_cpus::get(), Protocol::Http)
     }
 
     /// Kick off the server process using the HTTPS protocol.
@@ -89,7 +88,7 @@ impl<H: Handler> Iron<H> {
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn https<A: ToSocketAddrs + 'static>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                             -> HttpResult<Listening> {
-        self.listen_with(addr, 2 * os::num_cpus(),
+        self.listen_with(addr, 2 * ::num_cpus::get(),
                          Protocol::Https { certificate: certificate, key: key })
     }
 
