@@ -13,7 +13,7 @@ fn main() {
     router.get("/", handler);
     router.get("/:query", handler);
 
-    Iron::new(handler).http("localhost:3000").unwrap();
+    Iron::new(router).http("localhost:3000").unwrap();
 
     fn handler(req: &mut Request) -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>()
