@@ -1,10 +1,11 @@
 //! Iron's HTTP Request representation and associated methods.
 
-use std::io::{self, Read};
+use std::io::{self, Read, BufReader};
 use std::net::SocketAddr;
 use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
+use hyper::net::NetworkStream;
 use hyper::http::HttpReader;
 
 use typemap::TypeMap;
@@ -23,7 +24,7 @@ mod url;
 ///
 /// Stores all the properties of the client's request plus
 /// an `TypeMap` for data communication between middleware.
-pub struct Request<'a> {
+pub struct Request<'a, 'b: 'a> {
     /// The requested URL.
     pub url: Url,
 
@@ -37,7 +38,7 @@ pub struct Request<'a> {
     pub headers: Headers,
 
     /// The request body as a reader.
-    pub body: Body<'a>,
+    pub body: Body<'a, 'b>,
 
     /// The request method.
     pub method: Method,
@@ -46,7 +47,7 @@ pub struct Request<'a> {
     pub extensions: TypeMap
 }
 
-impl<'a> Debug for Request<'a> {
+impl<'a, 'b> Debug for Request<'a, 'b> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(writeln!(f, "Request {{"));
 
@@ -60,12 +61,12 @@ impl<'a> Debug for Request<'a> {
     }
 }
 
-impl<'a> Request<'a> {
+impl<'a, 'b> Request<'a, 'b> {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest<'a>, local_addr: SocketAddr, protocol: &Protocol)
-                     -> Result<Request<'a>, String> {
+    pub fn from_http(req: HttpRequest<'a, 'b>, local_addr: SocketAddr, protocol: &Protocol)
+                     -> Result<Request<'a, 'b>, String> {
         let (addr, method, headers, uri, _, reader) = req.deconstruct();
 
         let url = match uri {
@@ -107,23 +108,23 @@ impl<'a> Request<'a> {
 }
 
 /// The body of an Iron request,
-pub struct Body<'a>(HttpReader<&'a mut (Read + 'a)>);
+pub struct Body<'a, 'b: 'a>(HttpReader<&'a mut BufReader<&'b mut NetworkStream>>);
 
-impl<'a> Body<'a> {
+impl<'a, 'b> Body<'a, 'b> {
     /// Create a new reader for use in an Iron request from a hyper HttpReader.
-    pub fn new(reader: HttpReader<&'a mut (Read + 'a)>) -> Body<'a> {
+    pub fn new(reader: HttpReader<&'a mut BufReader<&'b mut NetworkStream>>) -> Body<'a, 'b> {
         Body(reader)
     }
 }
 
-impl<'a> Read for Body<'a> {
+impl<'a, 'b> Read for Body<'a, 'b> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.read(buf)
     }
 }
 
 // Allow plugins to attach to requests.
-impl<'a> Extensible for Request<'a> {
+impl<'a, 'b> Extensible for Request<'a, 'b> {
     fn extensions(&self) -> &TypeMap {
         &self.extensions
     }
@@ -133,6 +134,6 @@ impl<'a> Extensible for Request<'a> {
     }
 }
 
-impl<'a> Plugin for Request<'a> {}
-impl<'a> Set for Request<'a> {}
+impl<'a, 'b> Plugin for Request<'a, 'b> {}
+impl<'a, 'b> Set for Request<'a, 'b> {}
 
