@@ -1,15 +1,11 @@
 use std::net::ToSocketAddrs;
-use std::io::{self, Read};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;
 
-use hyper::http::HttpReader;
-
 use self::Kind::{Fine, Prob};
 
 use prelude::*;
-use request::Body;
 use {method, headers};
 use {AfterMiddleware, BeforeMiddleware, Handler, TypeMap, Url};
 
@@ -138,13 +134,13 @@ impl AfterMiddleware for Middleware {
 }
 
 // Stub request
-fn request(reader: &mut io::Empty) -> Request {
+fn request<'a, 'b>() -> Request<'a, 'b> {
     Request {
         url: Url::parse("http://www.rust-lang.org").unwrap(),
         remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
         local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
         headers: headers::Headers::new(),
-        body: Body::new(HttpReader::EmptyReader(reader as &mut Read)),
+        body: unsafe { ::std::mem::uninitialized() }, // FIXME(reem): Ugh
         method: method::Get,
         extensions: TypeMap::new()
     }
@@ -244,7 +240,7 @@ fn test_chain(chain: ChainLike<Kind>, expected: ChainLike<Kind>) {
     let chain = to_chain(&actual, chain);
 
     // Run the chain
-    let _ = chain.handle(&mut request(&mut io::empty()));
+    let _ = chain.handle(&mut request());
 
     // Get all the results
     let outbefores = actual.0.into_iter()
