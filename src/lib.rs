@@ -4,7 +4,7 @@
 #![cfg_attr(test, feature(test, box_syntax))]
 
 #![deny(missing_docs)]
-#![feature(unboxed_closures, core, net, file_path)]
+#![feature(unboxed_closures, core, file_path)]
 
 //! The main crate for Iron.
 //!

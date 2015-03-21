@@ -102,8 +102,7 @@ impl<H: Handler> Iron<H> {
                                                   protocol: Protocol) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
-        let ip = sock_addr.ip();
-        let port = sock_addr.port();
+
         self.addr = Some(sock_addr);
 
         self.protocol = Some(protocol.clone());
@@ -114,7 +113,7 @@ impl<H: Handler> Iron<H> {
                 Server::https(self, certificate, key)
         };
 
-        Ok(try!(server.listen_threads(ip, port, threads)))
+        Ok(try!(server.listen_threads(sock_addr, threads)))
     }
 
     /// Instantiate a new instance of `Iron`.
