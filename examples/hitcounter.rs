@@ -23,6 +23,6 @@ fn serve_hits(req: &mut Request) -> IronResult<Response> {
 fn main() {
     let mut chain = Chain::new(serve_hits);
     chain.link(Write::<HitCounter>::both(0));
-    Iron::new(chain).listen("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000").unwrap();
 }
 

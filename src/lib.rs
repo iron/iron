@@ -106,23 +106,23 @@ impl<P: Key> Key for Write<P> where P::Value: 'static {
     type Value = Arc<Mutex<P::Value>>;
 }
 
-impl<'a, P: Key> Plugin<Request<'a>> for State<P> where P::Value: Send + Sync {
+impl<'a, 'b, P: Key> Plugin<Request<'a, 'b>> for State<P> where P::Value: Send + Sync {
     type Error = PersistentError;
-    fn eval(req: &mut Request<'a>) -> Result<Arc<RwLock<P::Value>>, PersistentError> {
+    fn eval(req: &mut Request<'a, 'b>) -> Result<Arc<RwLock<P::Value>>, PersistentError> {
         req.extensions.get::<State<P>>().cloned().ok_or(PersistentError::NotFound)
     }
 }
 
-impl<'a, P: Key> Plugin<Request<'a>> for Read<P> where P::Value: Send + Sync {
+impl<'a, 'b, P: Key> Plugin<Request<'a, 'b>> for Read<P> where P::Value: Send + Sync {
     type Error = PersistentError;
-    fn eval(req: &mut Request<'a>) -> Result<Arc<P::Value>, PersistentError> {
+    fn eval(req: &mut Request<'a, 'b>) -> Result<Arc<P::Value>, PersistentError> {
         req.extensions.get::<Read<P>>().cloned().ok_or(PersistentError::NotFound)
     }
 }
 
-impl<'a, P: Key> Plugin<Request<'a>> for Write<P> where P::Value: Send {
+impl<'a, 'b, P: Key> Plugin<Request<'a, 'b>> for Write<P> where P::Value: Send {
     type Error = PersistentError;
-    fn eval(req: &mut Request<'a>) -> Result<Arc<Mutex<P::Value>>, PersistentError> {
+    fn eval(req: &mut Request<'a, 'b>) -> Result<Arc<Mutex<P::Value>>, PersistentError> {
         req.extensions.get::<Write<P>>().cloned().ok_or(PersistentError::NotFound)
     }
 }
