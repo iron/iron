@@ -87,7 +87,7 @@ impl<'a, 'b> Request<'a, 'b> {
                     None => return Err("No host specified in request".to_string())
                 };
 
-                match Url::parse(url_string.as_slice()) {
+                match Url::parse(&url_string) {
                     Ok(url) => url,
                     Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
                 }

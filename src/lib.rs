@@ -1,10 +1,8 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128", html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256", html_root_url = "http://ironframework.io/core/iron")]
-
 #![cfg_attr(test, deny(warnings))]
-#![cfg_attr(test, feature(test, box_syntax))]
-
 #![deny(missing_docs)]
-#![feature(unboxed_closures, core, file_path)]
+
+#![feature(core, file_path)]
 
 //! The main crate for Iron.
 //!
@@ -60,7 +58,6 @@
 
 // Stdlib dependencies
 #[macro_use] extern crate log;
-#[cfg(test)] extern crate test;
 
 // Third party packages
 extern crate hyper;

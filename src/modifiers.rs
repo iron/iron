@@ -112,7 +112,7 @@ impl<'a> Modifier<Response> for &'a Path {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(self)
-            .ok().expect(format!("No such file: {}", self.display()).as_slice())
+            .ok().expect(&format!("No such file: {}", self.display()))
             .modify(res);
     }
 }
@@ -125,7 +125,7 @@ impl Modifier<Response> for PathBuf {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(&self)
-            .ok().expect(format!("No such file: {}", self.display()).as_slice())
+            .ok().expect(&format!("No such file: {}", self.display()))
             .modify(res);
     }
 }
