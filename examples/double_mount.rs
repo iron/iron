@@ -20,6 +20,6 @@ fn main() {
     second.mount("/leveltwo/", level_two);
     first.mount("/levelone/", second);
 
-    Iron::new(first).listen("localhost:3000").unwrap();
+    Iron::new(first).http("localhost:3000").unwrap();
 }
 
