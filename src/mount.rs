@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::path::{Path, Component};
 use iron::{Handler, Response, Request, IronResult, IronError, Url, status};
 use iron::typemap;
 use sequence_trie::SequenceTrie;
@@ -59,7 +60,12 @@ impl Mount {
     /// Existing handlers on the same route will be overwritten.
     pub fn mount<H: Handler>(&mut self, route: &str, handler: H) -> &mut Mount {
         // Parse the route into a list of strings. The unwrap is safe because strs are UTF-8.
-        let key: Vec<String> = Path::new(route).str_components().map(|s| s.unwrap().to_string()).collect();
+        let key: Vec<String> = Path::new(route).components().flat_map(|c|
+            match c {
+                Component::RootDir => None,
+                c => Some(c.as_os_str().to_str().unwrap().to_string())
+            }.into_iter()
+        ).collect();
 
         // Insert a match struct into the trie.
         self.inner.insert(key.as_slice(), Match {

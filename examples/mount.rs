@@ -20,6 +20,6 @@ fn main() {
     let mut mount = Mount::new();
     mount.mount("/blocked/", intercept).mount("/", send_hello);
 
-    Iron::new(mount).listen("localhost:3000").unwrap();
+    Iron::new(mount).http("localhost:3000").unwrap();
 }
 
