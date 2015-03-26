@@ -69,7 +69,7 @@ extern crate plugin;
 extern crate "error" as err;
 extern crate url;
 extern crate num_cpus;
-extern crate "conduit-mime-types" as mime_types;
+extern crate "conduit_mime_types" as mime_types;
 #[macro_use]
 extern crate lazy_static;
 
@@ -160,4 +160,3 @@ pub mod request;
 pub mod modifiers;
 
 mod iron;
-
