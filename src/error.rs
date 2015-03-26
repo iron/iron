@@ -1,5 +1,6 @@
 use std::error::Error as StdError;
 use std::fmt;
+use std::marker::Send;
 
 use modifier::Modifier;
 use {Response};
@@ -60,3 +61,4 @@ impl StdError for IronError {
     }
 }
 
+unsafe impl Send for IronError {}
