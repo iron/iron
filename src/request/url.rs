@@ -79,7 +79,7 @@ impl Url {
 
                     // Otherwise, use the scheme's default port.
                     None => {
-                        match whatwg_scheme_type_mapper(raw_url.scheme.as_slice()) {
+                        match whatwg_scheme_type_mapper(&raw_url.scheme) {
                             SchemeType::Relative(port) => port,
                             _ => return Err(format!("Invalid relative scheme: `{}`", raw_url.scheme))
                         }
@@ -87,7 +87,7 @@ impl Url {
                 };
 
                 // Map empty usernames to None.
-                let username = match data.username.as_slice() {
+                let username = match &data.username {
                     "" => None,
                     _ => Some(data.username)
                 };
@@ -95,7 +95,7 @@ impl Url {
                 // Map empty passwords to None.
                 let password = match data.password {
                     None => None,
-                    Some(ref x) if x.as_slice().is_empty() => None,
+                    Some(ref x) if (&x).is_empty() => None,
                     Some(password) => Some(password)
                 };
 
@@ -144,8 +144,8 @@ impl fmt::Display for Url {
 
         // Write the user info.
         try!(write!(formatter, "{}", UserInfoFormatter {
-            username: self.username.as_ref().map(|s| s.as_slice()).unwrap_or(""),
-            password: self.password.as_ref().map(|s| s.as_slice())
+            username: self.username.as_ref().map(|s| &s).unwrap_or(""),
+            password: self.password.as_ref().map(|s| &s)
         }));
 
         // Write the host.
@@ -156,7 +156,7 @@ impl fmt::Display for Url {
         try!(self.port.fmt(formatter));
 
         // Write the path.
-        try!(write!(formatter, "{}", PathFormatter { path: self.path.as_slice() }));
+        try!(write!(formatter, "{}", PathFormatter { path: &self.path }));
 
         // Write the query.
         match self.query {
