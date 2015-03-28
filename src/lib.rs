@@ -131,7 +131,7 @@ pub mod typemap {
 
 /// Re-exports from the Modifier crate.
 pub mod modifier {
-    extern crate "modifier" as modfier;
+    extern crate modifier as modfier;
     pub use self::modfier::*;
 }
 
