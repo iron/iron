@@ -64,12 +64,12 @@
 
 // Third party packages
 extern crate hyper;
-extern crate "typemap" as tmap;
+extern crate typemap as tmap;
 extern crate plugin;
-extern crate "error" as err;
+extern crate error as err;
 extern crate url;
 extern crate num_cpus;
-extern crate "conduit-mime-types" as mime_types;
+extern crate conduit_mime_types as mime_types;
 #[macro_use]
 extern crate lazy_static;
 
@@ -131,7 +131,7 @@ pub mod typemap {
 
 /// Re-exports from the Modifier crate.
 pub mod modifier {
-    extern crate "modifier" as modfier;
+    extern crate modifier as modfier;
     pub use self::modfier::*;
 }
 
