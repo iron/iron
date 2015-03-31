@@ -13,6 +13,7 @@ use plugin::Extensible;
 use method::Method;
 
 pub use hyper::server::request::Request as HttpRequest;
+use hyper::buffer;
 
 pub use self::url::Url;
 
@@ -87,7 +88,7 @@ impl<'a, 'b> Request<'a, 'b> {
                     None => return Err("No host specified in request".to_string())
                 };
 
-                match Url::parse(url_string.as_slice()) {
+                match Url::parse(&url_string) {
                     Ok(url) => url,
                     Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
                 }
@@ -108,11 +109,11 @@ impl<'a, 'b> Request<'a, 'b> {
 }
 
 /// The body of an Iron request,
-pub struct Body<'a, 'b: 'a>(HttpReader<&'a mut BufReader<&'b mut NetworkStream>>);
+pub struct Body<'a, 'b: 'a>(HttpReader<&'a mut buffer::BufReader<&'b mut NetworkStream>>);
 
 impl<'a, 'b> Body<'a, 'b> {
     /// Create a new reader for use in an Iron request from a hyper HttpReader.
-    pub fn new(reader: HttpReader<&'a mut BufReader<&'b mut NetworkStream>>) -> Body<'a, 'b> {
+    pub fn new(reader: HttpReader<&'a mut buffer::BufReader<&'b mut NetworkStream>>) -> Body<'a, 'b> {
         Body(reader)
     }
 }

@@ -26,7 +26,7 @@ pub struct IronError {
     ///
     /// This can be layered and will be logged at the end of an errored
     /// request.
-    pub error: Box<Error>,
+    pub error: Box<Error + Send>,
 
     /// What to do about this error.
     ///
