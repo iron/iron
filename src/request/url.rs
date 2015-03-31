@@ -157,7 +157,7 @@ impl fmt::Display for Url {
         try!(self.port.fmt(formatter));
 
         // Write the path.
-        try!(write!(formatter, "{}", PathFormatter { path: self.path.as_slice() }));
+        try!(write!(formatter, "{}", PathFormatter { path: &self.path }));
 
         // Write the query.
         match self.query {
