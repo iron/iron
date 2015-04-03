@@ -91,11 +91,6 @@ impl<'a> Modifier<Response> for &'a [u8] {
 impl Modifier<Response> for File {
     fn modify(self, res: &mut Response) {
         // Set the content type based on the file extension if a path is available.
-        if let Some(path) = self.path() {
-            let mime_str = MIME_TYPES.mime_for_path(path);
-            let _ = mime_str.parse().map(|mime: Mime| res.set_mut(mime));
-        }
-
         if let Ok(metadata) = self.metadata() {
             res.headers.set(headers::ContentLength(metadata.len()));
         }
@@ -114,6 +109,9 @@ impl<'a> Modifier<Response> for &'a Path {
         File::open(self)
             .ok().expect(&format!("No such file: {}", self.display()))
             .modify(res);
+
+        let mime_str = MIME_TYPES.mime_for_path(self);
+        let _ = mime_str.parse().map(|mime: Mime| res.set_mut(mime));
     }
 }
 
