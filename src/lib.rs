@@ -2,8 +2,6 @@
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
 
-#![feature(file_path)]
-
 //! The main crate for Iron.
 //!
 //! ## Overview
