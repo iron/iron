@@ -6,7 +6,7 @@ use sequence_trie::SequenceTrie;
 use std::fmt;
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct OriginalUrl;
 impl typemap::Key for OriginalUrl { type Value = Url; }
 
@@ -26,7 +26,7 @@ pub struct Mount {
 }
 
 struct Match {
-    handler: Box<Handler + Send + Sync>,
+    handler: Box<Handler>,
     length: usize
 }
 
@@ -68,8 +68,8 @@ impl Mount {
         ).collect();
 
         // Insert a match struct into the trie.
-        self.inner.insert(key.as_slice(), Match {
-            handler: Box::new(handler) as Box<Handler + Send + Sync>,
+        self.inner.insert(key.as_ref(), Match {
+            handler: Box::new(handler) as Box<Handler>,
             length: key.len()
         });
         self
@@ -81,7 +81,7 @@ impl Handler for Mount {
         // Find the matching handler.
         let matched = {
             // Extract the request path.
-            let path = req.url.path.as_slice();
+            let path = &*req.url.path;
 
             // If present, remove the trailing empty string (which represents a trailing slash).
             // If it isn't removed the path will never match anything, because
@@ -111,7 +111,7 @@ impl Handler for Mount {
         // If the prefix is entirely removed and no trailing slash was present, the new path
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
-        req.url.path = req.url.path.as_slice()[matched.length..].to_vec();
+        req.url.path = req.url.path[matched.length..].to_vec();
 
         let res = matched.handler.handle(req);
 
