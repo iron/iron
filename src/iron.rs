@@ -64,6 +64,9 @@ impl<H: Handler> Iron<H> {
     /// This consumes the Iron instance, but does the listening on
     /// another task, so is not blocking.
     ///
+    /// The thread returns a guard that will automatically join with the parent
+    /// once it is dropped, blocking until this happens.
+    ///
     /// Defaults to a threadpool of size `2 * num_cpus`.
     ///
     /// ## Panics
@@ -79,6 +82,9 @@ impl<H: Handler> Iron<H> {
     /// Call this once to begin listening for requests on the server.
     /// This consumes the Iron instance, but does the listening on
     /// another task, so is not blocking.
+    ///
+    /// The thread returns a guard that will automatically join with the parent
+    /// once it is dropped, blocking until this happens.
     ///
     /// Defaults to a threadpool of size `2 * num_cpus`.
     ///
