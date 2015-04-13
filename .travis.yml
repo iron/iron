@@ -1,15 +1,11 @@
-os:
-- linux
+language: rust
+sudo: false
 env:
-  matrix:
-  - LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/rustlib/x86_64-unknown-linux-gnu/lib/
   global:
     secure: PqrYTLi97gu+3ABt7ODlekU8TPC6Rs7bXIXGa6+BArn6W+0gPja6XVuxsly+8oUq7p38RyK5m6YghJmTQp27DEXyVTh9SGUlP7wVwrwTo8zydjDSn6TGzWIoSM0j7duHf9dAXP6+TEknueR/fj6c72koxawYdRPs+pL4ekULNFY=
-install:
-- curl https://static.rust-lang.org/rustup.sh | sudo sh
 script:
-- cargo build --verbose
-- cargo test --verbose
-- cargo doc
+- cargo build
+- cargo test
+- cargo bench
 after_success: 'curl https://raw.githubusercontent.com/iron-bot/build-doc/master/build-doc.sh
   | sh '
