@@ -7,7 +7,7 @@ use persistent::Write;
 use iron::typemap::Key;
 use iron::{status};
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct HitCounter;
 
 impl Key for HitCounter { type Value = usize; }
