@@ -7,11 +7,11 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 
 ```rust
 fn send_hello(req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(status::Ok, "Hello!"))
+    Ok(Response::with((status::Ok, "Hello!")))
 }
 
 fn intercept(req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with(status::Ok, "Blocked!"))
+    Ok(Response::with((status::Ok, "Blocked!")))
 }
 
 fn main() {
