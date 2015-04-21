@@ -1,8 +1,8 @@
 Iron
 ====
 
-[![Build Status](https://img.shields.io/travis/iron/iron.svg?style=flat-square)](https://travis-ci.org/iron/iron)
-[![Crates.io Status](https://img.shields.io/crates/v/iron.svg?style=flat-square)](https://crates.io/crates/iron)
+[![Build Status](https://secure.travis-ci.org/iron/iron.svg?branch=master)](https://travis-ci.org/iron/iron)
+[![Crates.io Status](http://meritbadge.herokuapp.com/iron)](https://crates.io/crates/iron)
 
 > Extensible, Concurrency Focused Web Development in Rust.
 
