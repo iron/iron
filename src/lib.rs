@@ -5,14 +5,14 @@
 extern crate iron;
 extern crate time;
 extern crate term;
-extern crate typemap;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response};
-use iron::typemap::Assoc;
-use term::{Terminal, WriterWrapper, stdout};
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, status};
+use iron::typemap::Key;
+use term::{Terminal, stdout};
 
-use std::io::IoResult;
+use std::io;
 use std::error::Error;
+use std::fmt::{self, Display, Formatter};
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime};
 use format::FormatColor::{ConstantColor, FunctionColor};
@@ -37,7 +37,7 @@ impl Logger {
     /// the first in your chain and the logger `AfterMiddleware` the last by doing something like this:
     ///
     /// ```ignore
-    /// let mut chain = ChainBuilder::new(handler);
+    /// let mut chain = Chain::new(handler);
     /// let (logger_before, logger_after) = Logger::new(None);
     /// chain.link_before(logger_before);
     /// // link other middlewares here...
@@ -49,11 +49,11 @@ impl Logger {
 }
 
 struct StartTime;
-impl Assoc<u64> for StartTime {}
+impl Key for StartTime { type Value = u64; }
 
 impl BeforeMiddleware for Logger {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<StartTime, u64>(time::precise_time_ns());
+        req.extensions.insert::<StartTime>(time::precise_time_ns());
         Ok(())
     }
 
@@ -63,77 +63,85 @@ impl BeforeMiddleware for Logger {
 }
 
 impl AfterMiddleware for Logger {
-    fn after(&self, req: &mut Request, res: &mut Response) -> IronResult<()> {
+    fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
         let exit_time = time::precise_time_ns();
-        let entry_time = *req.extensions.get::<StartTime, u64>().unwrap();
+        let entry_time = *req.extensions.get::<StartTime>().unwrap();
 
         let response_time_ms = (exit_time - entry_time) as f64 / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or_default();
 
-        let render = |text: &FormatText| {
-            match *text {
-                Str(ref string) => string.clone(),
-                Method => format!("{}", req.method),
-                URI => format!("{}", req.url),
-                Status => format!("{}", res.status),
-                ResponseTime => format!("{} ms", response_time_ms)
-            }
-        };
-
-        let log = |mut t: Box<Terminal<WriterWrapper> + Send>| -> IoResult<()> {
-            for unit in format.iter() {
-                match unit.color {
-                    ConstantColor(Some(color)) => { try!(t.fg(color)); }
-                    ConstantColor(None) => (),
-                    FunctionColor(f) => match f(req, res) {
-                        Some(color) => { try!(t.fg(color)); }
-                        None => ()
-                    }
+        {
+            let render = |text: &FormatText| {
+                match *text {
+                    Str(ref string) => string.clone(),
+                    Method => format!("{}", req.method),
+                    URI => format!("{}", req.url),
+                    Status => format!("{}", res.status.unwrap()),
+                    ResponseTime => format!("{} ms", response_time_ms)
                 }
-                match unit.attrs {
-                    ConstantAttrs(ref attrs) => {
-                        for &attr in attrs.iter() {
-                            try!(t.attr(attr));
+            };
+
+            let log = |mut t: Box<Terminal<io::Stdout> + Send>| -> io::Result<()> {
+                for unit in format.iter() {
+                    match unit.color {
+                        ConstantColor(Some(color)) => { try!(t.fg(color)); }
+                        ConstantColor(None) => (),
+                        FunctionColor(f) => match f(req, &res) {
+                            Some(color) => { try!(t.fg(color)); }
+                            None => ()
                         }
                     }
-                    FunctionAttrs(f) => {
-                        for &attr in f(req, res).iter() {
-                            try!(t.attr(attr));
+                    match unit.attrs {
+                        ConstantAttrs(ref attrs) => {
+                            for &attr in attrs.iter() {
+                                try!(t.attr(attr));
+                            }
+                        }
+                        FunctionAttrs(f) => {
+                            for &attr in f(req, &res).iter() {
+                                try!(t.attr(attr));
+                            }
                         }
                     }
+                    try!(write!(t, "{}", render(&unit.text)));
+                    try!(t.reset());
                 }
-                try!(write!(t, "{}", render(&unit.text)));
-                try!(t.reset());
-            }
-            try!(writeln!(t, ""));
-            Ok(())
-        };
+                try!(writeln!(t, ""));
+                Ok(())
+            };
 
-        match stdout() {
-            Some(terminal) => {
-                try!(log(terminal));
-            }
-            None => { return Err(box CouldNotOpenTerminal as IronError) }
-        };
+            match stdout() {
+                Some(terminal) => {
+                    match log(terminal) {
+                        Ok(result) => result,
+                        Err(err) => return Err(IronError::new(err, status::InternalServerError))
+                    }
+                }
+                None => { return Err(IronError::new(CouldNotOpenTerminal,
+                                                    status::InternalServerError)) }
+            };
+        }
 
-        Ok(())
+        Ok(res)
     }
 
-    fn catch(&self, _: &mut Request, _: &mut Response, err: IronError) -> IronResult<()> {
+    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<Response> {
         Err(err)
     }
 }
 
 /// Error returned when logger cannout access stdout.
-#[deriving(Show, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct CouldNotOpenTerminal;
 
 impl Error for CouldNotOpenTerminal {
     fn description(&self) -> &str {
         "Could Not Open Terminal"
     }
+}
 
-    fn detail(&self) -> Option<String> {
-        Some("Logger could not open stdout as a terminal.".to_string())
+impl Display for CouldNotOpenTerminal {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Logger could not open stdout as a terminal.")
     }
 }
