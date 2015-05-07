@@ -73,7 +73,7 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn http<A: ToSocketAddrs + 'static>(self, addr: A) -> HttpResult<Listening> {
+    pub fn http<A: ToSocketAddrs>(self, addr: A) -> HttpResult<Listening> {
         self.listen_with(addr, 2 * ::num_cpus::get(), Protocol::Http)
     }
 
@@ -92,8 +92,8 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn https<A: ToSocketAddrs + 'static>(self, addr: A, certificate: PathBuf, key: PathBuf)
-                                            -> HttpResult<Listening> {
+    pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
+                                   -> HttpResult<Listening> {
         self.listen_with(addr, 2 * ::num_cpus::get(),
                          Protocol::Https { certificate: certificate, key: key })
     }
@@ -104,8 +104,8 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddrs + 'static>(mut self, addr: A, threads: usize,
-                                                  protocol: Protocol) -> HttpResult<Listening> {
+    pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
+                                         protocol: Protocol) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
