@@ -5,7 +5,8 @@ use modifier::Modifier;
 use {Response};
 
 pub use err::Error;
-pub use hyper::{HttpResult, HttpError};
+pub use hyper::Error as HttpError;
+pub use hyper::error::Result as HttpResult;
 
 /// The type of Errors inside and when using Iron.
 ///
