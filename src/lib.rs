@@ -51,19 +51,12 @@ impl Logger {
 struct StartTime;
 impl Key for StartTime { type Value = u64; }
 
-impl BeforeMiddleware for Logger {
-    fn before(&self, req: &mut Request) -> IronResult<()> {
+impl Logger {
+    fn initialise(&self, req: &mut Request) {
         req.extensions.insert::<StartTime>(time::precise_time_ns());
-        Ok(())
     }
 
-    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<()> {
-        Err(err)
-    }
-}
-
-impl AfterMiddleware for Logger {
-    fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
+    fn log(&self, req: &mut Request, res: &Response) -> IronResult<()> {
         let exit_time = time::precise_time_ns();
         let entry_time = *req.extensions.get::<StartTime>().unwrap();
 
@@ -86,7 +79,7 @@ impl AfterMiddleware for Logger {
                     match unit.color {
                         ConstantColor(Some(color)) => { try!(t.fg(color)); }
                         ConstantColor(None) => (),
-                        FunctionColor(f) => match f(req, &res) {
+                        FunctionColor(f) => match f(req, res) {
                             Some(color) => { try!(t.fg(color)); }
                             None => ()
                         }
@@ -98,7 +91,7 @@ impl AfterMiddleware for Logger {
                             }
                         }
                         FunctionAttrs(f) => {
-                            for &attr in f(req, &res).iter() {
+                            for &attr in f(req, res).iter() {
                                 try!(t.attr(attr));
                             }
                         }
@@ -122,11 +115,35 @@ impl AfterMiddleware for Logger {
             };
         }
 
-        Ok(res)
+        Ok(())
+    }
+}
+
+impl BeforeMiddleware for Logger {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        self.initialise(req);
+        Ok(())
     }
 
-    fn catch(&self, _: &mut Request, err: IronError) -> IronResult<Response> {
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<()> {
+        self.initialise(req);
         Err(err)
+    }
+}
+
+impl AfterMiddleware for Logger {
+    fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
+        match self.log(req, &res) {
+            Ok(_) => Ok(res),
+            Err(log_err) => Err(log_err),
+        }
+    }
+
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
+        match self.log(req, &err.response) {
+            Ok(_) => Err(err),
+            Err(log_err) => Err(log_err),
+        }
     }
 }
 
