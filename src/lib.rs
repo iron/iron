@@ -133,17 +133,13 @@ impl BeforeMiddleware for Logger {
 
 impl AfterMiddleware for Logger {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
-        match self.log(req, &res) {
-            Ok(_) => Ok(res),
-            Err(log_err) => Err(log_err),
-        }
+        try!(self.log(req, &res));
+        Ok(res)
     }
 
     fn catch(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
-        match self.log(req, &err.response) {
-            Ok(_) => Err(err),
-            Err(log_err) => Err(log_err),
-        }
+        try!(self.log(req, &err.response));
+        Err(err)
     }
 }
 
