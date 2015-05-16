@@ -134,6 +134,7 @@ pub mod modifier {
 pub mod status {
     pub use hyper::status::StatusCode as Status;
     pub use hyper::status::StatusCode::*;
+    pub use hyper::status::StatusClass;
 }
 
 /// HTTP Methods
