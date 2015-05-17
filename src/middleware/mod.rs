@@ -52,6 +52,7 @@
 //!
 
 use std::any::Any;
+use std::sync::Arc;
 use {Request, Response, IronResult, IronError};
 
 /// `Handler`s are responsible for handling requests by creating Responses from Requests.
@@ -320,6 +321,16 @@ impl BeforeMiddleware for Box<BeforeMiddleware> {
     }
 }
 
+impl<T> BeforeMiddleware for Arc<T> where T: BeforeMiddleware {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        (**self).before(req)
+    }
+
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<()> {
+        (**self).catch(req, err)
+    }
+}
+
 impl<F> AfterMiddleware for F
 where F: Send + Sync + Any + Fn(&mut Request, Response) -> IronResult<Response> {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
@@ -328,6 +339,16 @@ where F: Send + Sync + Any + Fn(&mut Request, Response) -> IronResult<Response> 
 }
 
 impl AfterMiddleware for Box<AfterMiddleware> {
+    fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
+        (**self).after(req, res)
+    }
+
+    fn catch(&self, req: &mut Request, err: IronError) -> IronResult<Response> {
+        (**self).catch(req, err)
+    }
+}
+
+impl<T> AfterMiddleware for Arc<T> where T: AfterMiddleware {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
         (**self).after(req, res)
     }
@@ -346,4 +367,3 @@ where F: FnOnce(Box<Handler>) -> Box<Handler> {
 
 #[cfg(test)]
 mod test;
-
