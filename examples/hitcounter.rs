@@ -13,7 +13,7 @@ pub struct HitCounter;
 impl Key for HitCounter { type Value = usize; }
 
 fn serve_hits(req: &mut Request) -> IronResult<Response> {
-    let mutex = req.get::<Write<HitCounter>>().ok().unwrap();
+    let mutex = req.get::<Write<HitCounter>>().unwrap();
     let mut count = mutex.lock().unwrap();
 
     *count += 1;
