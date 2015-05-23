@@ -13,7 +13,7 @@ use std::sync::{Arc, RwLock, Mutex};
 use plugin::Plugin;
 
 /// The type that can be returned by `eval` to indicate error.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PersistentError {
     /// The value was not found.
     NotFound
