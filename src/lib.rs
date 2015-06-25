@@ -8,7 +8,7 @@ extern crate term;
 
 use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, status};
 use iron::typemap::Key;
-use term::{Terminal, stdout};
+use term::{StdoutTerminal, stdout};
 
 use std::io;
 use std::error::Error;
@@ -81,7 +81,7 @@ impl AfterMiddleware for Logger {
                 }
             };
 
-            let log = |mut t: Box<Terminal<io::Stdout> + Send>| -> io::Result<()> {
+            let log = |mut t: Box<StdoutTerminal>| -> io::Result<()> {
                 for unit in format.iter() {
                     match unit.color {
                         ConstantColor(Some(color)) => { try!(t.fg(color)); }
