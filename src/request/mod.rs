@@ -6,7 +6,7 @@ use std::fmt::{self, Debug};
 
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
 use hyper::net::NetworkStream;
-use hyper::http::HttpReader;
+use hyper::http::h1::HttpReader;
 
 use typemap::TypeMap;
 use plugin::Extensible;
