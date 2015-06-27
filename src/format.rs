@@ -237,7 +237,7 @@ impl<'a> Iterator for FormatParser<'a> {
 
                         // Collect the attributes into attrs and color, for use as properties
                         // of a FormatUnit.
-                        for word in buffer.split_whitespace() {
+                        for word in buffer.split(|c: char| c.is_whitespace()) {
                             match word {
                                 "A" => attrs = self.attrs.next().unwrap_or(ConstantAttrs(vec![])),
 
@@ -427,4 +427,3 @@ pub struct FormatUnit {
     pub color: FormatColor,
     pub attrs: FormatAttr
 }
-
