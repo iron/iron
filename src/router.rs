@@ -123,6 +123,10 @@ impl Router {
                 }
             });
         }
+        // If GET is there, HEAD is also there.
+        if options.contains(&method::Get) && !options.contains(&method::Head) {
+            options.push(method::Head);
+        }
 
         let mut res = Response::with(status::Ok);
         res.headers.set(headers::Allow(options));
@@ -141,7 +145,12 @@ impl Router {
     }
 
     fn handle_method(&self, req: &mut Request, path: &str) -> IronResult<Response> {
-        let matched = match self.recognize(&req.method, path) {
+        let mut matched = self.recognize(&req.method, path);
+        if matched.is_none() && req.method == method::Head {
+            // For HEAD, fall back to GET. Hyper ensures no response body is written.
+            matched = self.recognize(&method::Get, path);
+        }
+        let matched = match matched {
             Some(matched) => matched,
             // No match.
             None => return Err(IronError::new(NoRoute, status::NotFound))
