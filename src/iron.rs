@@ -2,6 +2,7 @@
 //! `Iron` library.
 
 use std::net::{ToSocketAddrs, SocketAddr};
+#[cfg(feature = "ssl")]
 use std::path::PathBuf;
 
 pub use hyper::server::Listening;
@@ -39,6 +40,7 @@ pub enum Protocol {
     /// Plaintext HTTP/1
     Http,
     /// HTTP/1 over SSL/TLS
+    #[cfg(feature = "ssl")]
     Https {
         /// Path to SSL certificate file
         certificate: PathBuf,
@@ -52,6 +54,7 @@ impl Protocol {
     pub fn name(&self) -> &'static str {
         match *self {
             Protocol::Http => "http",
+            #[cfg(feature = "ssl")]
             Protocol::Https { .. } => "https"
         }
     }
@@ -92,6 +95,7 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
+    #[cfg(feature = "ssl")]
     pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                    -> HttpResult<Listening> {
         self.listen_with(addr, 2 * ::num_cpus::get(),
@@ -113,13 +117,18 @@ impl<H: Handler> Iron<H> {
 
         self.protocol = Some(protocol.clone());
 
-        let server = match protocol {
-            Protocol::Http => Server::http(self),
-            Protocol::Https { ref certificate, ref key } =>
-                Server::https(self, certificate, key)
-        };
+        match protocol {
+            Protocol::Http => try!(Server::http(sock_addr)).handle_threads(self, threads),
 
-        Ok(try!(server.listen_threads(sock_addr, threads)))
+            #[cfg(feature = "ssl")]
+            Protocol::Https { ref certificate, ref key } => {
+                use hyper::net::Openssl;
+
+                try!(Server::https(sock_addr,
+                                   try!(Openssl::with_cert_and_key(certificate, key))))
+                    .handle_threads(self, threads)
+            },
+        }
     }
 
     /// Instantiate a new instance of `Iron`.

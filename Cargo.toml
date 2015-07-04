@@ -19,8 +19,11 @@ authors = [
 name = "iron"
 path = "src/lib.rs"
 
+[features]
+default = ["ssl"]
+ssl = ["hyper/ssl"]
+
 [dependencies]
-hyper = "0.5"
 typemap = "*"
 url = "*"
 plugin = "*"
@@ -31,6 +34,9 @@ conduit-mime-types = "*"
 lazy_static = "*"
 num_cpus = "*"
 
+[dependencies.hyper]
+version = "0.6"
+default-features = false
+
 [dev-dependencies]
 time = "*"
-
