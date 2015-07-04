@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error::Error;
 use std::fmt;
 
@@ -54,11 +53,8 @@ impl Router {
     pub fn route<H, S>(&mut self, method: method::Method,
                        glob: S, handler: H) -> &mut Router
     where H: Handler, S: AsRef<str> {
-        match self.routers.entry(method) {
-            Vacant(entry)   => entry.insert(Recognizer::new()),
-            Occupied(entry) => entry.into_mut()
-        }.add(glob.as_ref().trim_right_matches('/'),
-              Box::new(handler) as Box<Handler>);
+        self.routers.entry(method).or_insert(Recognizer::new())
+                    .add(glob.as_ref(), Box::new(handler));
         self
     }
 
@@ -97,23 +93,17 @@ impl Router {
         self.route(method::Options, glob, handler)
     }
 
-    fn recognize<'a>(&'a self, method: &method::Method, path: &str)
-                     -> Option<Match<&'a Box<Handler>>> {
+    fn recognize(&self, method: &method::Method, path: &str)
+                     -> Option<Match<&Box<Handler>>> {
         self.routers.get(method).and_then(|router| router.recognize(path).ok())
     }
 
-    fn handle_options(&self, req: &mut Request, path: &str) -> IronResult<Response> {
+    fn handle_options(&self, path: &str) -> Response {
         static METHODS: &'static [method::Method] =
             &[method::Get, method::Post, method::Post, method::Put,
               method::Delete, method::Head, method::Patch];
 
-        // If there is an override, use it.
-        if let Some(matched) = self.recognize(&method::Options, path) {
-            req.extensions.insert::<Router>(matched.params);
-            return matched.handler.handle(req);
-        }
-
-        // Else, get all the available methods and return them.
+        // Get all the available methods and return them.
         let mut options = vec![];
 
         for method in METHODS.iter() {
@@ -130,34 +120,43 @@ impl Router {
 
         let mut res = Response::with(status::Ok);
         res.headers.set(headers::Allow(options));
-        Ok(res)
+        res
     }
 
-    fn handle_trailing_slash(&self, req: &mut Request) -> IronResult<Response> {
+    // Tests for a match by adding or removing a trailing slash.
+    fn redirect_slash(&self, req : &Request) -> Option<IronError>
+    {
         let mut url = req.url.clone();
+        let mut path = url.path.connect("/");
 
-        // Pull off as many trailing slashes as possible.
-        while url.path.len() != 1 && url.path.last() == Some(&String::new()) {
-            url.path.pop();
+        if let Some(last_char) = path.chars().last() {
+            if last_char == '/' {
+                path.pop();
+                url.path.pop();
+            } else {
+                path.push('/');
+                url.path.push("".to_string());
+            }
         }
 
-        Err(IronError::new(TrailingSlash, (status::MovedPermanently, Redirect(url))))
+        self.recognize(&req.method, &path).and(
+            Some(IronError::new(TrailingSlash,
+                                (status::MovedPermanently, Redirect(url))))
+        )
     }
 
-    fn handle_method(&self, req: &mut Request, path: &str) -> IronResult<Response> {
+    fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
         let mut matched = self.recognize(&req.method, path);
+
         if matched.is_none() && req.method == method::Head {
             // For HEAD, fall back to GET. Hyper ensures no response body is written.
             matched = self.recognize(&method::Get, path);
         }
-        let matched = match matched {
-            Some(matched) => matched,
-            // No match.
-            None => return Err(IronError::new(NoRoute, status::NotFound))
-        };
 
-        req.extensions.insert::<Router>(matched.params);
-        matched.handler.handle(req)
+        if let Some(matched) = matched {
+            req.extensions.insert::<Router>(matched.params);
+            Some(matched.handler.handle(req))
+        } else { self.redirect_slash(req).and_then(|redirect| Some(Err(redirect))) }
     }
 }
 
@@ -165,18 +164,21 @@ impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        if req.url.path.len() != 1 && Some(&String::new()) == req.url.path.last() {
-            return self.handle_trailing_slash(req);
-        }
-
-        // No trailing slash
         let path = req.url.path.connect("/");
 
-        if let method::Options = req.method {
-            return self.handle_options(req, &*path);
-        }
-
-        self.handle_method(req, &*path)
+        self.handle_method(req, &path).unwrap_or_else(||
+            match req.method {
+                method::Options => Ok(self.handle_options(&path)),
+                // For HEAD, fall back to GET. Hyper ensures no response body is written.
+                method::Head => {
+                    req.method = method::Get;
+                    self.handle_method(req, &path).unwrap_or(
+                        Err(IronError::new(NoRoute, status::NotFound))
+                    )
+                }
+                _ => Err(IronError::new(NoRoute, status::NotFound))
+            }
+        )
     }
 }
 
@@ -195,8 +197,8 @@ impl Error for NoRoute {
     fn description(&self) -> &str { "No Route" }
 }
 
-/// The error thrown by router if the request had a trailing slash,
-/// it is always accompanied by a redirect.
+/// The error thrown by router if a request was redirected
+/// by adding or removing a trailing slash.
 #[derive(Debug)]
 pub struct TrailingSlash;
 
@@ -209,4 +211,3 @@ impl fmt::Display for TrailingSlash {
 impl Error for TrailingSlash {
     fn description(&self) -> &str { "Trailing Slash" }
 }
-
