@@ -137,17 +137,6 @@ pub struct Chain {
     handler: Option<Box<Handler>>
 }
 
-/// Builder struct for a `Chain`
-///
-pub struct ChainLink {
-    befores: Vec<Box<BeforeMiddleware>>,
-    afters: Vec<Box<AfterMiddleware>>,
-
-    // Internal invariant: this is always Some
-    // Invariant inherited from the associated `Chain`
-    handler: Option<Box<Handler>>
-}
-
 impl Chain {
     /// Construct a new Chain from a `Handler`.
     pub fn new<H: Handler>(handler: H) -> Chain {
@@ -189,13 +178,18 @@ impl Chain {
     }
 }
 
+/// Builder struct for a `Chain`
+///
+pub struct ChainLink {
+    chain: Chain
+}
+
+
 impl ChainLink {
     /// Construct a new `ChainLink` from a `Handler`.
     pub fn new<H: Handler>(handler: H) -> ChainLink {
         ChainLink {
-            befores: vec![],
-            afters: vec![],
-            handler: Some(Box::new(handler) as Box<Handler>)
+            chain: Chain::new(handler)
         }
     }
 
@@ -205,9 +199,7 @@ impl ChainLink {
     /// which returns both as a tuple, so it can be passed directly to link.
     pub fn link<B, A>(mut self, link: (B, A)) -> ChainLink
     where A: AfterMiddleware, B: BeforeMiddleware {
-        let (before, after) = link;
-        self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
-        self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self.chain.link(link);
         self
     }
 
@@ -215,7 +207,7 @@ impl ChainLink {
     /// `BeforeMiddleware`.
     pub fn link_before<B>(mut self, before: B) -> ChainLink
     where B: BeforeMiddleware {
-        self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
+        self.chain.link_before(before);
         self
     }
 
@@ -223,26 +215,20 @@ impl ChainLink {
     /// `AfterMiddleware`.
     pub fn link_after<A>(mut self, after: A) -> ChainLink
     where A: AfterMiddleware {
-        self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self.chain.link_after(after);
         self
     }
 
     /// Apply an `AroundMiddleware` to the `Handler` in this `ChainLink`.
     pub fn around<A>(mut self, around: A) -> ChainLink
     where A: AroundMiddleware {
-        let mut handler = self.handler.take().unwrap();
-        handler = around.around(handler);
-        self.handler = Some(handler);
+        self.chain.around(around);
         self
     }
 
     /// Return the built `Chain`
     pub fn lock_chain(self) -> Chain {
-        Chain {
-            befores: self.befores,
-            afters: self.afters,
-            handler: self.handler
-        }
+        self.chain
     }
 }
 
