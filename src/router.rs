@@ -146,14 +146,7 @@ impl Router {
     }
 
     fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
-        let mut matched = self.recognize(&req.method, path);
-
-        if matched.is_none() && req.method == method::Head {
-            // For HEAD, fall back to GET. Hyper ensures no response body is written.
-            matched = self.recognize(&method::Get, path);
-        }
-
-        if let Some(matched) = matched {
+        if let Some(matched) = self.recognize(&req.method, path) {
             req.extensions.insert::<Router>(matched.params);
             Some(matched.handler.handle(req))
         } else { self.redirect_slash(req).and_then(|redirect| Some(Err(redirect))) }
