@@ -11,11 +11,11 @@ to be any Handler, including all Chains.
 
 ```rust
 fn main() {
-    let mut router = Router::new();
-    router.get("/", handler);
-    router.get("/:query", handler);
+    let mut router = Router::new();  // Alternative syntax:
+    router.get("/", handler);        // let router = router!(get "/" => handler,
+    router.get("/:query", handler);  //                      get "/:query" => handler);
 
-    Iron::new(router).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(router).http("localhost:3000").unwrap();
 
     fn handler(req: &mut Request) -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>().unwrap().find("query").unwrap_or("/");
