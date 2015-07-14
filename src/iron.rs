@@ -127,7 +127,7 @@ impl<H: Handler> Iron<H> {
                 try!(Server::https(sock_addr,
                                    try!(Openssl::with_cert_and_key(certificate, key))))
                     .handle_threads(self, threads)
-            },
+            }
         }
     }
 
@@ -142,40 +142,31 @@ impl<H: Handler> Iron<H> {
     fn bad_request(&self, mut http_res: HttpResponse<Fresh>) {
         *http_res.status_mut() = status::BadRequest;
 
-        let http_res = match http_res.start() {
-            Ok(res) => res,
-            // Would like this to work, but if not *shrug*
-            Err(_) => return,
-        };
-
+        // Consume and flush the response.
         // We would like this to work, but can't do anything if it doesn't.
-        let _ = http_res.end();
+        if let Ok(res) = http_res.start()
+        {
+            let _ = res.end();
+        }
     }
 }
 
 impl<H: Handler> ::hyper::server::Handler for Iron<H> {
     fn handle(&self, http_req: HttpRequest, http_res: HttpResponse<Fresh>) {
         // Create `Request` wrapper.
-        let mut req = match Request::from_http(http_req, self.addr.clone().unwrap(),
-                                               self.protocol.as_ref().unwrap()) {
-            Ok(req) => req,
+        match Request::from_http(http_req, self.addr.clone().unwrap(),
+                                 self.protocol.as_ref().unwrap()) {
+            Ok(mut req) => {
+                // Dispatch the request, write the response back to http_res
+                self.handler.handle(&mut req).unwrap_or_else(|e| {
+                    error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
+                    e.response
+                }).write_back(http_res)
+            },
             Err(e) => {
                 error!("Error creating request:\n    {}", e);
-                return self.bad_request(http_res);
-            }
-        };
-
-        // Dispatch the request
-        let res = self.handler.handle(&mut req);
-
-        match res {
-            // Write the response back to http_res
-            Ok(res) => res.write_back(http_res),
-            Err(e) => {
-                error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
-                e.response.write_back(http_res);
+                self.bad_request(http_res)
             }
         }
     }
 }
-
