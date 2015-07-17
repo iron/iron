@@ -54,11 +54,11 @@ pub struct Url {
 impl Url {
     /// Create a URL from a string.
     ///
-    /// The input must be a valid URL in a relative scheme for this to succeed.
+    /// The input must be a valid URL with a special scheme for this to succeed.
     ///
-    /// HTTP and HTTPS are relative schemes.
+    /// HTTP and HTTPS are special schemes.
     ///
-    /// See: http://url.spec.whatwg.org/#relative-scheme
+    /// See: http://url.spec.whatwg.org/#special-scheme
     pub fn parse(input: &str) -> Result<Url, String> {
         // Parse the string using rust-url, then convert.
         match url::Url::parse(input) {
@@ -69,7 +69,7 @@ impl Url {
 
     /// Create a `Url` from a `rust-url` `Url`.
     pub fn from_generic_url(raw_url: url::Url) -> Result<Url, String> {
-        // Create an Iron URL by extracting the relative scheme data.
+        // Create an Iron URL by extracting the special scheme data.
         match raw_url.scheme_data {
             SchemeData::Relative(data) => {
                 // Extract the port as a 16-bit unsigned integer.
@@ -81,7 +81,7 @@ impl Url {
                     None => {
                         match whatwg_scheme_type_mapper(&raw_url.scheme) {
                             SchemeType::Relative(port) => port,
-                            _ => return Err(format!("Invalid relative scheme: `{}`",
+                            _ => return Err(format!("Invalid special scheme: `{}`",
                                                     raw_url.scheme))
                         }
                     }
@@ -111,7 +111,7 @@ impl Url {
                     fragment: raw_url.fragment
                 })
             },
-            _ => Err(format!("Not a relative scheme: `{}`", raw_url.scheme))
+            _ => Err(format!("Not a special scheme: `{}`", raw_url.scheme))
         }
     }
 
