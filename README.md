@@ -3,6 +3,7 @@ Iron
 
 [![Build Status](https://secure.travis-ci.org/iron/iron.svg?branch=master)](https://travis-ci.org/iron/iron)
 [![Crates.io Status](http://meritbadge.herokuapp.com/iron)](https://crates.io/crates/iron)
+[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/iron/iron/master/LICENSE)
 
 > Extensible, Concurrency Focused Web Development in Rust.
 
@@ -212,8 +213,3 @@ Michael Sierks (1)
 Nerijus Arlauskas (1)
 SuprDewd (1)
 ```
-
-## License
-
-MIT
-
