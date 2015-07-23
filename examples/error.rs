@@ -26,13 +26,18 @@ impl Error for StringError {
 
 impl Handler for ErrorHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
+        // This is never called!
+        //
+        // If a BeforeMiddleware returns an error through Err(...),
+        // and it is not handled by a subsequent BeforeMiddleware in
+        // the chain, the main handler is not invoked.
         Ok(Response::new())
     }
 }
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(IronError::new(StringError("Error".to_string()), status::Ok))
+        Err(IronError::new(StringError("Error".to_string()), status::BadRequest))
     }
 }
 
