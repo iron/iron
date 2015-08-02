@@ -6,7 +6,7 @@ use std::fs::File;
 
 use typemap::TypeMap;
 use plugin::Extensible;
-use modifier::{Set, Modifier}; 
+use modifier::{Set, Modifier};
 use hyper::header::Headers;
 
 use status::{self, Status};
@@ -15,45 +15,58 @@ use {Plugin, headers};
 pub use hyper::server::response::Response as HttpResponse;
 use hyper::net::{Fresh, Streaming};
 
+/// A `Write`r of HTTP response bodies.
+pub struct ResponseBody<'a>(HttpResponse<'a, Streaming>);
+
+impl<'a> Write for ResponseBody<'a> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
 /// A trait which writes the body of an HTTP response.
 pub trait WriteBody {
-    /// Writes the body to the provided `Response<Streaming>`.
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()>;
+    /// Writes the body to the provided `ResponseBody`.
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()>;
 }
 
 impl WriteBody for String {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         self.as_bytes().write_body(res)
     }
 }
 
 impl<'a> WriteBody for &'a str {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         self.as_bytes().write_body(res)
     }
 }
 
 impl WriteBody for Vec<u8> {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         res.write_all(self)
     }
 }
 
 impl<'a> WriteBody for &'a [u8] {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         res.write_all(self)
     }
 }
 
 impl WriteBody for File {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         io::copy(self, res).map(|_| ())
     }
 }
 
 /* Needs specialization :(
 impl<R: Read> WriteBody for R {
-    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         io::copy(self, res)
     }
 }
@@ -132,9 +145,9 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody + Send>
                            .unwrap_or_else(|| headers::ContentType("text/plain".parse().unwrap()));
     res.headers_mut().set(content_type);
 
-    let mut res = try!(res.start());
+    let mut res = ResponseBody(try!(res.start()));
     try!(body.write_body(&mut res));
-    res.end()
+    res.0.end()
 }
 
 impl Debug for Response {
