@@ -1,19 +1,63 @@
 //! Iron's HTTP Response representation and associated methods.
 
-use std::io::{self, Read, Write};
+use std::io::{self, Write};
 use std::fmt::{self, Debug};
+use std::fs::File;
 
 use typemap::TypeMap;
 use plugin::Extensible;
-use modifier::{Set, Modifier};
-
+use modifier::{Set, Modifier}; 
 use hyper::header::Headers;
 
 use status::{self, Status};
 use {Plugin, headers};
 
 pub use hyper::server::response::Response as HttpResponse;
-use hyper::net::Fresh;
+use hyper::net::{Fresh, Streaming};
+
+/// A trait which writes the body of an HTTP response.
+pub trait WriteBody {
+    /// Writes the body to the provided `Response<Streaming>`.
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()>;
+}
+
+impl WriteBody for String {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        self.as_bytes().write_body(res)
+    }
+}
+
+impl<'a> WriteBody for &'a str {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        self.as_bytes().write_body(res)
+    }
+}
+
+impl WriteBody for Vec<u8> {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        res.write_all(self)
+    }
+}
+
+impl<'a> WriteBody for &'a [u8] {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        res.write_all(self)
+    }
+}
+
+impl WriteBody for File {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        io::copy(self, res).map(|_| ())
+    }
+}
+
+/* Needs specialization :(
+impl<R: Read> WriteBody for R {
+    fn write_body(&mut self, res: &mut HttpResponse<Streaming>) -> io::Result<()> {
+        io::copy(self, res)
+    }
+}
+*/
 
 /// The response representation given to `Middleware`
 pub struct Response {
@@ -33,7 +77,7 @@ pub struct Response {
     /// be sent using either `serve` or `serve_file`.
     ///
     /// Arbitrary Readers can be sent by assigning to body.
-    pub body: Option<Box<Read + Send>>
+    pub body: Option<Box<WriteBody + Send>>
 }
 
 impl Response {
@@ -81,29 +125,15 @@ impl Response {
     }
 }
 
-fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<Read + Send>) -> io::Result<()> {
+fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody + Send>)
+                   -> io::Result<()> {
     let content_type = res.headers().get::<headers::ContentType>()
                            .map(|cx| cx.clone())
                            .unwrap_or_else(|| headers::ContentType("text/plain".parse().unwrap()));
     res.headers_mut().set(content_type);
 
     let mut res = try!(res.start());
-
-    // FIXME: Manually inlined old_io::util::copy
-    // because Box<Reader + Send> does not impl Reader.
-    //
-    // Tracking issue: rust-lang/rust#18542
-    let mut buf = &mut [0; 1024 * 64];
-    loop {
-        let len = match body.read(buf) {
-            Ok(0) => break,
-            Ok(len) => len,
-            Err(e) => { return Err(e) },
-        };
-
-        try!(res.write_all(&buf[..len]))
-    }
-
+    try!(body.write_body(&mut res));
     res.end()
 }
 
