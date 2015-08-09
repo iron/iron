@@ -79,7 +79,7 @@ systems.
 
 Modifiers allow external code to manipulate Requests and Response in an ergonomic
 fashion, allowing third-party extensions to get the same treatment as modifiers
-defined in Iron itself. Plugins allow for lazily-evaluated, automically cached
+defined in Iron itself. Plugins allow for lazily-evaluated, automatically cached
 extensions to Requests and Responses, perfect for parsing, accessing, and
 otherwise lazily manipulating an http connection.
 
