@@ -48,6 +48,8 @@ fn main() {
     // Link our error maker.
     chain.link_before(ErrorProducer);
 
+    println!("server running at http://localhost:3000");
+    println!("try it by opening the url in a browser or by: 'curl -v http://localhost:3000', 'curl -v http://localhost:3000/any_other_destination/same_bad_request'");
     Iron::new(chain).http("localhost:3000").unwrap();
 }
 
