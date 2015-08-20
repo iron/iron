@@ -99,7 +99,7 @@ Iron averages [84,000+ requests per second for hello world](https://github.com/i
 and is mostly IO-bound, spending over 70% of its time in the kernel send-ing or
 recv-ing data.\*
 
-\* *Numbers from profiling on my OS X machine, your milage may vary.*
+\* *Numbers from profiling on my OS X machine, your mileage may vary.*
 
 ## Core Extensions
 
