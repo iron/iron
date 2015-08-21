@@ -9,6 +9,6 @@ documentation = "http://ironframework.io/doc/mount/index.html"
 license = "MIT"
 
 [dependencies]
-iron = "*"
-url = "*"
-sequence_trie = "*"
+iron = "0.1"
+url = "0.2"
+sequence_trie = "0.0"
