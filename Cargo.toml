@@ -24,15 +24,15 @@ default = ["ssl"]
 ssl = ["hyper/ssl"]
 
 [dependencies]
-typemap = "*"
-url = "*"
-plugin = "*"
-modifier = "*"
-error = "*"
-log = "*"
-conduit-mime-types = "*"
-lazy_static = "*"
-num_cpus = "*"
+typemap = "0.3"
+url = "0.2"
+plugin = "0.2*"
+modifier = "0.1"
+error = "0.1"
+log = "0.3"
+conduit-mime-types = "0.7"
+lazy_static = "0.1"
+num_cpus = "0.2"
 
 [dependencies.hyper]
 version = "0.6"
