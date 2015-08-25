@@ -1,4 +1,7 @@
 language: rust
+rust:
+    - stable
+    - nightly
 sudo: false
 script:
     - cargo build
