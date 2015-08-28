@@ -38,9 +38,8 @@ persistent is a part of Iron's [core bundle](https://github.com/iron/core).
 If you're using a `Cargo.toml` to manage dependencies, just add persistent to the toml:
 
 ```toml
-[dependencies.persistent]
-
-git = "https://github.com/iron/persistent.git"
+[dependencies]
+persistent = "0.0.6"
 ```
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
