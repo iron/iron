@@ -21,7 +21,7 @@
 #[macro_export]
 macro_rules! router {
     ($($method:ident $glob:expr => $handler:expr),+) => ({
-        let mut router = Router::new();
+        let mut router = $crate::Router::new();
         $(router.$method($glob, $handler);)*
         router
     });
@@ -29,7 +29,6 @@ macro_rules! router {
 
 #[cfg(test)]
 mod tests {
-    use router::Router;
     use iron::{Response, Request, IronResult};
 
     //simple test to check that all methods expand without error
