@@ -29,7 +29,6 @@
 //! For more information about the modifier system, see
 //! [rust-modifier](https://github.com/reem/rust-modifier).
 
-use std::io::{Read, Cursor};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -40,6 +39,7 @@ use hyper::mime::Mime;
 use {status, headers, Request, Response, Set, Url};
 
 use mime_types;
+use response::WriteBody;
 
 lazy_static! {
     static ref MIME_TYPES: mime_types::Types = mime_types::Types::new().unwrap();
@@ -52,7 +52,7 @@ impl Modifier<Response> for Mime {
     }
 }
 
-impl Modifier<Response> for Box<Read + Send> {
+impl Modifier<Response> for Box<WriteBody + Send> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.body = Some(self);
@@ -70,7 +70,7 @@ impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.headers.set(headers::ContentLength(self.len() as u64));
-        res.body = Some(Box::new(Cursor::new(self)) as Box<Read + Send>);
+        res.body = Some(Box::new(self));
     }
 }
 
@@ -95,7 +95,7 @@ impl Modifier<Response> for File {
             res.headers.set(headers::ContentLength(metadata.len()));
         }
 
-        res.body = Some(Box::new(self) as Box<Read + Send>);
+        res.body = Some(Box::new(self));
     }
 }
 
