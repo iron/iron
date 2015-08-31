@@ -71,6 +71,12 @@ impl WriteBody for File {
     }
 }
 
+impl WriteBody for Box<io::Read> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
+        io::copy(self, res).map(|_| ())
+    }
+}
+
 /* Needs specialization :(
 impl<R: Read> WriteBody for R {
     fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
