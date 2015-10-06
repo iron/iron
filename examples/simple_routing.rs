@@ -1,3 +1,6 @@
+// This example shows how to create a basic router that maps url to different handlers.
+// If you're looking for real routing middleware, check https://github.com/iron/router
+
 extern crate iron;
 
 use std::collections::HashMap;
@@ -32,6 +35,7 @@ impl Handler for Router {
 
 fn main() {
     let mut router = Router::new();
+
     router.add_route("hello".to_string(), |_: &mut Request| {
         Ok(Response::with("Hello world !"))
     });
