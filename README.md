@@ -125,7 +125,7 @@ Plugins:
 Both:
 - [Shared Memory (also used for Plugin configuration)](https://github.com/iron/persistent)
 
-This allows for insanely flexible and powerful setups and allows nearly all
+This allows for extremely flexible and powerful setups and allows nearly all
 of Iron's features to be swappable - you can even change the middleware
 resolution algorithm by swapping in your own `Chain`.
 
