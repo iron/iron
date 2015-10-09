@@ -96,7 +96,17 @@ middleware. No plugins or middleware are bundled with Iron.
 
 ## Performance
 
-Iron averages [84,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example)
+Iron averages [84,000+ requests per second. We run the benchmark test using:
+```
+  Model Name: MacBook Pro
+  Processor: Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz
+  Memory (RAM): 16 GB
+  Total Number of Cores: 4
+  Total Number of Threads: 8
+  L2 Cache (per Core): 256 KB
+  L3 Cache: 6 MB
+```
+See details here https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example
 and is mostly IO-bound, spending over 70% of its time in the kernel send-ing or
 recv-ing data.\*
 
