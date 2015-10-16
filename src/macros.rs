@@ -20,7 +20,7 @@
 /// `get`, `post`, `put`, `delete`, `head`, `patch`, `options`.
 #[macro_export]
 macro_rules! router {
-    ($($method:ident $glob:expr => $handler:expr),+) => ({
+    ($($method:ident $glob:expr => $handler:expr),+ $(,)*) => ({
         let mut router = $crate::Router::new();
         $(router.$method($glob, $handler);)*
         router
@@ -41,6 +41,6 @@ mod tests {
                         delete  "/bar/baz" => handler,
                         head    "/foo" => handler,
                         patch   "/bar/baz" => handler,
-                        options "/foo" => handler);
+                        options "/foo" => handler,);
     }
 }
