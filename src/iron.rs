@@ -152,7 +152,11 @@ impl<H: Handler> Iron<H> {
 }
 
 impl<H: Handler> ::hyper::server::Handler for Iron<H> {
-    fn handle(&self, http_req: HttpRequest, http_res: HttpResponse<Fresh>) {
+    fn handle(&self, http_req: HttpRequest, mut http_res: HttpResponse<Fresh>) {
+        // Set some defaults in case request handler panics.
+        // This should not be necessary anymore once stdlib's catch_panic becomes stable.
+        *http_res.status_mut() = status::InternalServerError;
+
         // Create `Request` wrapper.
         match Request::from_http(http_req, self.addr.clone().unwrap(),
                                  self.protocol.as_ref().unwrap()) {
