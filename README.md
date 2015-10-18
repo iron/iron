@@ -3,35 +3,11 @@ persistent [![Build Status](https://secure.travis-ci.org/iron/persistent.png?bra
 
 > Persistent storage as middleware for the [Iron](https://github.com/iron/iron) web framework.
 
-## Example
-
-```rust
-use iron::Plugin; // Request::get is provided through this trait.
-
-pub struct HitCounter;
-impl Assoc<uint> for HitCounter {}
-
-fn serve_hits(req: &mut Request) -> IronResult<Response> {
-    let mutex = req.get::<Write<HitCounter, uint>>().unwrap();
-    let mut count = mutex.lock();
-
-    *count += 1;
-    Ok(Response::with(status::Ok, format!("Hits: {}", *count)))
-}
-
-fn main() {
-    let mut chain = ChainBuilder::new(serve_hits);
-    chain.link(Write::<HitCounter, uint>::both(0u));
-    Iron::new(chain).listen(Ipv4Addr(127, 0, 0, 1), 3000);
-}
-```
-
-## Overview
-
-persistent is a part of Iron's [core bundle](https://github.com/iron/core).
-
 - Share persistent data across requests
 - Read or modify locally stored data
+
+Use this if you are currently thinking about using `std::sync::Arc` to share
+state between request handlers.
 
 ## Installation
 
