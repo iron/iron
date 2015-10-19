@@ -22,7 +22,7 @@ pub enum PersistentError {
 
 impl fmt::Display for PersistentError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        fmt::Display::fmt(self, f)
+        self.description().fmt(f)
     }
 }
 
