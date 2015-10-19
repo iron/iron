@@ -27,10 +27,10 @@ pub struct Iron<H> {
     pub handler: H,
 
     /// Once listening, the local address that this server is bound to.
-    pub addr: Option<SocketAddr>,
+    addr: Option<SocketAddr>,
 
     /// Once listening, the protocol used to serve content.
-    pub protocol: Option<Protocol>
+    protocol: Option<Protocol>
 }
 
 /// Protocol used to serve content. Future versions of Iron may add new protocols
