@@ -10,7 +10,8 @@ extern crate plugin;
 use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
 use iron::typemap::Key;
 use std::sync::{Arc, RwLock, Mutex};
-use std::{error,fmt};
+use std::fmt;
+use std::error::Error;
 use plugin::Plugin;
 
 /// The type that can be returned by `eval` to indicate error.
@@ -20,17 +21,17 @@ pub enum PersistentError {
     NotFound
 }
 
-impl fmt::Display for PersistentError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
-    }
-}
-
-impl error::Error for PersistentError {
+impl Error for PersistentError {
     fn description(&self) -> &str {
         match *self {
             PersistentError::NotFound => "Value not found in extensions."
         }
+    }
+}
+
+impl fmt::Display for PersistentError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        self.description().fmt(f)
     }
 }
 
