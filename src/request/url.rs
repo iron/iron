@@ -126,7 +126,7 @@ impl Url {
                     username: self.username.unwrap_or("".to_string()),
                     password: self.password,
                     host: self.host,
-                    port: Some(self.port),
+                    port: if Some(self.port) != default_port { Some(self.port) } else { None },
                     default_port: default_port,
                     path: self.path
                 }
