@@ -151,30 +151,37 @@ impl Chain {
     ///
     /// Middleware that have a Before and After piece should have a constructor
     /// which returns both as a tuple, so it can be passed directly to link.
-    pub fn link<B, A>(&mut self, link: (B, A))
+    pub fn link<B, A>(&mut self, link: (B, A)) -> &mut Chain
     where A: AfterMiddleware, B: BeforeMiddleware {
         let (before, after) = link;
         self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
         self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self
     }
 
     /// Link a `BeforeMiddleware` to the `Chain`, after all previously linked
     /// `BeforeMiddleware`.
-    pub fn link_before<B>(&mut self, before: B) where B: BeforeMiddleware {
+    pub fn link_before<B>(&mut self, before: B) -> &mut Chain
+    where B: BeforeMiddleware {
         self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
+        self
     }
 
     /// Link a `AfterMiddleware` to the `Chain`, after all previously linked
     /// `AfterMiddleware`.
-    pub fn link_after<A>(&mut self, after: A) where A: AfterMiddleware {
+    pub fn link_after<A>(&mut self, after: A) -> &mut Chain
+    where A: AfterMiddleware {
         self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self
     }
 
     /// Apply an `AroundMiddleware` to the `Handler` in this `Chain`.
-    pub fn around<A>(&mut self, around: A) where A: AroundMiddleware {
+    pub fn around<A>(&mut self, around: A) -> &mut Chain
+    where A: AroundMiddleware {
         let mut handler = self.handler.take().unwrap();
         handler = around.around(handler);
         self.handler = Some(handler);
+        self
     }
 }
 
