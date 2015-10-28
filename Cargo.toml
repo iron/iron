@@ -18,5 +18,5 @@ ssl = ["hyper/ssl"]
 route-recognizer = "0.1"
 
 [dependencies.iron]
-iron = "0.2"
+version = "0.2"
 default-features = false
