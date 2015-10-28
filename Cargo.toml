@@ -20,3 +20,7 @@ route-recognizer = "0.1"
 [dependencies.iron]
 version = "0.2"
 default-features = false
+
+[dependencies.hyper]
+version = "0.6"
+default-features = false
