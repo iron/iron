@@ -98,11 +98,6 @@ pub struct Response {
     pub extensions: TypeMap,
 
     /// The body of the response.
-    ///
-    /// This is a Reader for generality, most data should
-    /// be sent using either `serve` or `serve_file`.
-    ///
-    /// Arbitrary Readers can be sent by assigning to body.
     pub body: Option<Box<WriteBody + Send>>
 }
 
