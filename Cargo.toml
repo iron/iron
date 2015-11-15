@@ -2,12 +2,12 @@
 
 name = "persistent"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
-version = "0.0.7"
+version = "0.0.8"
 description = "A set of middleware for sharing server-global data in Iron."
 repository = "https://github.com/iron/persistent"
 documentation = "http://ironframework.io/doc/persistent/index.html"
 license = "MIT"
-keywords = ["iron", "web", "persistence", "sharing", "global", "sync"]
+keywords = ["iron", "web", "persistence", "sharing", "global"]
 
 [dependencies]
 iron = "0.2"
