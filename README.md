@@ -3,7 +3,7 @@ Iron
 
 [![Build Status](https://secure.travis-ci.org/iron/iron.svg?branch=master)](https://travis-ci.org/iron/iron)
 [![Crates.io Status](http://meritbadge.herokuapp.com/iron)](https://crates.io/crates/iron)
-[![License](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/iron/iron/master/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/iron/iron/master/LICENSE)
 
 > Extensible, Concurrency Focused Web Development in Rust.
 
@@ -107,13 +107,13 @@ recv-ing data.\*
 Iron aims to fill a void in the Rust web stack - a high level framework that is
 *extensible* and makes organizing complex server code easy.
 
-Extensions are painless to build, and the [core bundle](https://github.com/iron/core)
+Extensions are painless to build, and the [core bundle](https://github.com/iron/common)
 already includes\*:
 
 Middleware:
 - [Routing](https://github.com/iron/router)
 - [Mounting](https://github.com/iron/mount)
-- [Static File Serving](https://github.com/iron/static)
+- [Static File Serving](https://github.com/iron/staticfile)
 - [Logging](https://github.com/iron/logger)
 
 Plugins:
