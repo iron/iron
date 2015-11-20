@@ -162,5 +162,7 @@ pub mod request;
 // Request and Response Modifiers
 pub mod modifiers;
 
-mod iron;
+// Helper macros for error handling
+mod macros;
 
+mod iron;
