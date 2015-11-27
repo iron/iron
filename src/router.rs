@@ -1,6 +1,3 @@
-// FIXME(reem): When join makes it into stable, remove this and replace connect with join.
-#![allow(deprecated)]
-
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
@@ -129,7 +126,7 @@ impl Router {
     // Tests for a match by adding or removing a trailing slash.
     fn redirect_slash(&self, req : &Request) -> Option<IronError> {
         let mut url = req.url.clone();
-        let mut path = url.path.connect("/");
+        let mut path = url.path.join("/");
 
         if let Some(last_char) = path.chars().last() {
             if last_char == '/' {
@@ -159,7 +156,7 @@ impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let path = req.url.path.connect("/");
+        let path = req.url.path.join("/");
 
         self.handle_method(req, &path).unwrap_or_else(||
             match req.method {
