@@ -10,6 +10,8 @@ documentation = "http://ironframework.io/doc/router/index.html"
 keywords = ["iron", "web", "http", "routing", "router"]
 
 [dependencies]
-iron = "0.2"
 route-recognizer = "0.1"
 
+[dependencies.iron]
+version = "0.2"
+default-features = false
