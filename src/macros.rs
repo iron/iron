@@ -17,7 +17,7 @@
 ///
 /// The method name must be lowercase, supported methods:
 ///
-/// `get`, `post`, `put`, `delete`, `head`, `patch`, `options`.
+/// `get`, `post`, `put`, `delete`, `head`, `patch`, `options` and `any`.
 #[macro_export]
 macro_rules! router {
     ($($method:ident $glob:expr => $handler:expr),+ $(,)*) => ({
@@ -41,6 +41,7 @@ mod tests {
                         delete  "/bar/baz" => handler,
                         head    "/foo" => handler,
                         patch   "/bar/baz" => handler,
-                        options "/foo" => handler,);
+                        options "/foo" => handler,
+                        any     "/" => handler);
     }
 }

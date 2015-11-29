@@ -14,7 +14,9 @@ use recognizer::{Match, Params};
 /// for the Iron framework.
 pub struct Router {
     // The routers, specialized by method.
-    routers: HashMap<method::Method, Recognizer<Box<Handler>>>
+    routers: HashMap<method::Method, Recognizer<Box<Handler>>>,
+    // Routes that accept any method.
+    wildcard: Recognizer<Box<Handler>>
 }
 
 impl Router {
@@ -26,7 +28,8 @@ impl Router {
     /// ```
     pub fn new() -> Router {
         Router {
-            routers: HashMap::new()
+            routers: HashMap::new(),
+            wildcard: Recognizer::new()
         }
     }
 
@@ -93,9 +96,17 @@ impl Router {
         self.route(method::Options, glob, handler)
     }
 
+    /// Route will match any method, including gibberish.
+    /// In case of ambiguity, handlers specific to methods will be preferred.
+    pub fn any<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
+        self.wildcard.add(glob.as_ref(), Box::new(handler));
+        self
+    }
+
     fn recognize(&self, method: &method::Method, path: &str)
                      -> Option<Match<&Box<Handler>>> {
         self.routers.get(method).and_then(|router| router.recognize(path).ok())
+            .or(self.wildcard.recognize(path).ok())
     }
 
     fn handle_options(&self, path: &str) -> Response {
@@ -134,7 +145,7 @@ impl Router {
                 url.path.pop();
             } else {
                 path.push('/');
-                url.path.push("".to_string());
+                url.path.push(String::new());
             }
         }
 
