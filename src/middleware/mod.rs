@@ -176,7 +176,16 @@ impl Chain {
     }
 
     /// Apply an `AroundMiddleware` to the `Handler` in this `Chain`.
+    ///
+    /// Note: This function is being renamed `link_around()`, and will
+    /// eventually be removed.
     pub fn around<A>(&mut self, around: A) -> &mut Chain
+    where A: AroundMiddleware {
+        self.link_around(around)
+    }
+
+    /// Apply an `AroundMiddleware` to the `Handler` in this `Chain`.
+    pub fn link_around<A>(&mut self, around: A) -> &mut Chain
     where A: AroundMiddleware {
         let mut handler = self.handler.take().unwrap();
         handler = around.around(handler);
