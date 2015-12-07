@@ -7,6 +7,7 @@ use std::fmt::{self, Debug};
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
 use hyper::net::NetworkStream;
 use hyper::http::h1::HttpReader;
+use hyper::version::HttpVersion;
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -68,7 +69,7 @@ impl<'a, 'b> Request<'a, 'b> {
     /// This constructor consumes the HttpRequest.
     pub fn from_http(req: HttpRequest<'a, 'b>, local_addr: SocketAddr, protocol: &Protocol)
                      -> Result<Request<'a, 'b>, String> {
-        let (addr, method, headers, uri, _, reader) = req.deconstruct();
+        let (addr, method, headers, uri, version, reader) = req.deconstruct();
 
         let url = match uri {
             AbsoluteUri(ref url) => {
@@ -79,13 +80,21 @@ impl<'a, 'b> Request<'a, 'b> {
             },
 
             AbsolutePath(ref path) => {
-                // Attempt to prepend the Host header (mandatory in HTTP/1.1)
-                let url_string = match headers.get::<headers::Host>() {
-                    Some(ref host) => {
-                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(),
-                                path)
+                let url_string = match (version, headers.get::<headers::Host>()) {
+                    (_, Some(ref host)) => {
+                        // Attempt to prepend the Host header (mandatory in HTTP/1.1)
+                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(), path)
                     },
-                    None => return Err("No host specified in request".to_string())
+                    (v, None) if v < HttpVersion::Http11 => {
+                        // Attempt to use the local address? (host header is not required in HTTP/1.0).
+                        match local_addr {
+                            SocketAddr::V4(addr4) => format!("{}://{}:{}{}", protocol.name(), addr4.ip(), local_addr.port(), path),
+                            SocketAddr::V6(addr6) => format!("{}://[{}]:{}{}", protocol.name(), addr6.ip(), local_addr.port(), path),
+                        }
+                    },
+                    (_, None) => {
+                        return Err("No host specified in request".to_string())
+                    }
                 };
 
                 match Url::parse(&url_string) {
@@ -137,4 +146,3 @@ impl<'a, 'b> Extensible for Request<'a, 'b> {
 
 impl<'a, 'b> Plugin for Request<'a, 'b> {}
 impl<'a, 'b> Set for Request<'a, 'b> {}
-
