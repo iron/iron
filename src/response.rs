@@ -137,11 +137,8 @@ impl Response {
             }
         };
 
-        match out {
-            Err(e) => {
-                error!("Error writing response: {}", e);
-            },
-            _ => {}
+        if let Err(e) = out {
+            error!("Error writing response: {}", e);
         }
     }
 }
@@ -149,8 +146,8 @@ impl Response {
 fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody + Send>)
                    -> io::Result<()> {
     let content_type = res.headers().get::<headers::ContentType>()
-                           .map(|cx| cx.clone())
-                           .unwrap_or_else(|| headers::ContentType("text/plain".parse().unwrap()));
+                           .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),
+                                        |cx| cx.clone());
     res.headers_mut().set(content_type);
 
     let mut raw_res = try!(res.start());
@@ -187,4 +184,3 @@ impl Extensible for Response {
 
 impl Plugin for Response {}
 impl Set for Response {}
-
