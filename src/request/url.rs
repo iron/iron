@@ -123,7 +123,7 @@ impl Url {
             scheme: self.scheme,
             scheme_data: SchemeData::Relative(
                 RelativeSchemeData {
-                    username: self.username.unwrap_or("".to_string()),
+                    username: self.username.unwrap_or(String::new()),
                     password: self.password,
                     host: self.host,
                     port: if Some(self.port) != default_port { Some(self.port) } else { None },
@@ -145,7 +145,7 @@ impl fmt::Display for Url {
 
         // Write the user info.
         try!(write!(formatter, "{}", UserInfoFormatter {
-            username: self.username.as_ref().map(|s| &**s).unwrap_or(""),
+            username: self.username.as_ref().map_or("", |s| &**s),
             password: self.password.as_ref().map(|s| &**s)
         }));
 

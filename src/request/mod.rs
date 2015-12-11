@@ -85,7 +85,7 @@ impl<'a, 'b> Request<'a, 'b> {
                         format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(),
                                 path)
                     },
-                    None => return Err("No host specified in request".to_string())
+                    None => return Err("No host specified in request".into())
                 };
 
                 match Url::parse(&url_string) {
@@ -93,7 +93,7 @@ impl<'a, 'b> Request<'a, 'b> {
                     Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
                 }
             },
-            _ => return Err("Unsupported request URI".to_string())
+            _ => return Err("Unsupported request URI".into())
         };
 
         Ok(Request {
@@ -137,4 +137,3 @@ impl<'a, 'b> Extensible for Request<'a, 'b> {
 
 impl<'a, 'b> Plugin for Request<'a, 'b> {}
 impl<'a, 'b> Set for Request<'a, 'b> {}
-

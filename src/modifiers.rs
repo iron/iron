@@ -77,7 +77,7 @@ impl Modifier<Response> for Vec<u8> {
 impl<'a> Modifier<Response> for &'a str {
     #[inline]
     fn modify(self, res: &mut Response) {
-        self.to_string().modify(res);
+        self.to_owned().modify(res);
     }
 }
 
@@ -107,7 +107,7 @@ impl<'a> Modifier<Response> for &'a Path {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(self)
-            .ok().expect(&format!("No such file: {}", self.display()))
+            .expect(&format!("No such file: {}", self.display()))
             .modify(res);
 
         let mime_str = MIME_TYPES.mime_for_path(self);
@@ -123,7 +123,7 @@ impl Modifier<Response> for PathBuf {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(&self)
-            .ok().expect(&format!("No such file: {}", self.display()))
+            .expect(&format!("No such file: {}", self.display()))
             .modify(res);
     }
 }
@@ -160,4 +160,3 @@ impl Modifier<Response> for Redirect {
         res.headers.set(headers::Location(url.to_string()));
     }
 }
-
