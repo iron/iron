@@ -7,10 +7,12 @@ mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master
 
 ```rust
 fn send_hello(req: &mut Request) -> IronResult<Response> {
+    println!("Running send_hello handler, URL path: {:?}", req.url.path);
     Ok(Response::with((status::Ok, "Hello!")))
 }
 
 fn intercept(req: &mut Request) -> IronResult<Response> {
+    println!("Running intercept handler, URL path: {:?}", req.url.path);
     Ok(Response::with((status::Ok, "Blocked!")))
 }
 
@@ -18,8 +20,24 @@ fn main() {
     let mut mount = Mount::new();
     mount.mount("/blocked/", intercept).mount("/", send_hello);
 
-    Iron::new(mount).listen(Ipv4Addr(127, 0, 0, 1), 3000);
+    Iron::new(mount).http("localhost:3000").unwrap();
 }
+```
+
+Running the code above, the following HTTP requests would write the following line to the server process's stdout:
+
+```
+$ curl http://localhost:3000/
+Running send_hello handler, URL path: [""]
+
+$ curl http://localhost:3000/blocked/
+Running intercept handler, URL path: [""]
+
+$ curl http://localhost:3000/foo
+Running send_hello handler, URL path: ["foo"]
+
+$ curl http://localhost:3000/blocked/foo
+Running intercept handler, URL path: ["foo"]
 ```
 
 ## Overview
