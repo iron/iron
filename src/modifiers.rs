@@ -160,3 +160,13 @@ impl Modifier<Response> for Redirect {
         res.headers.set(headers::Location(url.to_string()));
     }
 }
+
+/// A modifier for creating redirect responses.
+pub struct RedirectRaw(String);
+
+impl Modifier<Response> for RedirectRaw {
+    fn modify(self, res: &mut Response) {
+        let RedirectRaw(path) = self;
+        res.headers.set(headers::Location(path));
+    }
+}
