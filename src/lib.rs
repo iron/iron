@@ -88,7 +88,7 @@ impl Logger {
                         ConstantColor(color) => color,
                         FunctionColor(f) => f(req, res)
                     };
-                    let mut fn_attrs;
+                    let fn_attrs;
                     let ref attrs = match unit.attrs {
                         ConstantAttrs(ref attrs) => attrs,
                         FunctionAttrs(f) => {
