@@ -9,6 +9,7 @@ use std::path::PathBuf;
 pub use hyper::server::Listening;
 use hyper::server::Server;
 use hyper::net::Fresh;
+use hyper::net::NetworkListener;
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -172,6 +173,24 @@ impl<H: Handler> Iron<H> {
                 server.handle_threads(self, threads)
             }
         }
+    }
+
+    /// Kick off the server process with X threads and custom listener.
+    pub fn listen_custom<L: NetworkListener+Send+'static>(mut self, threads: Option<usize>,
+                                             listener: L,
+                                             protocol: Protocol,
+                                             timeouts: Option<Timeouts>) -> HttpResult<Listening> {
+        self.addr = Some(try!(listener.clone().local_addr()));
+        self.protocol = Some(protocol.clone());
+
+        let threads = threads.unwrap_or_else(|| {8 * ::num_cpus::get()});
+
+        let mut server = Server::new(listener);
+        let timeouts = timeouts.unwrap_or_default();
+        server.keep_alive(timeouts.keep_alive);
+        server.set_read_timeout(timeouts.read);
+        server.set_write_timeout(timeouts.write);
+        server.handle_threads(self, threads)
     }
 
     /// Instantiate a new instance of `Iron`.
