@@ -102,7 +102,7 @@ impl<H: Handler> Iron<H> {
     /// The thread returns a guard that will automatically join with the parent
     /// once it is dropped, blocking until this happens.
     ///
-    /// Defaults to a threadpool of size `2 * num_cpus`.
+    /// Defaults to a threadpool of size `8 * num_cpus`.
     ///
     /// ## Panics
     ///
@@ -121,7 +121,7 @@ impl<H: Handler> Iron<H> {
     /// The thread returns a guard that will automatically join with the parent
     /// once it is dropped, blocking until this happens.
     ///
-    /// Defaults to a threadpool of size `2 * num_cpus`.
+    /// Defaults to a threadpool of size `8 * num_cpus`.
     ///
     /// ## Panics
     ///
