@@ -1,6 +1,6 @@
 //! Iron's HTTP Request representation and associated methods.
 
-use std::io::{self, Read, BufReader};
+use std::io::{self, Read};
 use std::net::SocketAddr;
 use std::fmt::{self, Debug};
 
