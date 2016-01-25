@@ -10,6 +10,13 @@ to be any Handler, including all Chains.
 ## Example
 
 ```rust
+extern crate iron;
+extern crate router;
+
+use iron::prelude::*;
+use iron::status;
+use router::Router;
+
 fn main() {
     let mut router = Router::new();  // Alternative syntax:
     router.get("/", handler);        // let router = router!(get "/" => handler,
