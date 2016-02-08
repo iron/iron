@@ -119,6 +119,7 @@ Middleware:
 Plugins:
 - [JSON Body Parsing](https://github.com/iron/body-parser)
 - [URL Encoded Data Parsing](https://github.com/iron/urlencoded)
+- [All-In-One (JSON, URL, & Form Data) Parameter Parsing](https://github.com/iron/params)
 - [Cookies](https://github.com/iron/cookie)
 - [Sessions](https://github.com/iron/session)
 
