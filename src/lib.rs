@@ -73,7 +73,7 @@ extern crate conduit_mime_types as mime_types;
 #[macro_use]
 extern crate lazy_static;
 
-#[cfg(feature = "openssl")]
+#[cfg(feature = "ssl")]
 extern crate openssl;
 // Request + Response
 pub use request::{Request, Url};
@@ -84,7 +84,10 @@ pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
                      Handler, Chain};
 
 // Server
-pub use iron::{Iron, Protocol};
+pub use iron::{Iron, Protocol, ProtocolHandler, HttpProtocolHandler};
+
+#[cfg(feature = "ssl")]
+pub use iron::HttpsProtocolHandler;
 
 // Extensions
 pub use typemap::TypeMap;

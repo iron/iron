@@ -4,19 +4,17 @@
 use std::net::{ToSocketAddrs, SocketAddr};
 use std::time::Duration;
 #[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
 use std::path::PathBuf;
 
 #[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
 use hyper::net::{NetworkStream, Openssl, Ssl};
-#[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
-use openssl::ssl::{Ssl, SslContext, SslStream, SslMethod, SSL_VERIFY_NONE};
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
-use hyper::net::Fresh;
+use hyper::net::{Fresh, NetworkListener, HttpListener};
+
+#[cfg(feature = "ssl")]
+use hyper::net::HttpsListener;
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -97,21 +95,22 @@ impl Protocol {
     }
 }
 
-pub trait ProtocolHandler {
+/// Protocol Handlers create servers
+pub trait ProtocolHandler<TListener: NetworkListener> {
     /// Return the name used for this protocol in a URI's scheme part.
     fn name(&self) -> &'static str;
 
-
-    // Returns the protocol this represents
+    /// Returns the protocol this represents
     fn protocol(&self) -> Protocol;
 
     /// Returns server for this protocol
-    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error>;
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<TListener>, Error>;
 }
 
-struct HttpProtocolHandler;
+/// Default HTTP handler
+pub struct HttpProtocolHandler;
 
-impl ProtocolHandler for HttpProtocolHandler {
+impl ProtocolHandler<HttpListener> for HttpProtocolHandler {
     fn name(&self) -> &'static str { "http" }
     fn protocol(&self) -> Protocol { Protocol::Http }
 
@@ -120,29 +119,36 @@ impl ProtocolHandler for HttpProtocolHandler {
    }
 }
 
+/// Default HTTPs handler
 #[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
-struct HttpsProtocolHandler<S: Ssl<Stream=SslStream> + Clone + Send> {
-    ssl: S
+pub struct HttpsProtocolHandler<S: Ssl + Clone + Send> {
+    /// SSL context when creating connection
+    pub ssl: Option<S>
 }
 
 #[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
 impl HttpsProtocolHandler<Openssl> {
-    pub fn load_cert_from_file(&self, certificate: PathBuf, key: PathBuf) {
+    /// Loads certificate from a file and returns the protocol handler
+    pub fn load_cert_from_file(certificate: PathBuf, key: PathBuf) -> HttpsProtocolHandler<Openssl> {
       use hyper::net::Openssl;
-      self.ssl = try!(Openssl::with_cert_and_key(certificate, key));
+      // This is terrible
+      // @TODO make this actually decent
+      HttpsProtocolHandler {
+        ssl: match Openssl::with_cert_and_key(certificate, key) {
+          Ok(v) => Some(v),
+          _ => None
+        }
+      }
     }
 }
 
 #[cfg(feature = "ssl")]
-#[cfg(feature = "openssl")]
-impl ProtocolHandler for HttpsProtocolHandler<Openssl> {
+impl ProtocolHandler<HttpsListener<Openssl>> for HttpsProtocolHandler<Openssl> {
     fn name(&self) -> &'static str { "https" }
     fn protocol(&self) -> Protocol { Protocol::Https }
 
-    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error> {
-        Server::https(sock_addr, self.ssl)
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<HttpsListener<Openssl>>, Error> {
+        Server::https(sock_addr, self.ssl.clone().expect("No SSL config given"))
     }
 }
 
@@ -183,12 +189,10 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     #[cfg(feature = "ssl")]
-    #[cfg(feature = "openssl")]
     pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                    -> HttpResult<Listening> {
 
-        let https = & HttpsProtocolHandler ;
-        https.load_cert_from_file(certificate, key);
+        let https = & HttpsProtocolHandler::load_cert_from_file(certificate, key);
 
         self.listen_with(addr, 8 * ::num_cpus::get(), https, None)
     }
@@ -199,17 +203,24 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
-                                         protocol_handler: & ProtocolHandler,
-                                         timeouts: Option<Timeouts>) -> HttpResult<Listening> {
+    pub fn listen_with<
+                       A: ToSocketAddrs, 
+                       ProtoHandlerListener: NetworkListener + Send + 'static>
+                         (mut self,
+                          addr: A, 
+                          threads: usize,
+                          protocol_handler: & ProtocolHandler<ProtoHandlerListener>,
+                          timeouts: Option<Timeouts>)
+    -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
         self.protocol = Some(protocol_handler.protocol());
         self.addr = Some(sock_addr);
 
-        let mut server = try!(protocol_handler.create_server(sock_addr));
         let timeouts = timeouts.unwrap_or_default();
+
+        let mut server = try!(protocol_handler.create_server(sock_addr));
         server.keep_alive(timeouts.keep_alive);
         server.set_read_timeout(timeouts.read);
         server.set_write_timeout(timeouts.write);
