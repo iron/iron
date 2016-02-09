@@ -6,9 +6,15 @@ use std::time::Duration;
 #[cfg(feature = "ssl")]
 use std::path::PathBuf;
 
+#[cfg(feature = "ssl")]
+use hyper::net::{NetworkStream, Openssl, Ssl};
+
 pub use hyper::server::Listening;
 use hyper::server::Server;
-use hyper::net::Fresh;
+use hyper::net::{Fresh, NetworkListener, HttpListener};
+
+#[cfg(feature = "ssl")]
+use hyper::net::HttpsListener;
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -17,6 +23,8 @@ use error::HttpResult;
 
 use {Request, Handler};
 use status;
+
+pub use hyper::error::Error;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -73,12 +81,7 @@ pub enum Protocol {
     Http,
     /// HTTP/1 over SSL/TLS
     #[cfg(feature = "ssl")]
-    Https {
-        /// Path to SSL certificate file
-        certificate: PathBuf,
-        /// Path to SSL private key file
-        key: PathBuf
-    }
+    Https
 }
 
 impl Protocol {
@@ -87,8 +90,65 @@ impl Protocol {
         match *self {
             Protocol::Http => "http",
             #[cfg(feature = "ssl")]
-            Protocol::Https { .. } => "https"
+            Protocol::Https => "https"
         }
+    }
+}
+
+/// Protocol Handlers create servers
+pub trait ProtocolHandler<TListener: NetworkListener> {
+    /// Return the name used for this protocol in a URI's scheme part.
+    fn name(&self) -> &'static str;
+
+    /// Returns the protocol this represents
+    fn protocol(&self) -> Protocol;
+
+    /// Returns server for this protocol
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<TListener>, Error>;
+}
+
+/// Default HTTP handler
+pub struct HttpProtocolHandler;
+
+impl ProtocolHandler<HttpListener> for HttpProtocolHandler {
+    fn name(&self) -> &'static str { "http" }
+    fn protocol(&self) -> Protocol { Protocol::Http }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error>{
+        Server::http(sock_addr)
+   }
+}
+
+/// Default HTTPs handler
+#[cfg(feature = "ssl")]
+pub struct HttpsProtocolHandler<S: Ssl + Clone + Send> {
+    /// SSL context when creating connection
+    pub ssl: Option<S>
+}
+
+#[cfg(feature = "ssl")]
+impl HttpsProtocolHandler<Openssl> {
+    /// Loads certificate from a file and returns the protocol handler
+    pub fn load_cert_from_file(certificate: PathBuf, key: PathBuf) -> HttpsProtocolHandler<Openssl> {
+      use hyper::net::Openssl;
+      // This is terrible
+      // @TODO make this actually decent
+      HttpsProtocolHandler {
+        ssl: match Openssl::with_cert_and_key(certificate, key) {
+          Ok(v) => Some(v),
+          _ => None
+        }
+      }
+    }
+}
+
+#[cfg(feature = "ssl")]
+impl ProtocolHandler<HttpsListener<Openssl>> for HttpsProtocolHandler<Openssl> {
+    fn name(&self) -> &'static str { "https" }
+    fn protocol(&self) -> Protocol { Protocol::Https }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<HttpsListener<Openssl>>, Error> {
+        Server::https(sock_addr, self.ssl.clone().expect("No SSL config given"))
     }
 }
 
@@ -109,7 +169,8 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn http<A: ToSocketAddrs>(self, addr: A) -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(), Protocol::Http, None)
+        let http = & HttpProtocolHandler;
+        self.listen_with(addr, 8 * ::num_cpus::get(), http, None)
     }
 
     /// Kick off the server process using the HTTPS protocol.
@@ -130,8 +191,10 @@ impl<H: Handler> Iron<H> {
     #[cfg(feature = "ssl")]
     pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                    -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(),
-                         Protocol::Https { certificate: certificate, key: key }, None)
+
+        let https = & HttpsProtocolHandler::load_cert_from_file(certificate, key);
+
+        self.listen_with(addr, 8 * ::num_cpus::get(), https, None)
     }
 
     /// Kick off the server process with X threads.
@@ -140,38 +203,28 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
-                                         protocol: Protocol,
-                                         timeouts: Option<Timeouts>) -> HttpResult<Listening> {
+    pub fn listen_with<
+                       A: ToSocketAddrs, 
+                       ProtoHandlerListener: NetworkListener + Send + 'static>
+                         (mut self,
+                          addr: A, 
+                          threads: usize,
+                          protocol_handler: & ProtocolHandler<ProtoHandlerListener>,
+                          timeouts: Option<Timeouts>)
+    -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
+        self.protocol = Some(protocol_handler.protocol());
         self.addr = Some(sock_addr);
-        self.protocol = Some(protocol.clone());
 
-        match protocol {
-            Protocol::Http => {
-                let mut server = try!(Server::http(sock_addr));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            },
+        let timeouts = timeouts.unwrap_or_default();
 
-            #[cfg(feature = "ssl")]
-            Protocol::Https { ref certificate, ref key } => {
-                use hyper::net::Openssl;
-
-                let ssl = try!(Openssl::with_cert_and_key(certificate, key));
-                let mut server = try!(Server::https(sock_addr, ssl));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            }
-        }
+        let mut server = try!(protocol_handler.create_server(sock_addr));
+        server.keep_alive(timeouts.keep_alive);
+        server.set_read_timeout(timeouts.read);
+        server.set_write_timeout(timeouts.write);
+        server.handle_threads(self, threads)
     }
 
     /// Instantiate a new instance of `Iron`.
