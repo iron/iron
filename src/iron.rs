@@ -4,7 +4,15 @@
 use std::net::{ToSocketAddrs, SocketAddr};
 use std::time::Duration;
 #[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
 use std::path::PathBuf;
+
+#[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
+use hyper::net::{NetworkStream, Openssl, Ssl};
+#[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
+use openssl::ssl::{Ssl, SslContext, SslStream, SslMethod, SSL_VERIFY_NONE};
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
@@ -17,6 +25,8 @@ use error::HttpResult;
 
 use {Request, Handler};
 use status;
+
+pub use hyper::error::Error;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -73,12 +83,7 @@ pub enum Protocol {
     Http,
     /// HTTP/1 over SSL/TLS
     #[cfg(feature = "ssl")]
-    Https {
-        /// Path to SSL certificate file
-        certificate: PathBuf,
-        /// Path to SSL private key file
-        key: PathBuf
-    }
+    Https
 }
 
 impl Protocol {
@@ -87,8 +92,57 @@ impl Protocol {
         match *self {
             Protocol::Http => "http",
             #[cfg(feature = "ssl")]
-            Protocol::Https { .. } => "https"
+            Protocol::Https => "https"
         }
+    }
+}
+
+pub trait ProtocolHandler {
+    /// Return the name used for this protocol in a URI's scheme part.
+    fn name(&self) -> &'static str;
+
+
+    // Returns the protocol this represents
+    fn protocol(&self) -> Protocol;
+
+    /// Returns server for this protocol
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error>;
+}
+
+struct HttpProtocolHandler;
+
+impl ProtocolHandler for HttpProtocolHandler {
+    fn name(&self) -> &'static str { "http" }
+    fn protocol(&self) -> Protocol { Protocol::Http }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error>{
+        Server::http(sock_addr)
+   }
+}
+
+#[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
+struct HttpsProtocolHandler<S: Ssl<Stream=SslStream> + Clone + Send> {
+    ssl: S
+}
+
+#[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
+impl HttpsProtocolHandler<Openssl> {
+    pub fn load_cert_from_file(&self, certificate: PathBuf, key: PathBuf) {
+      use hyper::net::Openssl;
+      self.ssl = try!(Openssl::with_cert_and_key(certificate, key));
+    }
+}
+
+#[cfg(feature = "ssl")]
+#[cfg(feature = "openssl")]
+impl ProtocolHandler for HttpsProtocolHandler<Openssl> {
+    fn name(&self) -> &'static str { "https" }
+    fn protocol(&self) -> Protocol { Protocol::Https }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error> {
+        Server::https(sock_addr, self.ssl)
     }
 }
 
@@ -109,7 +163,8 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn http<A: ToSocketAddrs>(self, addr: A) -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(), Protocol::Http, None)
+        let http = & HttpProtocolHandler;
+        self.listen_with(addr, 8 * ::num_cpus::get(), http, None)
     }
 
     /// Kick off the server process using the HTTPS protocol.
@@ -128,10 +183,14 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     #[cfg(feature = "ssl")]
+    #[cfg(feature = "openssl")]
     pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                    -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(),
-                         Protocol::Https { certificate: certificate, key: key }, None)
+
+        let https = & HttpsProtocolHandler ;
+        https.load_cert_from_file(certificate, key);
+
+        self.listen_with(addr, 8 * ::num_cpus::get(), https, None)
     }
 
     /// Kick off the server process with X threads.
@@ -141,37 +200,20 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
-                                         protocol: Protocol,
+                                         protocol_handler: & ProtocolHandler,
                                          timeouts: Option<Timeouts>) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
+        self.protocol = Some(protocol_handler.protocol());
         self.addr = Some(sock_addr);
-        self.protocol = Some(protocol.clone());
 
-        match protocol {
-            Protocol::Http => {
-                let mut server = try!(Server::http(sock_addr));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            },
-
-            #[cfg(feature = "ssl")]
-            Protocol::Https { ref certificate, ref key } => {
-                use hyper::net::Openssl;
-
-                let ssl = try!(Openssl::with_cert_and_key(certificate, key));
-                let mut server = try!(Server::https(sock_addr, ssl));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            }
-        }
+        let mut server = try!(protocol_handler.create_server(sock_addr));
+        let timeouts = timeouts.unwrap_or_default();
+        server.keep_alive(timeouts.keep_alive);
+        server.set_read_timeout(timeouts.read);
+        server.set_write_timeout(timeouts.write);
+        server.handle_threads(self, threads)
     }
 
     /// Instantiate a new instance of `Iron`.

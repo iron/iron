@@ -73,6 +73,8 @@ extern crate conduit_mime_types as mime_types;
 #[macro_use]
 extern crate lazy_static;
 
+#[cfg(feature = "openssl")]
+extern crate openssl;
 // Request + Response
 pub use request::{Request, Url};
 pub use response::Response;
