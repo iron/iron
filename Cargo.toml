@@ -10,5 +10,4 @@ license = "MIT"
 
 [dependencies]
 iron = { version = "0.2", default-features = false }
-url = "0.2"
 sequence_trie = "0.0"
