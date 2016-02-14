@@ -36,7 +36,7 @@ impl<'a> Write for ResponseBody<'a> {
 }
 
 /// A trait which writes the body of an HTTP response.
-pub trait WriteBody {
+pub trait WriteBody: Send {
     /// Writes the body to the provided `ResponseBody`.
     fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()>;
 }
@@ -71,14 +71,14 @@ impl WriteBody for File {
     }
 }
 
-impl WriteBody for Box<io::Read> {
+impl WriteBody for Box<io::Read + Send> {
     fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         io::copy(self, res).map(|_| ())
     }
 }
 
 /* Needs specialization :(
-impl<R: Read> WriteBody for R {
+impl<R: Read + Send> WriteBody for R {
     fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         io::copy(self, res)
     }
@@ -98,7 +98,7 @@ pub struct Response {
     pub extensions: TypeMap,
 
     /// The body of the response.
-    pub body: Option<Box<WriteBody + Send>>
+    pub body: Option<Box<WriteBody>>
 }
 
 impl Response {
@@ -143,7 +143,7 @@ impl Response {
     }
 }
 
-fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody + Send>)
+fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>)
                    -> io::Result<()> {
     let content_type = res.headers().get::<headers::ContentType>()
                            .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),

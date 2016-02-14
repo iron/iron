@@ -52,7 +52,7 @@ impl Modifier<Response> for Mime {
     }
 }
 
-impl Modifier<Response> for Box<WriteBody + Send> {
+impl Modifier<Response> for Box<WriteBody> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.body = Some(self);
