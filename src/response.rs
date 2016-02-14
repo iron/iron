@@ -35,6 +35,9 @@ impl<'a> Write for ResponseBody<'a> {
     }
 }
 
+/// Wrapper type to set `Read`ers as response bodies
+pub struct BodyReader<R: Send>(pub R);
+
 /// A trait which writes the body of an HTTP response.
 pub trait WriteBody: Send {
     /// Writes the body to the provided `ResponseBody`.
@@ -74,6 +77,12 @@ impl WriteBody for File {
 impl WriteBody for Box<io::Read + Send> {
     fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
         io::copy(self, res).map(|_| ())
+    }
+}
+
+impl <R: io::Read + Send> WriteBody for BodyReader<R> {
+    fn write_body(&mut self, res: &mut ResponseBody) -> io::Result<()> {
+        io::copy(&mut self.0, res).map(|_| ())
     }
 }
 

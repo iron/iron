@@ -30,6 +30,7 @@
 //! [rust-modifier](https://github.com/reem/rust-modifier).
 
 use std::fs::File;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use modifier::Modifier;
@@ -39,7 +40,7 @@ use hyper::mime::Mime;
 use {status, headers, Request, Response, Set, Url};
 
 use mime_types;
-use response::WriteBody;
+use response::{WriteBody, BodyReader};
 
 lazy_static! {
     static ref MIME_TYPES: mime_types::Types = mime_types::Types::new().unwrap();
@@ -56,6 +57,13 @@ impl Modifier<Response> for Box<WriteBody> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.body = Some(self);
+    }
+}
+
+impl <R: io::Read + Send + 'static> Modifier<Response> for BodyReader<R> {
+    #[inline]
+    fn modify(self, res: &mut Response) {
+        res.body = Some(Box::new(self));
     }
 }
 
