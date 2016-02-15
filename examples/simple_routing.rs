@@ -37,11 +37,11 @@ fn main() {
     let mut router = Router::new();
 
     router.add_route("hello".to_string(), |_: &mut Request| {
-        Ok(Response::with("Hello world !"))
+        Ok(Response::with((status::Ok, "Hello world !")))
     });
 
     router.add_route("hello/again".to_string(), |_: &mut Request| {
-       Ok(Response::with("Hello again !")) 
+       Ok(Response::with((status::Ok, "Hello again !")))
     });
 
     router.add_route("error".to_string(), |_: &mut Request| {
