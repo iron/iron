@@ -82,7 +82,7 @@ pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
                      Handler, Chain};
 
 // Server
-pub use iron::{Iron, Protocol, Timeouts};
+pub use iron::*;
 
 // Extensions
 pub use typemap::TypeMap;
