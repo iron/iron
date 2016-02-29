@@ -4,6 +4,8 @@ rust:
     - nightly
 sudo: false
 script:
+    - cargo build
+    - cargo test
     - cargo build --features=ssl
     - cargo test --features=ssl
 env:
