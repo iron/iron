@@ -8,7 +8,13 @@ use std::path::PathBuf;
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
-use hyper::net::Fresh;
+use hyper::net::{Fresh, NetworkListener, HttpListener};
+
+
+#[cfg(feature = "ssl")]
+use hyper::net::{HttpsListener,NetworkStream,Ssl, Openssl};
+
+use hyper::error::Error;
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -65,6 +71,59 @@ impl Default for Timeouts {
     }
 }
 
+/// Create a Hyper Server for a protocol
+pub trait ServerFactory<T: NetworkListener> {
+    ///  Get the protocol this Server will use
+    fn protocol(&self) -> Protocol;
+
+    /// Create the hyper::server::Server
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<T>, Error>;
+}
+
+/// Default HTTP Server Factory
+pub struct HttpServerFactory;
+
+impl ServerFactory<HttpListener> for HttpServerFactory {
+    fn protocol(&self) -> Protocol {
+       Protocol::Http
+    }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server, Error> {
+        Server::http(sock_addr)
+    }
+}
+
+
+#[cfg(feature="ssl")]
+/// HttpsServerFactory
+pub struct HttpsServerFactory<S: Ssl + Clone + Send> {
+    ssl: S
+}
+
+#[cfg(feature="ssl")]
+impl HttpsServerFactory<Openssl> {
+    /// Create a new HttpsServerFactory from an hyper::net::Openssl context
+    pub fn new(ssl: Openssl) -> HttpsServerFactory<Openssl> {
+        HttpsServerFactory {
+            ssl: ssl
+        }
+    }
+}
+
+#[cfg(feature="ssl")]
+impl ServerFactory<HttpsListener<Openssl>> for HttpsServerFactory<Openssl> {
+
+    fn protocol(&self) -> Protocol {
+        Protocol::Https
+    }
+
+    fn create_server(&self, sock_addr: SocketAddr) -> Result<Server<HttpsListener<Openssl>>, Error> {
+        Server::https(sock_addr, self.ssl.clone())
+    }
+}
+
+
+
 /// Protocol used to serve content. Future versions of Iron may add new protocols
 /// to this enum. Thus you should not exhaustively match on its variants.
 #[derive(Clone)]
@@ -73,12 +132,7 @@ pub enum Protocol {
     Http,
     /// HTTP/1 over SSL/TLS
     #[cfg(feature = "ssl")]
-    Https {
-        /// Path to SSL certificate file
-        certificate: PathBuf,
-        /// Path to SSL private key file
-        key: PathBuf
-    }
+    Https
 }
 
 impl Protocol {
@@ -87,7 +141,7 @@ impl Protocol {
         match *self {
             Protocol::Http => "http",
             #[cfg(feature = "ssl")]
-            Protocol::Https { .. } => "https"
+            Protocol::Https => "https"
         }
     }
 }
@@ -109,7 +163,8 @@ impl<H: Handler> Iron<H> {
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
     pub fn http<A: ToSocketAddrs>(self, addr: A) -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(), Protocol::Http, None)
+        let http = &HttpServerFactory;
+        self.listen_with(addr, 8 * ::num_cpus::get(), http, None)
     }
 
     /// Kick off the server process using the HTTPS protocol.
@@ -130,8 +185,10 @@ impl<H: Handler> Iron<H> {
     #[cfg(feature = "ssl")]
     pub fn https<A: ToSocketAddrs>(self, addr: A, certificate: PathBuf, key: PathBuf)
                                    -> HttpResult<Listening> {
-        self.listen_with(addr, 8 * ::num_cpus::get(),
-                         Protocol::Https { certificate: certificate, key: key }, None)
+
+        let ssl = try!(Openssl::with_cert_and_key(certificate, key));
+
+        self.listen_with(addr, 8 * ::num_cpus::get(), &HttpsServerFactory::new(ssl), None)
     }
 
     /// Kick off the server process with X threads.
@@ -140,38 +197,21 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
-                                         protocol: Protocol,
+    pub fn listen_with<A: ToSocketAddrs, TListener: NetworkListener + Send + 'static>(mut self, addr: A, threads: usize,
+                                         server_factory: &ServerFactory<TListener>,
                                          timeouts: Option<Timeouts>) -> HttpResult<Listening> {
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
         self.addr = Some(sock_addr);
-        self.protocol = Some(protocol.clone());
+        self.protocol = Some(server_factory.protocol());
 
-        match protocol {
-            Protocol::Http => {
-                let mut server = try!(Server::http(sock_addr));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            },
-
-            #[cfg(feature = "ssl")]
-            Protocol::Https { ref certificate, ref key } => {
-                use hyper::net::Openssl;
-
-                let ssl = try!(Openssl::with_cert_and_key(certificate, key));
-                let mut server = try!(Server::https(sock_addr, ssl));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
-            }
-        }
+        let mut server = try!(server_factory.create_server(sock_addr));
+        let timeouts = timeouts.unwrap_or_default();
+        server.keep_alive(timeouts.keep_alive);
+        server.set_read_timeout(timeouts.read);
+        server.set_write_timeout(timeouts.write);
+        server.handle_threads(self, threads)
     }
 
     /// Instantiate a new instance of `Iron`.
