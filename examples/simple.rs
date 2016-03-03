@@ -1,8 +1,8 @@
 extern crate iron;
 extern crate router;
 
-// To build, $ cargo test
-// To use, go to http://127.0.0.1:3000/test
+// To run, $ cargo run --example simple
+// To use, go to http://localhost:3000/test and see output "test"
 
 use iron::{Iron, Request, Response, IronResult};
 use iron::status;
