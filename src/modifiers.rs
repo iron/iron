@@ -1,30 +1,47 @@
-//! Defines a series of convenience modifiers for editing Responses
+//! This module defines a series of convenience modifiers for changing
+//! Responses.
 //!
-//! Modifiers can be used to edit Responses through the owning
-//! method `set` or the mutating `set_mut`, both of which are
-//! defined in the `Set` trait.
+//! Modifiers can be used to edit `Response`s through the owning method `set`
+//! or the mutating `set_mut`, both of which are defined in the `Set` trait.
 //!
-//! Instead of having a combinatorial explosion of Response methods
-//! and constructors, this provides a series of modifiers that
-//! can be used through the `Set` trait.
+//! For Iron, the `Modifier` interface offers extensible and ergonomic response
+//! creation while avoiding the introduction of many highly specific `Response`
+//! constructors.
 //!
-//! For instance, instead of `Response::redirect` constructing a
-//! redirect response, we provide a `Redirect` modifier, so you
-//! can just do:
+//! The simplest case of a modifier is probably the one used to change the
+//! return status code:
 //!
 //! ```
 //! # use iron::prelude::*;
 //! # use iron::status;
-//! # use iron::modifiers::Redirect;
-//! # use iron::Url;
-//!
-//! let url = Url::parse("http://doc.rust-lang.org").unwrap();
-//! Response::with((status::Found, Redirect(url)));
+//! let r = Response::with(status::NotFound);
+//! assert_eq!(r.status.unwrap().to_u16(), 404);
 //! ```
 //!
-//! This is more extensible as it allows you to combine
-//! arbitrary modifiers without having a massive number of
-//! Response constructors.
+//! You can also pass in a tuple of modifiers, they will all be applied. Here's
+//! an example of a modifier 2-tuple that will change the status code and the
+//! body message:
+//!
+//! ```
+//! # use iron::prelude::*;
+//! # use iron::status;
+//! Response::with((status::ImATeapot, "I am a tea pot!"));
+//! ```
+//!
+//! There is also a `Redirect` modifier:
+//!
+//! ```
+//! # use iron::prelude::*;
+//! # use iron::status;
+//! # use iron::modifiers;
+//! # use iron::Url;
+//! let url = Url::parse("http://doc.rust-lang.org").unwrap();
+//! Response::with((status::Found, modifiers::Redirect(url)));
+//! ```
+//!
+//! The modifiers are applied depending on their type. Currently the easiest
+//! way to see how different types are used as modifiers, take a look at [the
+//! source code](https://github.com/iron/iron/blob/master/src/modifiers.rs).
 //!
 //! For more information about the modifier system, see
 //! [rust-modifier](https://github.com/reem/rust-modifier).
