@@ -20,7 +20,7 @@ name = "iron"
 path = "src/lib.rs"
 
 [features]
-default = ["ssl"]
+default = []
 ssl = ["hyper/ssl"]
 
 [dependencies]
