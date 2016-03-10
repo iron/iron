@@ -29,7 +29,7 @@ macro_rules! itry {
 }
 
 /// Unwrap the given `Option` or return a `Ok(Response::new())` with the given
-/// modifier. The default modifier is `status::BadRequest.
+/// modifier. The default modifier is `status::BadRequest`.
 #[macro_export]
 macro_rules! iexpect {
     ($option:expr) => (iexpect!($option, $crate::status::BadRequest));
