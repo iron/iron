@@ -1,7 +1,7 @@
 [package]
 
 name = "iron"
-version = "0.2.6"
+version = "0.3.0"
 description = "Extensible, Concurrency Focused Web Development in Rust."
 readme = "README.md"
 repository = "https://github.com/iron/iron"
@@ -26,7 +26,7 @@ ssl = ["hyper/ssl"]
 [dependencies]
 typemap = "0.3"
 url = "0.5"
-plugin = "0.2*"
+plugin = "0.2"
 modifier = "0.1"
 error = "0.1"
 log = "0.3"
@@ -39,4 +39,4 @@ version = "0.8"
 default-features = false
 
 [dev-dependencies]
-time = "*"
+time = "0.1"
