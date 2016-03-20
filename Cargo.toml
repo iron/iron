@@ -11,7 +11,4 @@ keywords = ["iron", "web", "http", "routing", "router"]
 
 [dependencies]
 route-recognizer = "0.1"
-
-[dependencies.iron]
-version = "0.2"
-default-features = false
+iron = ">=0.2, <0.4"
