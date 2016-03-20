@@ -2,7 +2,8 @@ extern crate iron;
 extern crate router;
 
 // To run, $ cargo run --example custom_404
-// then go to http://localhost:3000 in a web browser
+// To use, go to http://localhost:3000/foobar to see the custom 404
+// Or, go to http://localhost:3000 for a standard 200 OK
 
 use iron::{Iron, Request, Response, IronResult, AfterMiddleware, Chain};
 use iron::error::{IronError};
