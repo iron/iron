@@ -10,6 +10,5 @@ license = "MIT"
 keywords = ["iron", "web", "persistence", "sharing", "global"]
 
 [dependencies]
-iron = { version = "0.2", default-features = false }
+iron = "0.3"
 plugin = "0.2"
-
