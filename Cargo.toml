@@ -11,4 +11,4 @@ keywords = ["iron", "web", "http", "routing", "router"]
 
 [dependencies]
 route-recognizer = "0.1"
-iron = ">=0.2, <0.4"
+iron = "0.3"
