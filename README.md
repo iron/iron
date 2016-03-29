@@ -42,7 +42,7 @@ Running intercept handler, URL path: ["foo"]
 
 ## Overview
 
-mount is a part of Iron's [core bundle](https://github.com/iron/core).
+mount is a part of Iron's [core bundle](https://github.com/iron/common).
 
 - Mount a handler on a sub-path, hiding the old path from that handler.
 
@@ -58,7 +58,7 @@ git = "https://github.com/iron/mount.git"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://ironframework.io/doc/mount)
+## [Documentation](http://ironframework.io/doc/mount/)
 
 Along with the [online documentation](http://ironframework.io/doc/mount),
 you can build a local copy with `cargo doc`.
