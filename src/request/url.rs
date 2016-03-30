@@ -153,8 +153,8 @@ impl fmt::Display for Url {
         try!(self.host.fmt(formatter));
 
         // Write the port if they are not the default ports of 80 for HTTP and 443 for HTTPS.
-        if !((self.scheme == "http".to_owned() && self.port == 80) ||
-            (self.scheme == "https".to_owned() && self.port == 443)) {
+        if !((&self.scheme == "http" && self.port == 80) ||
+            (&self.scheme == "https" && self.port == 443)) {
                 try!(":".fmt(formatter));
                 try!(self.port.fmt(formatter));
         }
