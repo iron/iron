@@ -140,23 +140,17 @@ impl<H: Handler> Iron<H> {
     ///
     /// Panics if the provided address does not parse. To avoid this
     /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
-    pub fn listen_with<A: ToSocketAddrs>(mut self, addr: A, threads: usize,
+    pub fn listen_with<A: ToSocketAddrs>(self, addr: A, threads: usize,
                                          protocol: Protocol,
                                          timeouts: Option<Timeouts>) -> HttpResult<Listening> {
+
         let sock_addr = addr.to_socket_addrs()
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
-        self.addr = Some(sock_addr);
-        self.protocol = Some(protocol.clone());
-
         match protocol {
             Protocol::Http => {
-                let mut server = try!(Server::http(sock_addr));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
+                let server = try!(Server::http(sock_addr));
+                self.listen_with_server(sock_addr, threads, &protocol, server, timeouts)
             },
 
             #[cfg(feature = "ssl")]
@@ -164,14 +158,34 @@ impl<H: Handler> Iron<H> {
                 use hyper::net::Openssl;
 
                 let ssl = try!(Openssl::with_cert_and_key(certificate, key));
-                let mut server = try!(Server::https(sock_addr, ssl));
-                let timeouts = timeouts.unwrap_or_default();
-                server.keep_alive(timeouts.keep_alive);
-                server.set_read_timeout(timeouts.read);
-                server.set_write_timeout(timeouts.write);
-                server.handle_threads(self, threads)
+                let server = try!(Server::https(sock_addr, ssl));
+                self.listen_with_server(sock_addr, threads, &protocol, server, timeouts)
             }
         }
+    }
+
+    /// Kicks off the server with a preconfigured hyper Server object.
+    ///
+    /// This method gives you the ability to set up a Server with an advanced SSL context,
+    /// such as client certificate authentication.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the provided address does not parse. To avoid this
+    /// call `to_socket_addrs` yourself and pass a parsed `SocketAddr`.
+    pub fn listen_with_server<L>(mut self, sock_addr: SocketAddr, threads: usize,
+                                 protocol: &Protocol,
+                                 mut server: Server<L>,
+                                 timeouts: Option<Timeouts>) -> HttpResult<Listening>
+        where L : ::hyper::net::NetworkListener + Send + 'static {
+        self.addr = Some(sock_addr);
+        self.protocol = Some(protocol.clone());
+
+        let timeouts = timeouts.unwrap_or_default();
+        server.keep_alive(timeouts.keep_alive);
+        server.set_read_timeout(timeouts.read);
+        server.set_write_timeout(timeouts.write);
+        server.handle_threads(self, threads)
     }
 
     /// Instantiate a new instance of `Iron`.
