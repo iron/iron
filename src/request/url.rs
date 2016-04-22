@@ -152,9 +152,12 @@ impl fmt::Display for Url {
         // Write the host.
         try!(self.host.fmt(formatter));
 
-        // Write the port.
-        try!(":".fmt(formatter));
-        try!(self.port.fmt(formatter));
+        // Write the port if they are not the default ports of 80 for HTTP and 443 for HTTPS.
+        if !((&self.scheme == "http" && self.port == 80) ||
+            (&self.scheme == "https" && self.port == 443)) {
+                try!(":".fmt(formatter));
+                try!(self.port.fmt(formatter));
+        }
 
         // Write the path.
         try!(write!(formatter, "{}", PathFormatter { path: &self.path }));
@@ -229,7 +232,7 @@ mod test {
     #[test]
     fn test_formatting() {
         assert_eq!(Url::parse("http://michael@example.com/path/?q=wow").unwrap().to_string(),
-                    "http://michael@example.com:80/path/?q=wow".to_string());
+                    "http://michael@example.com/path/?q=wow".to_string());
     }
 
     #[test]
@@ -244,5 +247,17 @@ mod test {
         // Convert back to an Iron URL and check fidelity.
         let new_url = Url::from_generic_url(raw_url).unwrap();
         assert_eq!(url, new_url);
+    }
+
+    #[test]
+    fn test_https_non_default_port() {
+        let parsed = Url::parse("https://example.com:8080").unwrap().to_string();
+        assert_eq!(parsed, "https://example.com:8080/");
+    }
+
+    #[test]
+    fn test_https_default_port() {
+        let parsed = Url::parse("https://example.com:443").unwrap().to_string();
+        assert_eq!(parsed, "https://example.com/");
     }
 }
