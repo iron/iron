@@ -8,7 +8,9 @@ use std::path::PathBuf;
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
-use hyper::net::Fresh;
+use hyper::net::{NetworkListener, HttpListener, Fresh, NetworkStream};
+#[cfg(feature = "ssl")]
+use hyper::net::{HttpsListener};
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -112,6 +114,20 @@ impl<H: Handler> Iron<H> {
         self.listen_with(addr, 8 * ::num_cpus::get(), Protocol::Http, None)
     }
 
+    /// Kick off the server process using the HTTP protocol.
+    ///
+    /// Call this once to begin listening for requests on the server.
+    /// This consumes the Iron instance, but does the listening on
+    /// another task, so is not blocking.
+    ///
+    /// The thread returns a guard that will automatically join with the parent
+    /// once it is dropped, blocking until this happens.
+    ///
+    /// Defaults to a threadpool of size `8 * num_cpus`.
+    pub fn http_on<L>(self, listener: L) -> HttpResult<Listening> where HttpListener: From<L> {
+        self.listen_on(HttpListener::from(listener), 8 * ::num_cpus::get(), Protocol::Http, None)
+    }
+
     /// Kick off the server process using the HTTPS protocol.
     ///
     /// Call this once to begin listening for requests on the server.
@@ -134,6 +150,23 @@ impl<H: Handler> Iron<H> {
                          Protocol::Https { certificate: certificate, key: key }, None)
     }
 
+    /// Kick off the server process using the HTTPS protocol.
+    ///
+    /// Call this once to begin listening for requests on the server.
+    /// This consumes the Iron instance, but does the listening on
+    /// another task, so is not blocking.
+    ///
+    /// The thread returns a guard that will automatically join with the parent
+    /// once it is dropped, blocking until this happens.
+    ///
+    /// Defaults to a threadpool of size `8 * num_cpus`.
+    #[cfg(feature = "ssl")]
+    pub fn https_on<L>(self, listener: L, certificate: PathBuf, key: PathBuf)
+                                   -> HttpResult<Listening> where HttpListener: From<L> {
+        self.listen_on(HttpListener::from(listener), 8 * ::num_cpus::get(),
+                         Protocol::Https { certificate: certificate, key: key }, None)
+    }
+
     /// Kick off the server process with X threads.
     ///
     /// ## Panics
@@ -147,11 +180,24 @@ impl<H: Handler> Iron<H> {
             .ok().and_then(|mut addrs| addrs.next()).expect("Could not parse socket address.");
 
         self.addr = Some(sock_addr);
+        let listener = try!(HttpListener::new(sock_addr));
+        self.listen(listener, threads, protocol, timeouts)
+    }
+
+    /// Kick off the server process with X threads.
+    pub fn listen_on(mut self, mut listener: HttpListener, threads: usize, protocol: Protocol,
+                                         timeouts: Option<Timeouts>) -> HttpResult<Listening> {
+        self.addr = Some(listener.local_addr().unwrap());
+        self.listen(listener, threads, protocol, timeouts)
+    }
+
+    fn listen(mut self, listener: HttpListener, threads: usize, protocol: Protocol,
+                                         timeouts: Option<Timeouts>) -> HttpResult<Listening> {
         self.protocol = Some(protocol.clone());
 
         match protocol {
             Protocol::Http => {
-                let mut server = try!(Server::http(sock_addr));
+                let mut server = Server::new(listener);
                 let timeouts = timeouts.unwrap_or_default();
                 server.keep_alive(timeouts.keep_alive);
                 server.set_read_timeout(timeouts.read);
@@ -164,7 +210,8 @@ impl<H: Handler> Iron<H> {
                 use hyper::net::Openssl;
 
                 let ssl = try!(Openssl::with_cert_and_key(certificate, key));
-                let mut server = try!(Server::https(sock_addr, ssl));
+                let listener = HttpsListener::with_listener(listener, ssl);
+                let mut server = Server::new(listener);
                 let timeouts = timeouts.unwrap_or_default();
                 server.keep_alive(timeouts.keep_alive);
                 server.set_read_timeout(timeouts.read);
