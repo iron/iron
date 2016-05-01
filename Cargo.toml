@@ -11,4 +11,4 @@ license = "MIT"
 [dependencies]
 iron = { version = "0.3", default-features = false }
 time = "0.1"
-term = "0.2"
+term = "0.4"
