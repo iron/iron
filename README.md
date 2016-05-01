@@ -1,7 +1,9 @@
-logger [![Build Status](https://secure.travis-ci.org/iron/logger.png?branch=master)](https://travis-ci.org/iron/logger)
+logger
 ====
 
 > [Morgan](https://github.com/expressjs/morgan)-inspired logging middleware for the [Iron](https://github.com/iron/iron) web framework.
+
+This is a forked edition of original [logger](https://github.com/iron/logger)
 
 ## Example
 
@@ -33,10 +35,9 @@ fn no_op_handler(_: &mut Request) -> IronResult<Response> {
 
 ## Overview
 
-Logger is a part of Iron's [core bundle](https://github.com/iron/core).
+Logger prints request and response information to the configured log, using either a default format or a custom format string.
 
-- Logger prints request and response information to the terminal, using either a default format or a custom format string.
-- Format strings can specify fields to be logged as well as ANSI terminal colors and attributes.
+Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported).
 
 ## Installation
 
@@ -45,22 +46,14 @@ If you're using a `Cargo.toml` to manage dependencies, just add logger to the to
 ```toml
 [dependencies.logger]
 
-git = "https://github.com/iron/logger.git"
+git = "https://github.com/alexander-irbis/logger.git"
 ```
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://docs.ironframework.io/logger)
+## [Documentation](http://docs.ironframework.io/logger) (unmaintained).
 
-Along with the [online documentation](http://docs.ironframework.io/logger),
-you can build a local copy with `make doc`.
+You can build a local copy with `make doc`.
 
 ## [Examples](/examples)
-
-## Get Help
-
-One of us ([@reem](https://github.com/reem/), [@zzmp](https://github.com/zzmp/),
-[@theptrk](https://github.com/theptrk/), [@mcreinhard](https://github.com/mcreinhard))
-is usually on `#iron` on the mozilla irc. Come say hi and ask any questions you might have.
-We are also usually on `#rust` and `#rust-webdev`.
 

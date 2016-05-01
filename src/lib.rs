@@ -3,19 +3,13 @@
 //! Request logging middleware for Iron
 
 extern crate iron;
+#[macro_use] extern crate log;
 extern crate time;
-extern crate term;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, status};
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response};
 use iron::typemap::Key;
-use term::{StdoutTerminal, color, stdout};
-
-use std::io;
-use std::io::Write;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime};
-use format::FormatColor::{ConstantColor, FunctionColor};
-use format::FormatAttr::{ConstantAttrs, FunctionAttrs};
 use format::{Format, FormatText};
 
 pub mod format;
@@ -63,15 +57,6 @@ impl Logger {
         let Format(format) = self.format.clone().unwrap_or_default();
 
         {
-            macro_rules! tryio {
-                ($expr:expr) => (match $expr {
-                    std::result::Result::Ok(val) => val,
-                    std::result::Result::Err(err) => {
-                        return Err(IronError::new(err, status::InternalServerError))
-                    }
-                })
-            }
-
             let render = |text: &FormatText| {
                 match *text {
                     Str(ref string) => string.clone(),
@@ -82,85 +67,10 @@ impl Logger {
                 }
             };
 
-            let log = |w: &mut LogWriter| -> IronResult<()> {
-                for unit in format.iter() {
-                    let c = match unit.color {
-                        ConstantColor(color) => color,
-                        FunctionColor(f) => f(req, res)
-                    };
-                    let fn_attrs;
-                    let ref attrs = match unit.attrs {
-                        ConstantAttrs(ref attrs) => attrs,
-                        FunctionAttrs(f) => {
-                            fn_attrs = f(req, res);
-                            &fn_attrs
-                        }
-                    };
-                    tryio!(w.write_item(render(&unit.text), c, attrs));
-                }
-                tryio!(w.new_line());
-                Ok(())
-            };
-
-            match stdout() {
-                Some(terminal) => {
-                    try!(log(&mut TermWriter::new(terminal)));
-                }
-                None => {
-                    try!(log(&mut io::stdout()));
-                }
-            };
+            let lg = format.iter().map(|unit| render(&unit.text)).collect::<Vec<String>>().join("");
+            info!(target: "cms::access", "{}", lg);
         }
 
-        Ok(())
-    }
-}
-
-trait LogWriter {
-    fn write_item(&mut self, text: String, color: Option<color::Color>, attrs: &Vec<term::Attr>) -> io::Result<()>;
-    fn new_line(&mut self) -> io::Result<()>;
-}
-
-struct TermWriter {
-    term: Box<StdoutTerminal>
-}
-
-impl TermWriter {
-    fn new(term: Box<StdoutTerminal>) -> TermWriter {
-        TermWriter {
-            term: term
-        }
-    }
-}
-
-impl LogWriter for TermWriter {
-    fn write_item(&mut self, text: String, color: Option<color::Color>, attrs: &Vec<term::Attr>) -> io::Result<()> {
-        match color {
-            Some(c) => { try!(self.term.fg(c)); }
-            None => {},
-        }
-        for &attr in attrs.iter() {
-            try!(self.term.attr(attr));
-        }
-        try!(write!(self.term, "{}", text));
-        try!(self.term.reset());
-        Ok(())
-    }
-
-    fn new_line(&mut self) -> io::Result<()> {
-        try!(writeln!(self.term, ""));
-        Ok(())
-    }
-}
-
-impl<T: Write> LogWriter for T {
-    fn write_item(&mut self, text: String, _: Option<color::Color>, _: &Vec<term::Attr>) -> io::Result<()> {
-        try!(write!(self, "{}", text));
-        Ok(())
-    }
-
-    fn new_line(&mut self) -> io::Result<()> {
-        try!(writeln!(self, ""));
         Ok(())
     }
 }

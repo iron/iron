@@ -1,14 +1,14 @@
 [package]
 
 name = "logger"
-version = "0.0.3"
-authors = ["Jonathan Reem <jonathan.reem@gmail.com>", "Michael Reinhard <mcreinhard@gmail.com>"]
+version = "0.0.9"
+authors = ["Alexander Irbis <irbis.labs@gmail.com>", "Jonathan Reem <jonathan.reem@gmail.com>", "Michael Reinhard <mcreinhard@gmail.com>"]
 description = "Logging middleware for the Iron framework."
-repository = "https://github.com/iron/logger"
+repository = "https://github.com/alexander-irbis/logger"
 keywords = ["iron", "web", "logger", "log", "timer"]
 license = "MIT"
 
 [dependencies]
 iron = { version = "0.3", default-features = false }
+log = "*"
 time = "0.1"
-term = "0.4"
