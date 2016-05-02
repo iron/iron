@@ -3,7 +3,7 @@
 use url::{Host, RelativeSchemeData};
 use url::{whatwg_scheme_type_mapper};
 use url::{self, SchemeData, SchemeType};
-use url::format::{PathFormatter, UserInfoFormatter};
+use url::format::PathFormatter;
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
@@ -143,11 +143,17 @@ impl fmt::Display for Url {
         try!(self.scheme.fmt(formatter));
         try!("://".fmt(formatter));
 
+        let username = self.username.as_ref().map_or("", |s| &**s);
+        let password = self.password.as_ref().map(|s| &**s);
         // Write the user info.
-        try!(write!(formatter, "{}", UserInfoFormatter {
-            username: self.username.as_ref().map_or("", |s| &**s),
-            password: self.password.as_ref().map(|s| &**s)
-        }));
+        if !username.is_empty() || password.is_some() {
+            try!(formatter.write_str(username));
+            if let Some(password) = password {
+                try!(formatter.write_str(":"));
+                try!(formatter.write_str(password));
+            }
+            try!(formatter.write_str("@"));
+        }
 
         // Write the host.
         try!(self.host.fmt(formatter));
