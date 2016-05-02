@@ -3,7 +3,6 @@
 use url::{Host, RelativeSchemeData};
 use url::{whatwg_scheme_type_mapper};
 use url::{self, SchemeData, SchemeType};
-use url::format::PathFormatter;
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
@@ -166,7 +165,14 @@ impl fmt::Display for Url {
         }
 
         // Write the path.
-        try!(write!(formatter, "{}", PathFormatter { path: &self.path }));
+        if self.path.is_empty() {
+            try!(formatter.write_str("/"));
+        } else {
+            for path_part in self.path.iter() {
+                try!("/".fmt(formatter));
+                try!(path_part.fmt(formatter));
+            }
+        }
 
         // Write the query.
         match self.query {
