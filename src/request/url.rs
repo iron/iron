@@ -1,8 +1,6 @@
 //! HTTP/HTTPS URL type for Iron.
 
-use url::{Host, RelativeSchemeData};
-use url::{whatwg_scheme_type_mapper};
-use url::{self, SchemeData, SchemeType};
+use url::{self, Host};
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
@@ -69,70 +67,47 @@ impl Url {
     /// Create a `Url` from a `rust-url` `Url`.
     pub fn from_generic_url(raw_url: url::Url) -> Result<Url, String> {
         // Create an Iron URL by extracting the special scheme data.
-        match raw_url.scheme_data {
-            SchemeData::Relative(data) => {
+        match raw_url.cannot_be_a_base() {
+            false => {
                 // Extract the port as a 16-bit unsigned integer.
-                let port: u16 = match data.port {
-                    // If explicitly defined, unwrap it.
+                let port: u16 = match raw_url.port_or_known_default() {
+                    // If explicitly defined or has a known default, unwrap it.
                     Some(port) => port,
 
                     // Otherwise, use the scheme's default port.
-                    None => {
-                        match whatwg_scheme_type_mapper(&raw_url.scheme) {
-                            SchemeType::Relative(port) => port,
-                            _ => return Err(format!("Invalid special scheme: `{}`",
-                                                    raw_url.scheme))
-                        }
-                    }
+                    None => return Err(format!("Invalid special scheme: `{}`",
+                                                    raw_url.scheme())),
                 };
-
                 // Map empty usernames to None.
-                let username = match &*data.username {
+                let username = match raw_url.username() {
                     "" => None,
-                    _ => Some(data.username)
+                    _ => Some(raw_url.username())
                 };
-
                 // Map empty passwords to None.
-                let password = match data.password {
+                let password = match raw_url.password() {
                     None => None,
                     Some(ref x) if x.is_empty() => None,
                     Some(password) => Some(password)
                 };
-
                 Ok(Url {
-                    scheme: raw_url.scheme,
-                    host: data.host,
+                    scheme: raw_url.scheme().to_string(),
+                    // `unwrap` is safe here because urls that cannot be a base don't have a host
+                    host: raw_url.host().unwrap().to_owned(),
                     port: port,
-                    path: data.path,
-                    username: username,
-                    password: password,
-                    query: raw_url.query,
-                    fragment: raw_url.fragment
+                    path: raw_url.path_segments().into_iter().flat_map(|x| x).map(|x| x.to_string()).collect(),
+                    username: username.map(|s| s.to_string()),
+                    password: password.map(|s| s.to_string()),
+                    query: raw_url.query().map(|s| s.to_string()),
+                    fragment: raw_url.fragment().map(|s| s.to_string()),
                 })
             },
-            _ => Err(format!("Not a special scheme: `{}`", raw_url.scheme))
+            true => Err(format!("Not a special scheme: `{}`", raw_url.scheme()))
         }
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
     pub fn into_generic_url(self) -> url::Url {
-        let default_port = whatwg_scheme_type_mapper(&self.scheme).default_port();
-
-        url::Url {
-            scheme: self.scheme,
-            scheme_data: SchemeData::Relative(
-                RelativeSchemeData {
-                    username: self.username.unwrap_or(String::new()),
-                    password: self.password,
-                    host: self.host,
-                    port: if Some(self.port) != default_port { Some(self.port) } else { None },
-                    default_port: default_port,
-                    path: self.path
-                }
-            ),
-            query: self.query,
-            fragment: self.fragment
-        }
+        url::Url::parse(&self.to_string()).unwrap()
     }
 }
 
