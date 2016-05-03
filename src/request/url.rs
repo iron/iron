@@ -95,11 +95,11 @@ impl Url {
                     host: raw_url.host().unwrap().to_owned(),
                     port: port,
                     // `unwrap` is safe here because urls that can be a base will have `Some`.
-                    path: raw_url.path_segments().unwrap().map(|x| x.to_string()).collect(),
-                    username: username.map(|s| s.to_string()),
-                    password: password.map(|s| s.to_string()),
-                    query: raw_url.query().map(|s| s.to_string()),
-                    fragment: raw_url.fragment().map(|s| s.to_string()),
+                    path: raw_url.path_segments().unwrap().map(str::to_string).collect(),
+                    username: username.map(str::to_string),
+                    password: password.map(str::to_string),
+                    query: raw_url.query().map(str::to_string),
+                    fragment: raw_url.fragment().map(str::to_string),
                 })
             },
             true => Err(format!("Not a special scheme: `{}`", raw_url.scheme()))
