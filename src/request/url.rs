@@ -67,42 +67,41 @@ impl Url {
     /// Create a `Url` from a `rust-url` `Url`.
     pub fn from_generic_url(raw_url: url::Url) -> Result<Url, String> {
         // Create an Iron URL by extracting the special scheme data.
-        match raw_url.cannot_be_a_base() {
-            false => {
-                // Extract the port as a 16-bit unsigned integer.
-                let port: u16 = match raw_url.port_or_known_default() {
-                    // If explicitly defined or has a known default, unwrap it.
-                    Some(port) => port,
+        if raw_url.cannot_be_a_base() {
+            Err(format!("Not a special scheme: `{}`", raw_url.scheme()))
+        } else {
+            // Extract the port as a 16-bit unsigned integer.
+            let port: u16 = match raw_url.port_or_known_default() {
+                // If explicitly defined or has a known default, unwrap it.
+                Some(port) => port,
 
-                    // Otherwise, use the scheme's default port.
-                    None => return Err(format!("Invalid special scheme: `{}`",
-                                                    raw_url.scheme())),
-                };
-                // Map empty usernames to None.
-                let username = match raw_url.username() {
-                    "" => None,
-                    _ => Some(raw_url.username())
-                };
-                // Map empty passwords to None.
-                let password = match raw_url.password() {
-                    None => None,
-                    Some(ref x) if x.is_empty() => None,
-                    Some(password) => Some(password)
-                };
-                Ok(Url {
-                    scheme: raw_url.scheme().to_string(),
-                    // `unwrap` is safe here because urls that cannot be a base don't have a host
-                    host: raw_url.host().unwrap().to_owned(),
-                    port: port,
-                    // `unwrap` is safe here because urls that can be a base will have `Some`.
-                    path: raw_url.path_segments().unwrap().map(str::to_string).collect(),
-                    username: username.map(str::to_string),
-                    password: password.map(str::to_string),
-                    query: raw_url.query().map(str::to_string),
-                    fragment: raw_url.fragment().map(str::to_string),
-                })
-            },
-            true => Err(format!("Not a special scheme: `{}`", raw_url.scheme()))
+                // Otherwise, use the scheme's default port.
+                None => return Err(format!("Invalid special scheme: `{}`",
+                                                raw_url.scheme())),
+            };
+            // Map empty usernames to None.
+            let username = match raw_url.username() {
+                "" => None,
+                _ => Some(raw_url.username())
+            };
+            // Map empty passwords to None.
+            let password = match raw_url.password() {
+                None => None,
+                Some(ref x) if x.is_empty() => None,
+                Some(password) => Some(password)
+            };
+            Ok(Url {
+                scheme: raw_url.scheme().to_string(),
+                // `unwrap` is safe here because urls that cannot be a base don't have a host
+                host: raw_url.host().unwrap().to_owned(),
+                port: port,
+                // `unwrap` is safe here because urls that can be a base will have `Some`.
+                path: raw_url.path_segments().unwrap().map(str::to_string).collect(),
+                username: username.map(str::to_string),
+                password: password.map(str::to_string),
+                query: raw_url.query().map(str::to_string),
+                fragment: raw_url.fragment().map(str::to_string),
+            })
         }
     }
 
