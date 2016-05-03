@@ -94,7 +94,8 @@ impl Url {
                     // `unwrap` is safe here because urls that cannot be a base don't have a host
                     host: raw_url.host().unwrap().to_owned(),
                     port: port,
-                    path: raw_url.path_segments().into_iter().flat_map(|x| x).map(|x| x.to_string()).collect(),
+                    // `unwrap` is safe here because urls that can be a base will have `Some`.
+                    path: raw_url.path_segments().unwrap().map(|x| x.to_string()).collect(),
                     username: username.map(|s| s.to_string()),
                     password: password.map(|s| s.to_string()),
                     query: raw_url.query().map(|s| s.to_string()),
