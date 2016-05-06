@@ -45,7 +45,10 @@ pub struct Url {
     ///
     /// `None` if the `#` character was not part of the input.
     /// Otherwise, a possibly empty, percent encoded string.
-    pub fragment: Option<String>
+    pub fragment: Option<String>,
+
+    /// The generic rust-url that corresponds to this Url
+    generic_url: url::Url,
 }
 
 impl Url {
@@ -82,13 +85,13 @@ impl Url {
             // Map empty usernames to None.
             let username = match raw_url.username() {
                 "" => None,
-                _ => Some(raw_url.username())
+                _ => Some(raw_url.username().to_string())
             };
             // Map empty passwords to None.
             let password = match raw_url.password() {
                 None => None,
                 Some(ref x) if x.is_empty() => None,
-                Some(password) => Some(password)
+                Some(password) => Some(password.to_string())
             };
             Ok(Url {
                 scheme: raw_url.scheme().to_string(),
@@ -97,17 +100,18 @@ impl Url {
                 port: port,
                 // `unwrap` is safe here because urls that can be a base will have `Some`.
                 path: raw_url.path_segments().unwrap().map(str::to_string).collect(),
-                username: username.map(str::to_string),
-                password: password.map(str::to_string),
+                username: username,
+                password: password,
                 query: raw_url.query().map(str::to_string),
                 fragment: raw_url.fragment().map(str::to_string),
+                generic_url: raw_url,
             })
         }
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
     pub fn into_generic_url(self) -> url::Url {
-        url::Url::parse(&self.to_string()).unwrap()
+        self.generic_url
     }
 }
 
