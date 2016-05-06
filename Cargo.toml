@@ -25,7 +25,7 @@ ssl = ["hyper/ssl"]
 
 [dependencies]
 typemap = "0.3"
-url = "1.0"
+url = "1.1"
 plugin = "0.2"
 modifier = "0.1"
 error = "0.1"
