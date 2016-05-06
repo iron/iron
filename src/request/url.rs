@@ -6,47 +6,6 @@ use std::fmt;
 /// HTTP/HTTPS URL type for Iron.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Url {
-    /// The lower-cased scheme of the URL, typically "http" or "https".
-    pub scheme: String,
-
-    /// The host field of the URL, probably a domain.
-    pub host: Host,
-
-    /// The connection port.
-    pub port: u16,
-
-    /// The URL path, the resource to be accessed.
-    ///
-    /// A *non-empty* vector encoding the parts of the URL path.
-    /// Empty entries of `""` correspond to trailing slashes.
-    pub path: Vec<String>,
-
-    /// The URL username field, from the userinfo section of the URL.
-    ///
-    /// `None` if the `@` character was not part of the input OR
-    /// if a blank username was provided.
-    /// Otherwise, a non-empty string.
-    pub username: Option<String>,
-
-    /// The URL password field, from the userinfo section of the URL.
-    ///
-    /// `None` if the `@` character was not part of the input OR
-    /// if a blank password was provided.
-    /// Otherwise, a non-empty string.
-    pub password: Option<String>,
-
-    /// The URL query string.
-    ///
-    /// `None` if the `?` character was not part of the input.
-    /// Otherwise, a possibly empty, percent encoded string.
-    pub query: Option<String>,
-
-    /// The URL fragment.
-    ///
-    /// `None` if the `#` character was not part of the input.
-    /// Otherwise, a possibly empty, percent encoded string.
-    pub fragment: Option<String>,
-
     /// The generic rust-url that corresponds to this Url
     generic_url: url::Url,
 }
@@ -69,41 +28,14 @@ impl Url {
 
     /// Create a `Url` from a `rust-url` `Url`.
     pub fn from_generic_url(raw_url: url::Url) -> Result<Url, String> {
-        // Create an Iron URL by extracting the special scheme data.
+        // Create an Iron URL by verifying the `rust-url` `Url` is a special
+        // scheme that Iron supports.
         if raw_url.cannot_be_a_base() {
             Err(format!("Not a special scheme: `{}`", raw_url.scheme()))
+        } else if raw_url.port_or_known_default().is_none() {
+            Err(format!("Invalid special scheme: `{}`", raw_url.scheme()))
         } else {
-            // Extract the port as a 16-bit unsigned integer.
-            let port: u16 = match raw_url.port_or_known_default() {
-                // If explicitly defined or has a known default, unwrap it.
-                Some(port) => port,
-
-                // Otherwise, use the scheme's default port.
-                None => return Err(format!("Invalid special scheme: `{}`",
-                                                raw_url.scheme())),
-            };
-            // Map empty usernames to None.
-            let username = match raw_url.username() {
-                "" => None,
-                _ => Some(raw_url.username().to_string())
-            };
-            // Map empty passwords to None.
-            let password = match raw_url.password() {
-                None => None,
-                Some(ref x) if x.is_empty() => None,
-                Some(password) => Some(password.to_string())
-            };
             Ok(Url {
-                scheme: raw_url.scheme().to_string(),
-                // `unwrap` is safe here because urls that cannot be a base don't have a host
-                host: raw_url.host().unwrap().to_owned(),
-                port: port,
-                // `unwrap` is safe here because urls that can be a base will have `Some`.
-                path: raw_url.path_segments().unwrap().map(str::to_string).collect(),
-                username: username,
-                password: password,
-                query: raw_url.query().map(str::to_string),
-                fragment: raw_url.fragment().map(str::to_string),
                 generic_url: raw_url,
             })
         }
@@ -112,6 +44,76 @@ impl Url {
     /// Create a `rust-url` `Url` from a `Url`.
     pub fn into_generic_url(self) -> url::Url {
         self.generic_url
+    }
+
+    /// The lower-cased scheme of the URL, typically "http" or "https".
+    pub fn scheme(&self) -> String {
+        self.generic_url.scheme().to_string()
+    }
+
+    /// The host field of the URL, probably a domain.
+    pub fn host(&self) -> Host {
+        // `unwrap` is safe here because urls that cannot be a base don't have a host
+        self.generic_url.host().unwrap().to_owned()
+    }
+
+    /// The connection port.
+    pub fn port(&self) -> u16 {
+        // `unwrap` is safe here because we checked `port_or_known_default`
+        // in `from_generic_url`.
+        self.generic_url.port_or_known_default().unwrap()
+    }
+
+    /// The URL path, the resource to be accessed.
+    ///
+    /// A *non-empty* vector encoding the parts of the URL path.
+    /// Empty entries of `""` correspond to trailing slashes.
+    pub fn path(&self) -> Vec<String> {
+        // `unwrap` is safe here because urls that can be a base will have `Some`.
+        self.generic_url.path_segments().unwrap().map(str::to_string).collect()
+    }
+
+    /// The URL username field, from the userinfo section of the URL.
+    ///
+    /// `None` if the `@` character was not part of the input OR
+    /// if a blank username was provided.
+    /// Otherwise, a non-empty string.
+    pub fn username(&self) -> Option<String> {
+        // Map empty usernames to None.
+        match self.generic_url.username() {
+            "" => None,
+            username => Some(username.to_string())
+        }
+    }
+
+    /// The URL password field, from the userinfo section of the URL.
+    ///
+    /// `None` if the `@` character was not part of the input OR
+    /// if a blank password was provided.
+    /// Otherwise, a non-empty string.
+    pub fn password(&self) -> Option<String> {
+        // Map empty passwords to None.
+        match self.generic_url.password() {
+            None => None,
+            Some(ref x) if x.is_empty() => None,
+            Some(password) => Some(password.to_string())
+        }
+    }
+
+    /// The URL query string.
+    ///
+    /// `None` if the `?` character was not part of the input.
+    /// Otherwise, a possibly empty, percent encoded string.
+    pub fn query(&self) -> Option<String> {
+        self.generic_url.query().map(str::to_string)
+    }
+
+    /// The URL fragment.
+    ///
+    /// `None` if the `#` character was not part of the input.
+    /// Otherwise, a possibly empty, percent encoded string.
+    pub fn fragment(&self) -> Option<String> {
+        self.generic_url.fragment().map(str::to_string)
     }
 }
 
@@ -128,42 +130,42 @@ mod test {
 
     #[test]
     fn test_default_port() {
-        assert_eq!(Url::parse("http://example.com/wow").unwrap().port, 80u16);
-        assert_eq!(Url::parse("https://example.com/wow").unwrap().port, 443u16);
+        assert_eq!(Url::parse("http://example.com/wow").unwrap().port(), 80u16);
+        assert_eq!(Url::parse("https://example.com/wow").unwrap().port(), 443u16);
     }
 
     #[test]
     fn test_explicit_port() {
-        assert_eq!(Url::parse("http://localhost:3097").unwrap().port, 3097u16);
+        assert_eq!(Url::parse("http://localhost:3097").unwrap().port(), 3097u16);
     }
 
     #[test]
     fn test_empty_username() {
-        assert!(Url::parse("http://@example.com").unwrap().username.is_none());
-        assert!(Url::parse("http://:password@example.com").unwrap().username.is_none());
+        assert!(Url::parse("http://@example.com").unwrap().username().is_none());
+        assert!(Url::parse("http://:password@example.com").unwrap().username().is_none());
     }
 
     #[test]
     fn test_not_empty_username() {
-        let user = Url::parse("http://john:pass@example.com").unwrap().username;
+        let user = Url::parse("http://john:pass@example.com").unwrap().username();
         assert_eq!(user.unwrap(), "john");
 
-        let user = Url::parse("http://john:@example.com").unwrap().username;
+        let user = Url::parse("http://john:@example.com").unwrap().username();
         assert_eq!(user.unwrap(), "john");
     }
 
     #[test]
     fn test_empty_password() {
-        assert!(Url::parse("http://michael@example.com").unwrap().password.is_none());
-        assert!(Url::parse("http://:@example.com").unwrap().password.is_none());
+        assert!(Url::parse("http://michael@example.com").unwrap().password().is_none());
+        assert!(Url::parse("http://:@example.com").unwrap().password().is_none());
     }
 
     #[test]
     fn test_not_empty_password() {
-        let pass = Url::parse("http://michael:pass@example.com").unwrap().password;
+        let pass = Url::parse("http://michael:pass@example.com").unwrap().password();
         assert_eq!(pass.unwrap(), "pass");
 
-        let pass = Url::parse("http://:pass@example.com").unwrap().password;
+        let pass = Url::parse("http://:pass@example.com").unwrap().password();
         assert_eq!(pass.unwrap(), "pass");
     }
 
