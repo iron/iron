@@ -187,7 +187,7 @@ impl Modifier<Response> for Redirect {
 }
 
 /// A modifier for creating redirect responses.
-pub struct RedirectRaw(String);
+pub struct RedirectRaw(pub String);
 
 impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
