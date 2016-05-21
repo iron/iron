@@ -47,14 +47,14 @@ impl Url {
     }
 
     /// The lower-cased scheme of the URL, typically "http" or "https".
-    pub fn scheme(&self) -> String {
-        self.generic_url.scheme().to_string()
+    pub fn scheme(&self) -> &str {
+        self.generic_url.scheme()
     }
 
     /// The host field of the URL, probably a domain.
-    pub fn host(&self) -> Host {
+    pub fn host(&self) -> Host<&str> {
         // `unwrap` is safe here because urls that cannot be a base don't have a host
-        self.generic_url.host().unwrap().to_owned()
+        self.generic_url.host().unwrap()
     }
 
     /// The connection port.
@@ -68,9 +68,9 @@ impl Url {
     ///
     /// A *non-empty* vector encoding the parts of the URL path.
     /// Empty entries of `""` correspond to trailing slashes.
-    pub fn path(&self) -> Vec<String> {
+    pub fn path(&self) -> Vec<&str> {
         // `unwrap` is safe here because urls that can be a base will have `Some`.
-        self.generic_url.path_segments().unwrap().map(str::to_string).collect()
+        self.generic_url.path_segments().unwrap().collect()
     }
 
     /// The URL username field, from the userinfo section of the URL.
@@ -78,11 +78,11 @@ impl Url {
     /// `None` if the `@` character was not part of the input OR
     /// if a blank username was provided.
     /// Otherwise, a non-empty string.
-    pub fn username(&self) -> Option<String> {
+    pub fn username(&self) -> Option<&str> {
         // Map empty usernames to None.
         match self.generic_url.username() {
             "" => None,
-            username => Some(username.to_string())
+            username => Some(username)
         }
     }
 
@@ -91,12 +91,12 @@ impl Url {
     /// `None` if the `@` character was not part of the input OR
     /// if a blank password was provided.
     /// Otherwise, a non-empty string.
-    pub fn password(&self) -> Option<String> {
+    pub fn password(&self) -> Option<&str> {
         // Map empty passwords to None.
         match self.generic_url.password() {
             None => None,
             Some(ref x) if x.is_empty() => None,
-            Some(password) => Some(password.to_string())
+            Some(password) => Some(password)
         }
     }
 
@@ -104,16 +104,16 @@ impl Url {
     ///
     /// `None` if the `?` character was not part of the input.
     /// Otherwise, a possibly empty, percent encoded string.
-    pub fn query(&self) -> Option<String> {
-        self.generic_url.query().map(str::to_string)
+    pub fn query(&self) -> Option<&str> {
+        self.generic_url.query()
     }
 
     /// The URL fragment.
     ///
     /// `None` if the `#` character was not part of the input.
     /// Otherwise, a possibly empty, percent encoded string.
-    pub fn fragment(&self) -> Option<String> {
-        self.generic_url.fragment().map(str::to_string)
+    pub fn fragment(&self) -> Option<&str> {
+        self.generic_url.fragment()
     }
 }
 
@@ -147,11 +147,11 @@ mod test {
 
     #[test]
     fn test_not_empty_username() {
-        let user = Url::parse("http://john:pass@example.com").unwrap().username();
-        assert_eq!(user.unwrap(), "john");
+        let url = Url::parse("http://john:pass@example.com").unwrap();
+        assert_eq!(url.username().unwrap(), "john");
 
-        let user = Url::parse("http://john:@example.com").unwrap().username();
-        assert_eq!(user.unwrap(), "john");
+        let url = Url::parse("http://john:@example.com").unwrap();
+        assert_eq!(url.username().unwrap(), "john");
     }
 
     #[test]
@@ -162,11 +162,11 @@ mod test {
 
     #[test]
     fn test_not_empty_password() {
-        let pass = Url::parse("http://michael:pass@example.com").unwrap().password();
-        assert_eq!(pass.unwrap(), "pass");
+        let url = Url::parse("http://michael:pass@example.com").unwrap();
+        assert_eq!(url.password().unwrap(), "pass");
 
-        let pass = Url::parse("http://:pass@example.com").unwrap().password();
-        assert_eq!(pass.unwrap(), "pass");
+        let url = Url::parse("http://:pass@example.com").unwrap();
+        assert_eq!(url.password().unwrap(), "pass");
     }
 
     #[test]
