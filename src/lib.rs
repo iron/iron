@@ -3,7 +3,6 @@
 //! Request logging middleware for Iron
 
 extern crate iron;
-extern crate time;
 extern crate term;
 
 use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response, status};
@@ -12,6 +11,7 @@ use term::{StdoutTerminal, color, stdout};
 
 use std::io;
 use std::io::Write;
+use std::time;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime};
 use format::FormatColor::{ConstantColor, FunctionColor};
@@ -48,18 +48,18 @@ impl Logger {
 }
 
 struct StartTime;
-impl Key for StartTime { type Value = u64; }
+impl Key for StartTime { type Value = time::Instant; }
 
 impl Logger {
     fn initialise(&self, req: &mut Request) {
-        req.extensions.insert::<StartTime>(time::precise_time_ns());
+        req.extensions.insert::<StartTime>(time::Instant::now());
     }
 
     fn log(&self, req: &mut Request, res: &Response) -> IronResult<()> {
-        let exit_time = time::precise_time_ns();
         let entry_time = *req.extensions.get::<StartTime>().unwrap();
 
-        let response_time_ms = (exit_time - entry_time) as f64 / 1000000.0;
+        let response_time = entry_time.elapsed();
+        let response_time_ms = (response_time.as_secs() * 1000) as f64 + (response_time.subsec_nanos() as f64) / 1000000.0;
         let Format(format) = self.format.clone().unwrap_or_default();
 
         {
