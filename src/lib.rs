@@ -13,7 +13,7 @@ use std::io;
 use std::io::Write;
 use std::time;
 
-use format::FormatText::{Str, Method, URI, Status, ResponseTime};
+use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr};
 use format::FormatColor::{ConstantColor, FunctionColor};
 use format::FormatAttr::{ConstantAttrs, FunctionAttrs};
 use format::{Format, FormatText};
@@ -78,7 +78,8 @@ impl Logger {
                     Method => format!("{}", req.method),
                     URI => format!("{}", req.url),
                     Status => format!("{}", res.status.unwrap()),
-                    ResponseTime => format!("{} ms", response_time_ms)
+                    ResponseTime => format!("{} ms", response_time_ms),
+                    RemoteAddr => format!("{}", req.remote_addr)
                 }
             };
 
