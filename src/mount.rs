@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::path::{Path, Component};
-use iron::{Handler, Response, Request, IronResult, IronError, Url, status};
+use iron::prelude::*;
+use iron::middleware::Handler;
+use iron::{Url,status};
 use iron::typemap;
 use sequence_trie::SequenceTrie;
 use std::fmt;
@@ -81,7 +83,7 @@ impl Handler for Mount {
         // Find the matching handler.
         let matched = {
             // Extract the request path.
-            let path = &*req.url.path;
+            let path = req.url.path();
 
             // If present, remove the trailing empty string (which represents a trailing slash).
             // If it isn't removed the path will never match anything, because
@@ -89,11 +91,13 @@ impl Handler for Mount {
             // ending in "".
             let key = match path.last() {
                 Some(s) if s.is_empty() => &path[..path.len() - 1],
-                _ => path
+                _ => &path
             };
 
+            let key=key.into_iter().map(|s|String::from(*s)).collect::<Vec<String>>();
+
             // Search the Trie for the nearest most specific match.
-            match self.inner.get_ancestor(key) {
+            match self.inner.get_ancestor(&key) {
                 Some(matched) => matched,
                 None => return Err(IronError::new(NoMatch, status::NotFound))
             }
@@ -111,8 +115,8 @@ impl Handler for Mount {
         // If the prefix is entirely removed and no trailing slash was present, the new path
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
-        req.url.path = req.url.path[matched.length..].to_vec();
-
+        //req.url.path() = req.url.path()[matched.length..].to_vec();
+        req.url.path().clone_from(&req.url.path()[matched.length..].to_vec());
         let res = matched.handler.handle(req);
 
         // Reverse the URL munging, for future middleware.
