@@ -2,7 +2,7 @@ use std::error::Error;
 use std::path::{Path, Component};
 use iron::prelude::*;
 use iron::middleware::Handler;
-use iron::{Url,status};
+use iron::{status, Url};
 use iron::typemap;
 use sequence_trie::SequenceTrie;
 use std::fmt;
@@ -94,7 +94,7 @@ impl Handler for Mount {
                 _ => &path
             };
 
-            let key=key.into_iter().map(|s|String::from(*s)).collect::<Vec<String>>();
+            let key: Vec<_> = key.into_iter().map(|s| String::from(*s)).collect();
 
             // Search the Trie for the nearest most specific match.
             match self.inner.get_ancestor(&key) {
@@ -115,7 +115,6 @@ impl Handler for Mount {
         // If the prefix is entirely removed and no trailing slash was present, the new path
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
-        //req.url.path() = req.url.path()[matched.length..].to_vec();
         req.url.path().clone_from(&req.url.path()[matched.length..].to_vec());
         let res = matched.handler.handle(req);
 
