@@ -9,5 +9,5 @@ documentation = "http://ironframework.io/doc/mount/index.html"
 license = "MIT"
 
 [dependencies]
-iron = "0.3"
+iron = "0.4"
 sequence_trie = "0.0"
