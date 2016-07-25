@@ -9,5 +9,5 @@ keywords = ["iron", "web", "logger", "log", "timer"]
 license = "MIT"
 
 [dependencies]
-iron = { version = "0.2", default-features = false }
-term = "0.2"
+iron = { version = "0.4", default-features = false }
+term = "0.4"
