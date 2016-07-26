@@ -115,7 +115,11 @@ impl Handler for Mount {
         // If the prefix is entirely removed and no trailing slash was present, the new path
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
-        req.url.path().clone_from(&req.url.path()[matched.length..].to_vec());
+        let path = req.url.path()[matched.length..].join("/");
+        let mut nu = req.url.clone().into_generic_url();
+        nu.set_path(&path);
+        req.url = Url::from_generic_url(nu).unwrap();
+
         let res = matched.handler.handle(req);
 
         // Reverse the URL munging, for future middleware.
