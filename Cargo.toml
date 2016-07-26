@@ -7,6 +7,7 @@ description = "Mounting middleware for Iron."
 repository = "https://github.com/iron/mount"
 documentation = "http://ironframework.io/doc/mount/index.html"
 license = "MIT"
+keywords = ["iron", "web", "handler", "routing"]
 
 [dependencies]
 iron = "0.4"
