@@ -6,6 +6,7 @@ use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method, headers};
 use iron::typemap::Key;
 use iron::modifiers::Redirect;
+use iron::Url;
 
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
@@ -137,16 +138,24 @@ impl Router {
     // Tests for a match by adding or removing a trailing slash.
     fn redirect_slash(&self, req : &Request) -> Option<IronError> {
         let mut url = req.url.clone();
-        let mut path = url.path.join("/");
+        let mut path = url.path().join("/");
 
         if let Some(last_char) = path.chars().last() {
-            if last_char == '/' {
-                path.pop();
-                url.path.pop();
-            } else {
-                path.push('/');
-                url.path.push(String::new());
+            // Unwrap generic URL to get access to its path components.
+            let mut generic_url = url.into_generic_url();
+            {
+                let mut path_segments = generic_url.path_segments_mut().unwrap();
+                if last_char == '/' {
+                    // We didn't recognize anything without a trailing slash; try again with one appended.
+                    path.pop();
+                    path_segments.pop();
+                } else {
+                    // We didn't recognize anything with a trailing slash; try again without it.
+                    path.push('/');
+                    path_segments.push("");
+                }
             }
+            url = Url::from_generic_url(generic_url).unwrap();
         }
 
         self.recognize(&req.method, &path).and(
@@ -167,7 +176,7 @@ impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let path = req.url.path.join("/");
+        let path = req.url.path().join("/");
 
         self.handle_method(req, &path).unwrap_or_else(||
             match req.method {
