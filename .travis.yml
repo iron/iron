@@ -1,3 +1,11 @@
 language: rust
-rust: nightly
+rust:
+    - nightly
+    - stable
+    - beta
 sudo: false
+env:
+    global:
+        secure: GBUs51VTpYXiQMunI1tslOpRpLweMdQG5Pnf+8k54tbhGDWjdlGssuhf7k9VknskpfBi3D2CesVsAI/rLJ6vkahCPpKj2uHZbmU1I8/z3ram+2/M1pcV5ehW3Cgf5oK/CsI3rzyDZhszmuQWqEpd6Q+rvcFqbKzM8+cBdyPpEVo=
+
+after_success: 'curl https://raw.githubusercontent.com/iron-bot/build-doc/master/build-doc.sh | sh'
