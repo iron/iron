@@ -11,8 +11,8 @@ use router::{Router};
 
 fn main() {
     let mut router = Router::new();
-    router.get("/", handler);
-    router.get("/:query", query_handler);
+    router.get(None, "/", handler);
+    router.get(None, "/:query", query_handler);
 
     Iron::new(router).http("localhost:3000").unwrap();
 

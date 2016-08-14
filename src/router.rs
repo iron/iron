@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 
 use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method, headers};
@@ -11,13 +12,20 @@ use iron::Url;
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
 
+
+pub struct RouterInner {
+    // The routers, specialized by method.
+    pub routers: HashMap<method::Method, Recognizer<Box<Handler>>>,
+    // Routes that accept any method.
+    pub wildcard: Recognizer<Box<Handler>>,
+    // Used in URL generation.
+    pub route_ids: HashMap<String, String>
+}
+
 /// `Router` provides an interface for creating complex routes as middleware
 /// for the Iron framework.
 pub struct Router {
-    // The routers, specialized by method.
-    routers: HashMap<method::Method, Recognizer<Box<Handler>>>,
-    // Routes that accept any method.
-    wildcard: Recognizer<Box<Handler>>
+    inner: Arc<RouterInner>
 }
 
 impl Router {
@@ -29,9 +37,16 @@ impl Router {
     /// ```
     pub fn new() -> Router {
         Router {
-            routers: HashMap::new(),
-            wildcard: Recognizer::new()
+            inner: Arc::new(RouterInner {
+                routers: HashMap::new(),
+                wildcard: Recognizer::new(),
+                route_ids: HashMap::new()
+            })
         }
+    }
+
+    fn mut_inner(&mut self) -> &mut RouterInner {
+        Arc::get_mut(&mut self.inner).expect("Cannot modify router at this point.")
     }
 
     /// Add a new route to a `Router`, matching both a method and glob pattern.
@@ -46,68 +61,85 @@ impl Router {
     ///
     /// ```ignore
     /// let mut router = Router::new();
-    /// router.route(method::Get, "/users/:userid/:friendid", controller);
+    /// router.route(Some("user_friend"), method::Get, "/users/:userid/:friendid", controller);
     /// ```
+    ///
+    /// `route_id` is a unique name for your route, and is used when generating an URL with
+    /// `url_for`.
     ///
     /// The controller provided to route can be any `Handler`, which allows
     /// extreme flexibility when handling routes. For instance, you could provide
     /// a `Chain`, a `Handler`, which contains an authorization middleware and
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
-    pub fn route<H, S>(&mut self, method: method::Method,
-                       glob: S, handler: H) -> &mut Router
-    where H: Handler, S: AsRef<str> {
-        self.routers.entry(method).or_insert(Recognizer::new())
-                    .add(glob.as_ref(), Box::new(handler));
+    pub fn route<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, method: method::Method, glob: S, handler: H) -> &mut Router {
+        self.mut_inner().routers
+            .entry(method)
+            .or_insert(Recognizer::new())
+            .add(glob.as_ref(), Box::new(handler));
+        route_id.map(|id| self.route_id(id, glob.as_ref()));
         self
     }
 
+    fn route_id(&mut self, id: &str, glob: &str) {
+        let mut mut_inner = self.mut_inner();
+        let ref mut route_ids = mut_inner.route_ids;
+
+        match route_ids.get(id) {
+            Some(other_glob) if glob != other_glob => panic!("Duplicate route_id: {}", id),
+            _ => ()
+        };
+
+        route_ids.insert(id.to_owned(), glob.to_owned());
+    }
+
     /// Like route, but specialized to the `Get` method.
-    pub fn get<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Get, glob, handler)
+    pub fn get<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Get, glob, handler)
     }
 
     /// Like route, but specialized to the `Post` method.
-    pub fn post<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Post, glob, handler)
+    pub fn post<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Post, glob, handler)
     }
 
     /// Like route, but specialized to the `Put` method.
-    pub fn put<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Put, glob, handler)
+    pub fn put<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Put, glob, handler)
     }
 
     /// Like route, but specialized to the `Delete` method.
-    pub fn delete<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Delete, glob, handler)
+    pub fn delete<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Delete, glob, handler)
     }
 
     /// Like route, but specialized to the `Head` method.
-    pub fn head<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Head, glob, handler)
+    pub fn head<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Head, glob, handler)
     }
 
     /// Like route, but specialized to the `Patch` method.
-    pub fn patch<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Patch, glob, handler)
+    pub fn patch<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Patch, glob, handler)
     }
 
     /// Like route, but specialized to the `Options` method.
-    pub fn options<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.route(method::Options, glob, handler)
+    pub fn options<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.route(route_id, method::Options, glob, handler)
     }
 
     /// Route will match any method, including gibberish.
     /// In case of ambiguity, handlers specific to methods will be preferred.
-    pub fn any<H: Handler, S: AsRef<str>>(&mut self, glob: S, handler: H) -> &mut Router {
-        self.wildcard.add(glob.as_ref(), Box::new(handler));
+    pub fn any<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+        self.mut_inner().wildcard.add(glob.as_ref(), Box::new(handler));
+        route_id.map(|id| self.route_id(id, glob.as_ref()));
         self
     }
 
     fn recognize(&self, method: &method::Method, path: &str)
                      -> Option<Match<&Box<Handler>>> {
-        self.routers.get(method).and_then(|router| router.recognize(path).ok())
-            .or(self.wildcard.recognize(path).ok())
+        self.inner.routers.get(method).and_then(|router| router.recognize(path).ok())
+            .or(self.inner.wildcard.recognize(path).ok())
     }
 
     fn handle_options(&self, path: &str) -> Response {
@@ -119,7 +151,7 @@ impl Router {
         let mut options = vec![];
 
         for method in METHODS.iter() {
-            self.routers.get(method).map(|router| {
+            self.inner.routers.get(method).map(|router| {
                 if let Some(_) = router.recognize(path).ok() {
                     options.push(method.clone());
                 }
@@ -167,12 +199,15 @@ impl Router {
     fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
         if let Some(matched) = self.recognize(&req.method, path) {
             req.extensions.insert::<Router>(matched.params);
+            req.extensions.insert::<RouterInner>(self.inner.clone());
             Some(matched.handler.handle(req))
         } else { self.redirect_slash(req).and_then(|redirect| Some(Err(redirect))) }
     }
 }
 
 impl Key for Router { type Value = Params; }
+
+impl Key for RouterInner { type Value = Arc<RouterInner>; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
