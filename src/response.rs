@@ -166,9 +166,8 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>)
 
 impl Debug for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "HTTP/1.1 {} {}\n{}",
+        writeln!(f, "HTTP/1.1 {}\n{}",
             self.status.unwrap_or(status::NotFound),
-            self.status.unwrap_or(status::NotFound).canonical_reason().unwrap(),
             self.headers
         )
     }
