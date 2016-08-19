@@ -46,6 +46,16 @@ impl Url {
         self.generic_url
     }
 
+    /// Return an immutable pointer to the underlying `rust-url` `Url`.
+    pub fn generic_url(&self) -> &url::Url {
+        &self.generic_url
+    }
+
+    /// Return a mutable pointer to the underlying `rust-url` `Url`.
+    pub fn generic_url_mut(&mut self) -> &mut url::Url {
+        &mut self.generic_url
+    }
+
     /// The lower-cased scheme of the URL, typically "http" or "https".
     pub fn scheme(&self) -> &str {
         self.generic_url.scheme()
