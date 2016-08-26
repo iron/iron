@@ -26,7 +26,7 @@ impl AfterMiddleware for Custom404 {
 
 fn main() {
     let mut router = Router::new();
-    router.get("example", "/", handler);
+    router.get("/", handler, "example");
 
     let mut chain = Chain::new(router);
     chain.link_after(Custom404);

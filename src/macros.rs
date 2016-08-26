@@ -9,10 +9,10 @@
 /// Is equivalent to:
 ///
 /// ```ignore
-///    let mut router = Router::new();
-///    router.get(Some("index"), "/", index);
-///    router.get(Some("query"), "/:query", queryHandler);
-///    router.post(Some("post"), "/", postHandler);
+/// let mut router = Router::new();
+/// router.get("/", index, "index");
+/// router.get("/:query", queryHandler, "query");
+/// router.post("/", postHandler, "post");
 /// ```
 ///
 /// The method name must be lowercase, supported methods:
@@ -22,7 +22,7 @@
 macro_rules! router {
     ($($route_id:ident: $method:ident $glob:expr => $handler:expr),+ $(,)*) => ({
         let mut router = $crate::Router::new();
-        $(router.$method(stringify!($route_id), $glob, $handler);)*
+        $(router.$method($glob, $handler, stringify!($route_id));)*
         router
     });
 }
