@@ -22,7 +22,7 @@
 macro_rules! router {
     ($($route_id:ident: $method:ident $glob:expr => $handler:expr),+ $(,)*) => ({
         let mut router = $crate::Router::new();
-        $(router.$method(Some(stringify!($route_id)), $glob, $handler);)*
+        $(router.$method(stringify!($route_id), $glob, $handler);)*
         router
     });
 }

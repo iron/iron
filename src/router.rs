@@ -61,7 +61,7 @@ impl Router {
     ///
     /// ```ignore
     /// let mut router = Router::new();
-    /// router.route(Some("user_friend"), method::Get, "/users/:userid/:friendid", controller);
+    /// router.route("user_friend", method::Get, "/users/:userid/:friendid", controller);
     /// ```
     ///
     /// `route_id` is a unique name for your route, and is used when generating an URL with
@@ -72,12 +72,12 @@ impl Router {
     /// a `Chain`, a `Handler`, which contains an authorization middleware and
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
-    pub fn route<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, method: method::Method, glob: S, handler: H) -> &mut Router {
+    pub fn route<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, method: method::Method, glob: S, handler: H) -> &mut Router {
         self.mut_inner().routers
             .entry(method)
             .or_insert(Recognizer::new())
             .add(glob.as_ref(), Box::new(handler));
-        route_id.map(|id| self.route_id(id, glob.as_ref()));
+        self.route_id(route_id.as_ref(), glob.as_ref());
         self
     }
 
@@ -94,45 +94,45 @@ impl Router {
     }
 
     /// Like route, but specialized to the `Get` method.
-    pub fn get<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn get<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Get, glob, handler)
     }
 
     /// Like route, but specialized to the `Post` method.
-    pub fn post<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn post<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Post, glob, handler)
     }
 
     /// Like route, but specialized to the `Put` method.
-    pub fn put<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn put<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Put, glob, handler)
     }
 
     /// Like route, but specialized to the `Delete` method.
-    pub fn delete<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn delete<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Delete, glob, handler)
     }
 
     /// Like route, but specialized to the `Head` method.
-    pub fn head<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn head<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Head, glob, handler)
     }
 
     /// Like route, but specialized to the `Patch` method.
-    pub fn patch<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn patch<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Patch, glob, handler)
     }
 
     /// Like route, but specialized to the `Options` method.
-    pub fn options<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn options<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.route(route_id, method::Options, glob, handler)
     }
 
     /// Route will match any method, including gibberish.
     /// In case of ambiguity, handlers specific to methods will be preferred.
-    pub fn any<H: Handler, S: AsRef<str>>(&mut self, route_id: Option<&str>, glob: S, handler: H) -> &mut Router {
+    pub fn any<H: Handler, S: AsRef<str>, I: AsRef<str>>(&mut self, route_id: I, glob: S, handler: H) -> &mut Router {
         self.mut_inner().wildcard.add(glob.as_ref(), Box::new(handler));
-        route_id.map(|id| self.route_id(id, glob.as_ref()));
+        self.route_id(route_id.as_ref(), glob.as_ref());
         self
     }
 
