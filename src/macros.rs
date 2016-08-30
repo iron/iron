@@ -47,7 +47,7 @@ macro_rules! router {
 /// ```
 #[macro_export]
 macro_rules! url_for {
-    ($request:expr, $route_id:expr, $($key:expr => $value:expr),* $(,)*) => (
+    ($request:expr, $route_id:expr $(,$key:expr => $value:expr)* $(,)*) => (
         $crate::url_for($request, $route_id, {
             let mut params = ::std::collections::HashMap::<String, String>::new();
             $(params.insert($key.into(), $value.into());)*
