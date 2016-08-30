@@ -231,7 +231,7 @@ impl Handler for Router {
 
 /// The error thrown by router if there is no matching route,
 /// it is always accompanied by a NotFound response.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NoRoute;
 
 impl fmt::Display for NoRoute {
@@ -246,7 +246,7 @@ impl Error for NoRoute {
 
 /// The error thrown by router if a request was redirected
 /// by adding or removing a trailing slash.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TrailingSlash;
 
 impl fmt::Display for TrailingSlash {
