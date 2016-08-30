@@ -11,7 +11,7 @@ use iron::status;
 use router::{Router};
 
 fn main() {
-    let router = router!(get "/" => handler, get "/:query" => query_handler);
+    let router = router!(root: get "/" => handler, query: get "/:query" => query_handler);
 
     Iron::new(router).http("localhost:3000").unwrap();
 
