@@ -41,9 +41,11 @@ fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) 
     url.set_path(&path);
 
     // Now add on the remaining parameters that had no path match.
-    url.query_pairs_mut()
-        .clear()
-        .extend_pairs(params.into_iter());
+    url.set_query(None);
+    if !params.is_empty() {
+        url.query_pairs_mut()
+            .extend_pairs(params.into_iter());
+    }
 
     url.set_fragment(None);
 }
