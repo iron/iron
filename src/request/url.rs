@@ -42,6 +42,7 @@ impl Url {
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
+    #[deprecated(since="0.5.0", note="use `into` from the `Into` trait instead")]
     pub fn into_generic_url(self) -> url::Url {
         self.generic_url
     }
@@ -124,6 +125,19 @@ impl fmt::Display for Url {
     }
 }
 
+impl Into<url::Url> for Url {
+    fn into(self) -> url::Url { self.generic_url }
+}
+
+impl AsRef<url::Url> for Url {
+    fn as_ref(&self) -> &url::Url { &self.generic_url }
+}
+
+impl AsMut<url::Url> for Url {
+    fn as_mut(&mut self) -> &mut url::Url { &mut self.generic_url }
+}
+
+
 #[cfg(test)]
 mod test {
     use super::Url;
@@ -181,7 +195,7 @@ mod test {
         let url = Url::parse(url_str).unwrap();
 
         // Convert to a generic URL and check fidelity.
-        let raw_url = url.clone().into_generic_url();
+        let raw_url: ::url::Url = url.clone().into();
         assert_eq!(::url::Url::parse(url_str).unwrap(), raw_url);
 
         // Convert back to an Iron URL and check fidelity.
