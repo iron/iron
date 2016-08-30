@@ -49,9 +49,11 @@ macro_rules! router {
 macro_rules! url_for {
     ($request:expr, $route_id:expr $(,$key:expr => $value:expr)* $(,)*) => (
         $crate::url_for($request, $route_id, {
-            let mut params = ::std::collections::HashMap::<String, String>::new();
-            $(params.insert($key.into(), $value.into());)*
-            params
+            // Underscore-prefix suppresses `unused_mut` warning
+            // Also works on stable rust!
+            let mut _params = ::std::collections::HashMap::<String, String>::new();
+            $(_params.insert($key.into(), $value.into());)*
+            _params
         })
     )
 }
