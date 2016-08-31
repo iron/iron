@@ -49,3 +49,31 @@ fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) 
 
     url.set_fragment(None);
 }
+
+#[cfg(test)]
+mod test {
+    use super::url_for_impl;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_no_trailing_slash() {
+        let mut url = "http://localhost/foo/bar/baz".parse().unwrap();
+        url_for_impl(&mut url, "/foo/:user", {
+            let mut rv = HashMap::new();
+            rv.insert("user".into(), "bam".into());
+            rv
+        });
+        assert_eq!(url.to_string(), "http://localhost/foo/bam");
+    }
+
+    #[test]
+    fn test_trailing_slash() {
+        let mut url = "http://localhost/foo/bar/baz".parse().unwrap();
+        url_for_impl(&mut url, "/foo/:user/", {
+            let mut rv = HashMap::new();
+            rv.insert("user".into(), "bam".into());
+            rv
+        });
+        assert_eq!(url.to_string(), "http://localhost/foo/bam/");
+    }
+}
