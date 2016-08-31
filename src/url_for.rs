@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::iter::FromIterator;
 
 use url::Url;
 
@@ -22,23 +21,21 @@ pub fn url_for(request: &Request, route_id: &str, params: HashMap<String, String
 }
 
 fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) {
-    let mut glob_iter = glob.chars();
-    let mut path = String::new();
-
-    while glob_iter.size_hint().1.unwrap() > 0 {
-        path.extend(glob_iter.by_ref().take_while(|&x| x != ':' && x != '*'));
-
-        let key = String::from_iter(glob_iter.by_ref().take_while(|&x| x != '/'));
-        if key.is_empty() { continue }
-
-        let value = match params.remove(&key) {
-            Some(x) => x,
-            None => panic!("No value for key {}", key)
-        };
-        path.push_str(&value);
+    {
+        let mut url_path_segments = url.path_segments_mut().unwrap();
+        url_path_segments.clear();
+        for path_segment in glob.split('/') {
+            if path_segment.len() > 1 && (path_segment.starts_with(':') || path_segment.starts_with('*')) {
+                let key = &path_segment[1..];
+                match params.remove(key) {
+                    Some(x) => url_path_segments.push(&x),
+                    None => panic!("No value for key {}", key)
+                };
+            } else {
+                url_path_segments.push(path_segment);
+            }
+        }
     }
-
-    url.set_path(&path);
 
     // Now add on the remaining parameters that had no path match.
     url.set_query(None);
