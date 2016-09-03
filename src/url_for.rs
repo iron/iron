@@ -11,13 +11,13 @@ use router::RouterInner;
 ///
 /// `params` will be inserted as route parameters if fitting, the rest will be appended as query
 /// parameters.
-pub fn url_for(request: &Request, route_id: &str, params: HashMap<String, String>) -> Url {
+pub fn url_for(request: &Request, route_id: &str, params: HashMap<String, String>) -> ::iron::Url {
     let inner = request.extensions.get::<RouterInner>().expect("Couldn\'t find router set up properly.");
     let glob = inner.route_ids.get(route_id).expect("No route with that ID");
 
     let mut url = request.url.clone().into_generic_url();
     url_for_impl(&mut url, glob, params);
-    url
+    ::iron::Url::from_generic_url(url).unwrap()
 }
 
 fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) {
