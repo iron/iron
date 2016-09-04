@@ -42,7 +42,7 @@ impl Url {
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
-    #[deprecated(since="0.5.0", note="use `into` from the `Into` trait instead")]
+    #[deprecated(since="0.4.1", note="use `into` from the `Into` trait instead")]
     pub fn into_generic_url(self) -> url::Url {
         self.generic_url
     }
