@@ -62,17 +62,18 @@ impl Mount {
     /// Existing handlers on the same route will be overwritten.
     pub fn mount<H: Handler>(&mut self, route: &str, handler: H) -> &mut Mount {
         // Parse the route into a list of strings. The unwrap is safe because strs are UTF-8.
-        let key: Vec<String> = Path::new(route).components().flat_map(|c|
+        let key: Vec<&str> = Path::new(route).components().flat_map(|c|
             match c {
                 Component::RootDir => None,
-                c => Some(c.as_os_str().to_str().unwrap().to_string())
-            }.into_iter()
+                c => Some(c.as_os_str().to_str().unwrap())
+            }
         ).collect();
 
         // Insert a match struct into the trie.
-        self.inner.insert(key.as_ref(), Match {
+        let match_length = key.len();
+        self.inner.insert(key, Match {
             handler: Box::new(handler) as Box<Handler>,
-            length: key.len()
+            length: match_length,
         });
         self
     }

@@ -11,4 +11,4 @@ keywords = ["iron", "web", "handler", "routing"]
 
 [dependencies]
 iron = "0.4"
-sequence_trie = "0.0"
+sequence_trie = "0.2"
