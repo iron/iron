@@ -52,7 +52,7 @@ Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
 ## [Documentation](http://ironframework.io/doc/logger/)
 
-Along with the [online documentation](http://docs.ironframework.io/logger),
+Along with the [online documentation](http://ironframework.io/doc/logger/),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)
