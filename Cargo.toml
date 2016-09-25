@@ -31,7 +31,7 @@ modifier = "0.1"
 error = "0.1"
 log = "0.3"
 conduit-mime-types = "0.7"
-lazy_static = "0.1"
+lazy_static = "0.2"
 num_cpus = "1.0"
 
 [dependencies.hyper]
