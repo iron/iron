@@ -79,7 +79,7 @@ pub use response::Response;
 
 // Middleware system
 pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain};
+                     Handler, Chain, ChainLink};
 
 // Server
 pub use iron::*;
@@ -122,7 +122,7 @@ pub type IronResult<T> = Result<T, IronError>;
 /// of the convenience methods in Iron, as well as `Request`, `Response`
 /// `IronResult`, `IronError` and `Iron`.
 pub mod prelude {
-    pub use {Set, Plugin, Chain, Request, Response,
+    pub use {Set, Plugin, Chain, ChainLink, Request, Response,
              IronResult, IronError, Iron};
 }
 
