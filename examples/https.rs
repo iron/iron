@@ -30,7 +30,7 @@ fn main() {
         Ok(Response::with((status::Ok, "Hello world!")))
     }).https("127.0.0.1:3000", cert, key) {
         Result::Ok(listening) => println!("{:?}", listening),
-        Result::Err(err) => println!("{:?}", err),
+        Result::Err(err) => panic!("{:?}", err),
     }
     // curl -vvvv https://127.0.0.1:3000/ -k
 }
