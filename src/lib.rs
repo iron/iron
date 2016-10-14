@@ -77,7 +77,9 @@ impl Logger {
                     Str(ref string) => string.clone(),
                     Method => format!("{}", req.method),
                     URI => format!("{}", req.url),
-                    Status => format!("{}", res.status.unwrap()),
+                    Status => res.status
+                        .map(|status| format!("{}", status))
+                        .unwrap_or("<missing status code>".to_owned()),
                     ResponseTime => format!("{} ms", response_time_ms),
                     RemoteAddr => format!("{}", req.remote_addr),
                     RequestTime => format!("{}", entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z").unwrap()),
