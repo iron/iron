@@ -11,7 +11,7 @@ use std::vec::IntoIter;
 use std::iter::Peekable;
 
 use self::ColorOrAttr::{Color, Attr};
-use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr};
+use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
 use self::FormatColor::{ConstantColor, FunctionColor};
 use self::FormatAttr::{ConstantAttrs, FunctionAttrs};
 
@@ -53,7 +53,8 @@ impl Default for Format {
 impl Format {
     // TODO: Document the color/attribute tags.
     /// Create a `Format` from a format string, which can contain the fields
-    /// `{method}`, `{uri}`, `{status}`, `{response-time}`, and `{ip-addr}`.
+    /// `{method}`, `{uri}`, `{status}`, `{response-time}`, `{ip-addr}` and
+    /// `{request-time}`.
     ///
     /// Returns `None` if the format string syntax is incorrect.
     ///
@@ -177,6 +178,7 @@ impl<'a> Iterator for FormatParser<'a> {
             //   - {status}
             //   - {response-time}
             //   - {ip-addr}
+            //   - {request-time}
             Some('{') => {
                 self.object_buffer.clear();
 
@@ -196,6 +198,7 @@ impl<'a> Iterator for FormatParser<'a> {
                     "uri" => URI,
                     "status" => Status,
                     "response-time" => ResponseTime,
+                    "request-time" => RequestTime,
                     "ip-addr" => RemoteAddr,
                     _ => {
                         // Error, so mark as finished.
@@ -419,7 +422,8 @@ pub enum FormatText {
     URI,
     Status,
     ResponseTime,
-    RemoteAddr
+    RemoteAddr,
+    RequestTime
 }
 
 /// A `FormatText` with associated style information.

@@ -12,7 +12,7 @@ use logger::format::FormatAttr::FunctionAttrs;
 use term::Attr;
 
 static FORMAT: &'static str =
-    "@[red A]Uri: {uri}@, @[blue blink underline]Method: {method}@, @[yellow standout]Status: {status}@, @[brightgreen]Time: {response-time}@";
+    "@[red A]Uri: {uri}@, @[blue blink underline]Method: {method}@, @[yellow standout]Status: {status}@, @[brightgreen]Duration: {response-time}@, Time: {request-time}";
 
 // This is an example of using a format string that can specify colors and attributes
 // to specific words that are printed out to the console.
