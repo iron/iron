@@ -35,8 +35,9 @@ fn no_op_handler(_: &mut Request) -> IronResult<Response> {
 
 Logger is a part of Iron's [core bundle](https://github.com/iron/core).
 
-- Logger prints request and response information to the terminal, using either a default format or a custom format string.
-- Format strings can specify fields to be logged as well as ANSI terminal colors and attributes.
+Logger prints request and response information to the configured log, using either a default format or a custom format string.
+
+Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported).
 
 ## Installation
 
