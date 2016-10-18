@@ -10,5 +10,5 @@ license = "MIT"
 
 [dependencies]
 iron = { version = "0.4", default-features = false }
-log = "*"
+log = "0.3.6"
 time = "0.1.35"

@@ -37,7 +37,7 @@ Logger is a part of Iron's [core bundle](https://github.com/iron/core).
 
 Logger prints request and response information to the configured log, using either a default format or a custom format string.
 
-Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported).
+Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported since [#82](https://github.com/iron/logger/issues/82)).
 
 ## Installation
 
