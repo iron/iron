@@ -35,7 +35,7 @@ fn no_op_handler(_: &mut Request) -> IronResult<Response> {
 
 Logger is a part of Iron's [core bundle](https://github.com/iron/core).
 
-Logger prints request and response information to the configured log, using either a default format or a custom format string.
+Logger emits request and response information using standard rust [log facade](https://doc.rust-lang.org/log/log/index.html), formatted with default format or a custom format string.
 
 Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported since [#82](https://github.com/iron/logger/issues/82)).
 
@@ -57,6 +57,12 @@ Along with the [online documentation](http://ironframework.io/doc/logger/),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)
+
+## Log implementations
+
+To actually log anything, you will need to use some log implementation that will deliver the logs to your desired location, like standard error output, a file or log collecting service. This is not responsibility of iron-logger alone. There are numerous such implementations to choose from, from simple ones that just write to standard error like [env_logger](https://crates.io/crates/env_logger), more configurable ones like [simplelog](https://crates.io/crates/simplelog) to ultimate solutions like [slog](https://crates.io/crates/slog). You can find more on [crates.io](https://crates.io/keywords/logging).
+
+If you are looking for turn-key solution, just follow example from [env_logger](https://doc.rust-lang.org/log/env_logger/).
 
 ## Get Help
 
