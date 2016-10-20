@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 pub use hyper::server::Listening;
 use hyper::server::Server;
-use hyper::net::{NetworkListener, HttpListener, Fresh, NetworkStream};
+use hyper::net::{NetworkListener, HttpListener, Fresh};
 #[cfg(feature = "ssl")]
 use hyper::net::{HttpsListener};
 
