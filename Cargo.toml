@@ -40,3 +40,4 @@ default-features = false
 
 [dev-dependencies]
 time = "0.1"
+mime = "0.2"
