@@ -109,6 +109,24 @@ impl<P: Key> Clone for Write<P> where P::Value: Send {
     }
 }
 
+impl<P: Key> From<Arc<P::Value>> for Read<P> {
+    fn from(data: Arc<P::Value>) -> Read<P> {
+        Read { data: data }
+    }
+}
+
+impl<P: Key> From<Arc<RwLock<P::Value>>> for State<P> {
+    fn from(data: Arc<RwLock<P::Value>>) -> State<P> {
+        State { data: data }
+    }
+}
+
+impl<P: Key> From<Arc<Mutex<P::Value>>> for Write<P> {
+    fn from(data: Arc<Mutex<P::Value>>) -> Write<P> {
+        Write { data: data }
+    }
+}
+
 impl<P: Key> Key for State<P> where P::Value: 'static {
     type Value = Arc<RwLock<P::Value>>;
 }
