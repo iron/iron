@@ -86,11 +86,6 @@ pub struct Write<P: Key> {
     data: Arc<Mutex<P::Value>>
 }
 
-macro_rules! impl_persistent {
-    ($name:ty, $out:ty, $param:ident) => {
-    }
-}
-
 impl<P: Key> Clone for Read<P> where P::Value: Send + Sync {
     fn clone(&self) -> Read<P> {
         Read { data: self.data.clone() }
