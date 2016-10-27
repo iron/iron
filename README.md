@@ -96,7 +96,7 @@ middleware. No plugins or middleware are bundled with Iron.
 
 ## Performance
 
-Iron averages [84,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example)
+Iron averages [72,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example)
 and is mostly IO-bound, spending over 70% of its time in the kernel send-ing or
 recv-ing data.\*
 
