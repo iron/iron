@@ -83,7 +83,11 @@ impl<'a, 'b> Request<'a, 'b> {
                 let url_string = match (version, headers.get::<headers::Host>()) {
                     (_, Some(ref host)) => {
                         // Attempt to prepend the Host header (mandatory in HTTP/1.1)
-                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(), path)
+                        if let Some(port) = host.port {
+                            format!("{}://{}:{}{}", protocol.name(), host.hostname, port, path)
+                        } else {
+                            format!("{}://{}{}", protocol.name(), host.hostname, path)
+                        }
                     },
                     (v, None) if v < HttpVersion::Http11 => {
                         // Attempt to use the local address? (host header is not required in HTTP/1.0).
