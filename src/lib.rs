@@ -35,6 +35,39 @@ impl fmt::Display for PersistentError {
     }
 }
 
+/// Helper trait for overloading the constructors of `Read`/`Write`/`State`.
+/// This is an implementation detail, and should not be used for any other
+/// purpose.
+///
+/// For example, this trait lets you construct a `Read<T>` from either a `T` or
+/// an `Arc<T>`.
+pub trait PersistentInto<T> {
+    /// Convert `self` into a value of type `T`.
+    fn persistent_into(self) -> T;
+}
+
+impl<T> PersistentInto<T> for T {
+    fn persistent_into(self) -> T { self }
+}
+
+impl<T> PersistentInto<Arc<T>> for T {
+    fn persistent_into(self) -> Arc<T> {
+        Arc::new(self)
+    }
+}
+
+impl<T> PersistentInto<Arc<Mutex<T>>> for T {
+    fn persistent_into(self) -> Arc<Mutex<T>> {
+        Arc::new(Mutex::new(self))
+    }
+}
+
+impl<T> PersistentInto<Arc<RwLock<T>>> for T {
+    fn persistent_into(self) -> Arc<RwLock<T>> {
+        Arc::new(RwLock::new(self))
+    }
+}
+
 /// Middleware for data that persists between requests with read and write capabilities.
 ///
 /// The data is stored behind a `RwLock`, so multiple read locks
@@ -84,11 +117,6 @@ pub struct Read<P: Key> {
 /// accessed through `request.get::<Write<P>>()` as an `Arc<Mutex<P::Value>>`.
 pub struct Write<P: Key> {
     data: Arc<Mutex<P::Value>>
-}
-
-macro_rules! impl_persistent {
-    ($name:ty, $out:ty, $param:ident) => {
-    }
 }
 
 impl<P: Key> Clone for Read<P> where P::Value: Send + Sync {
@@ -188,8 +216,8 @@ impl<P: Key> State<P> where P::Value: Send + Sync {
     /// Construct a new pair of `State` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: P::Value) -> (State<P>, State<P>) {
-        let x = State { data: Arc::new(RwLock::new(start)) };
+    pub fn both<T>(start: T) -> (State<P>, State<P>) where T: PersistentInto<Arc<RwLock<P::Value>>> {
+        let x = State { data: start.persistent_into() };
         (x.clone(), x)
     }
 
@@ -197,8 +225,8 @@ impl<P: Key> State<P> where P::Value: Send + Sync {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: P::Value) -> State<P> {
-        State { data: Arc::new(RwLock::new(start)) }
+    pub fn one<T>(start: P::Value) -> State<P> where T: PersistentInto<Arc<RwLock<P::Value>>> {
+        State { data: start.persistent_into() }
     }
 }
 
@@ -206,8 +234,8 @@ impl<P: Key> Read<P> where P::Value: Send + Sync {
     /// Construct a new pair of `Read` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: P::Value) -> (Read<P>, Read<P>) {
-        let x = Read { data: Arc::new(start) };
+    pub fn both<T>(start: T) -> (Read<P>, Read<P>) where T: PersistentInto<Arc<P::Value>> {
+        let x = Read { data: start.persistent_into() };
         (x.clone(), x)
     }
 
@@ -215,8 +243,8 @@ impl<P: Key> Read<P> where P::Value: Send + Sync {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: P::Value) -> Read<P> {
-        Read { data: Arc::new(start) }
+    pub fn one<T>(start: T) -> Read<P> where T: PersistentInto<Arc<P::Value>> {
+        Read { data: start.persistent_into() }
     }
 }
 
@@ -224,8 +252,8 @@ impl<P: Key> Write<P> where P::Value: Send {
     /// Construct a new pair of `Write` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both(start: P::Value) -> (Write<P>, Write<P>) {
-        let x = Write { data: Arc::new(Mutex::new(start)) };
+    pub fn both<T>(start: T) -> (Write<P>, Write<P>) where T: PersistentInto<Arc<Mutex<P::Value>>> {
+        let x = Write { data: start.persistent_into() };
         (x.clone(), x)
     }
 
@@ -233,7 +261,7 @@ impl<P: Key> Write<P> where P::Value: Send {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one(start: P::Value) -> Write<P> {
-        Write { data: Arc::new(Mutex::new(start)) }
+    pub fn one<T>(start: T) -> Write<P> where T: PersistentInto<Arc<Mutex<P::Value>>> {
+        Write { data: start.persistent_into() }
     }
 }
