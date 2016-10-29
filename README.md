@@ -15,7 +15,7 @@ If you're using a `Cargo.toml` to manage dependencies, just add persistent to th
 
 ```toml
 [dependencies]
-persistent = "0.0.6"
+persistent = "x.y.z"  # Insert current version here
 ```
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
