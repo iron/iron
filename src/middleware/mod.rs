@@ -71,6 +71,9 @@ pub trait Handler: Send + Sync + 'static {
 /// early response that is not an error cannot be `BeforeMiddleware`, but should
 /// instead be `AroundMiddleware`.
 pub trait BeforeMiddleware: Send + Sync + 'static {
+    /// Prepare the chain for this middleware.
+    fn prepare_chain(&self, _: &mut Chain) -> () {}
+
     /// Do whatever work this middleware should do with a `Request` object.
     fn before(&self, _: &mut Request) -> IronResult<()> { Ok(()) }
 
@@ -92,6 +95,9 @@ pub trait BeforeMiddleware: Send + Sync + 'static {
 /// `AfterMiddleware` simply do post-processing of that Response, such as
 /// adding headers or logging.
 pub trait AfterMiddleware: Send + Sync + 'static {
+    /// Prepare the chain for this middleware.
+    fn prepare_chain(&self, _: &mut Chain) -> () {}
+
     /// Do whatever post-processing this middleware should do.
     fn after(&self, _: &mut Request, res: Response) -> IronResult<Response> {
         Ok(res)
@@ -113,6 +119,9 @@ pub trait AfterMiddleware: Send + Sync + 'static {
 /// called once on insertion into a Chain or can be called manually outside of a
 /// `Chain`.
 pub trait AroundMiddleware {
+    /// Prepare the chain for this middleware.
+    fn prepare_chain(&self, _: &mut Chain) -> () {}
+
     /// Produce a `Handler` from this `AroundMiddleware` given another `Handler`.
     ///
     /// Usually this means wrapping the handler and editing the `Request` on the
@@ -162,6 +171,7 @@ impl Chain {
     /// `BeforeMiddleware`.
     pub fn link_before<B>(&mut self, before: B) -> &mut Chain
     where B: BeforeMiddleware {
+        before.prepare_chain(self);
         self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
         self
     }
@@ -170,6 +180,7 @@ impl Chain {
     /// `AfterMiddleware`.
     pub fn link_after<A>(&mut self, after: A) -> &mut Chain
     where A: AfterMiddleware {
+        after.prepare_chain(self);
         self.afters.push(Box::new(after) as Box<AfterMiddleware>);
         self
     }
@@ -186,6 +197,7 @@ impl Chain {
     /// Apply an `AroundMiddleware` to the `Handler` in this `Chain`.
     pub fn link_around<A>(&mut self, around: A) -> &mut Chain
     where A: AroundMiddleware {
+        around.prepare_chain(self);
         let mut handler = self.handler.take().unwrap();
         handler = around.around(handler);
         self.handler = Some(handler);
