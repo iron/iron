@@ -144,7 +144,7 @@ impl Router {
 
     fn handle_options(&self, path: &str) -> Response {
         static METHODS: &'static [method::Method] =
-            &[method::Get, method::Post, method::Post, method::Put,
+            &[method::Get, method::Post, method::Put,
               method::Delete, method::Head, method::Patch];
 
         // Get all the available methods and return them.
@@ -257,4 +257,34 @@ impl fmt::Display for TrailingSlash {
 
 impl Error for TrailingSlash {
     fn description(&self) -> &str { "Trailing Slash" }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Router;
+    use iron::{headers, method, status, Request, Response};
+
+    #[test]
+    fn test_handle_options_post() {
+        let mut router = Router::new();
+        router.post("/", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        let resp = router.handle_options("/");
+        let headers = resp.headers.get::<headers::Allow>().unwrap();
+        let expected = headers::Allow(vec![method::Method::Post]);
+        assert_eq!(&expected, headers);
+    }
+
+    #[test]
+    fn test_handle_options_get_head() {
+        let mut router = Router::new();
+        router.get("/", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        let resp = router.handle_options("/");
+        let headers = resp.headers.get::<headers::Allow>().unwrap();
+        let expected = headers::Allow(vec![method::Method::Get, method::Method::Head]);
+        assert_eq!(&expected, headers);
+    }
 }
