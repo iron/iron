@@ -12,3 +12,6 @@ license = "MIT"
 iron = { version = "0.4", default-features = false }
 log = "0.3.6"
 time = "0.1.35"
+
+[dev-dependencies]
+env_logger = "0.3.5"

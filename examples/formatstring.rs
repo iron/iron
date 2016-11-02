@@ -1,6 +1,7 @@
 //! Example of logger with custom formatting
 extern crate iron;
 extern crate logger;
+extern crate env_logger;
 
 use iron::prelude::*;
 
@@ -13,10 +14,17 @@ static FORMAT: &'static str =
 // This is an example of using a format string that can specify colors and attributes
 // to specific words that are printed out to the console.
 fn main() {
+    env_logger::init().unwrap();
+
     let mut chain = Chain::new(no_op_handler);
     let format = Format::new(FORMAT);
     chain.link(Logger::new(Some(format.unwrap())));
-    Iron::new(chain).http("localhost:3000").unwrap();
+	
+    println!("Run `RUST_LOG=info cargo run --example formatstring` to see logs.");
+    match Iron::new(chain).http("127.0.0.1:3000") {
+        Result::Ok(listening) => println!("{:?}", listening),
+        Result::Err(err) => panic!("{:?}", err),
+    }
 }
 
 fn no_op_handler(_: &mut Request) -> IronResult<Response> {
