@@ -49,7 +49,7 @@ pub struct Timeouts {
     /// The default is `Some(Duration::from_secs(30))`
     pub read: Option<Duration>,
 
-    /// Controls the timeout for writes on existing conncetions.
+    /// Controls the timeout for writes on existing connections.
     ///
     /// The default is `Some(Duration::from_secs(1))`
     pub write: Option<Duration>
