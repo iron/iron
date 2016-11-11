@@ -225,7 +225,7 @@ impl<P: Key> State<P> where P::Value: Send + Sync {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one<T>(start: P::Value) -> State<P> where T: PersistentInto<Arc<RwLock<P::Value>>> {
+    pub fn one<T>(start: T) -> State<P> where T: PersistentInto<Arc<RwLock<P::Value>>> {
         State { data: start.persistent_into() }
     }
 }
