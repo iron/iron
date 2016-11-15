@@ -12,12 +12,11 @@ use iron::Url;
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
 
-
 pub struct RouterInner {
     // The routers, specialized by method.
-    pub routers: HashMap<method::Method, Recognizer<Box<Handler>>>,
+    pub routers: Recognizer<HashMap<method::Method, Arc<Handler>>>,
     // Routes that accept any method.
-    pub wildcard: Recognizer<Box<Handler>>,
+    pub wildcard: Recognizer<Arc<Handler>>,
     // Used in URL generation.
     pub route_ids: HashMap<String, String>
 }
@@ -38,7 +37,7 @@ impl Router {
     pub fn new() -> Router {
         Router {
             inner: Arc::new(RouterInner {
-                routers: HashMap::new(),
+                routers: Recognizer::new(),
                 wildcard: Recognizer::new(),
                 route_ids: HashMap::new()
             })
@@ -73,10 +72,17 @@ impl Router {
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
     pub fn route<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, method: method::Method, glob: S, handler: H, route_id: I) -> &mut Router {
-        self.mut_inner().routers
-            .entry(method)
-            .or_insert(Recognizer::new())
-            .add(glob.as_ref(), Box::new(handler));
+
+        let mut hash: HashMap<method::Method, Arc<Handler>>;
+
+        if let Some(s) = self.mut_inner().routers.recognize(glob.as_ref()).ok() {
+            hash = s.handler.clone();
+        } else {
+            hash = HashMap::new();
+        }
+
+        hash.insert(method, Arc::new(handler));
+        self.mut_inner().routers.add(glob.as_ref(), hash);
         self.route_id(route_id.as_ref(), glob.as_ref());
         self
     }
@@ -131,15 +137,23 @@ impl Router {
     /// Route will match any method, including gibberish.
     /// In case of ambiguity, handlers specific to methods will be preferred.
     pub fn any<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
-        self.mut_inner().wildcard.add(glob.as_ref(), Box::new(handler));
+        self.mut_inner().wildcard.add(glob.as_ref(), Arc::new(handler));
         self.route_id(route_id.as_ref(), glob.as_ref());
         self
     }
 
     fn recognize(&self, method: &method::Method, path: &str)
-                     -> Option<Match<&Box<Handler>>> {
-        self.inner.routers.get(method).and_then(|router| router.recognize(path).ok())
-            .or(self.inner.wildcard.recognize(path).ok())
+                      -> Result<Match<&Arc<Handler>>, RouterError> {
+        match self.inner.routers.recognize(path)
+            .map(|s|
+                match s.handler.get(method) {
+                    Some(h) => Ok(Match::new(h, s.params)),
+                    None => self.inner.wildcard.recognize(path).ok().map_or(Err(RouterError::MethodNotAllowed), |s| Ok(s))
+                }
+        ).map_err(|_| self.inner.wildcard.recognize(path).ok().map_or(Err(RouterError::NotFound), |s| Ok(s))) {
+            Ok(s) => s,
+            Err(e) => e
+        }
     }
 
     fn handle_options(&self, path: &str) -> Response {
@@ -151,11 +165,11 @@ impl Router {
         let mut options = vec![];
 
         for method in METHODS.iter() {
-            self.inner.routers.get(method).map(|router| {
-                if let Some(_) = router.recognize(path).ok() {
+            if let Ok(s) = self.inner.routers.recognize(path) {
+                if let Some(_) = s.handler.get(method) {
                     options.push(method.clone());
                 }
-            });
+            }
         }
         // If GET is there, HEAD is also there.
         if options.contains(&method::Get) && !options.contains(&method::Head) {
@@ -168,7 +182,7 @@ impl Router {
     }
 
     // Tests for a match by adding or removing a trailing slash.
-    fn redirect_slash(&self, req : &Request) -> Option<IronError> {
+    fn redirect_slash(&self, req : &Request) -> Option<IronResult<Response>> {
         let mut url = req.url.clone();
         let mut path = url.path().join("/");
 
@@ -190,18 +204,26 @@ impl Router {
             url = Url::from_generic_url(generic_url).unwrap();
         }
 
-        self.recognize(&req.method, &path).and(
-            Some(IronError::new(TrailingSlash,
-                                (status::MovedPermanently, Redirect(url))))
+        self.recognize(&req.method, &path).ok().and(
+            Some(Err(IronError::new(RouterError::TrailingSlash,
+                                (status::MovedPermanently, Redirect(url)))))
         )
     }
 
     fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
-        if let Some(matched) = self.recognize(&req.method, path) {
-            req.extensions.insert::<Router>(matched.params);
-            req.extensions.insert::<RouterInner>(self.inner.clone());
-            Some(matched.handler.handle(req))
-        } else { self.redirect_slash(req).and_then(|redirect| Some(Err(redirect))) }
+        match self.recognize(&req.method, path) {
+            Ok(matched) => {
+                req.extensions.insert::<Router>(matched.params);
+                req.extensions.insert::<RouterInner>(self.inner.clone());
+                Some(matched.handler.handle(req))
+            },
+            Err(RouterError::MethodNotAllowed) => {
+                Some(Err(IronError::new(RouterError::MethodNotAllowed, status::MethodNotAllowed)))
+            },
+            Err(_) => {
+                self.redirect_slash(req)
+            }
+        }
     }
 }
 
@@ -220,12 +242,40 @@ impl Handler for Router {
                 method::Head => {
                     req.method = method::Get;
                     self.handle_method(req, &path).unwrap_or(
-                        Err(IronError::new(NoRoute, status::NotFound))
+                        Err(IronError::new(RouterError::NotFound, status::NotFound))
                     )
                 }
-                _ => Err(IronError::new(NoRoute, status::NotFound))
+                _ => Err(IronError::new(RouterError::NotFound, status::NotFound))
             }
         )
+    }
+}
+
+/// A set of errors that can occur parsing HTTP streams.
+#[derive(Debug, PartialEq)]
+pub enum RouterError {
+    /// The error thrown by router if there is no matching method in existing route.
+    MethodNotAllowed,
+    /// The error thrown by router if there is no matching route.
+    NotFound,
+    /// The error thrown by router if a request was redirected by adding or removing a trailing slash.
+    TrailingSlash
+}
+
+
+impl fmt::Display for RouterError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(&self.description())
+    }
+}
+
+impl Error for RouterError {
+    fn description(&self) -> &str {
+        match *self {
+            RouterError::MethodNotAllowed => "Method Not Allowed",
+            RouterError::NotFound => "No matching route found.",
+            RouterError::TrailingSlash => "The request had a trailing slash."
+        }
     }
 }
 
@@ -261,7 +311,7 @@ impl Error for TrailingSlash {
 
 #[cfg(test)]
 mod test {
-    use super::Router;
+    use super::{Router, RouterError};
     use iron::{headers, method, status, Request, Response};
 
     #[test]
@@ -286,5 +336,91 @@ mod test {
         let headers = resp.headers.get::<headers::Allow>().unwrap();
         let expected = headers::Allow(vec![method::Method::Get, method::Method::Head]);
         assert_eq!(&expected, headers);
+    }
+
+    #[test]
+    fn test_not_allowed_method() {
+        let mut router = Router::new();
+
+        router.post("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+
+        router.get("/post/", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "another_route");
+
+        match router.recognize(&method::Get, "/post") {
+            Ok(_) => {
+                panic!();
+            },
+            Err(e) => {
+                assert_eq!(RouterError::MethodNotAllowed, e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_handle_any_ok() {
+        let mut router = Router::new();
+        router.post("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        router.any("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        router.put("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        router.any("/get", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "any");
+
+        assert!(router.recognize(&method::Get, "/post").is_ok());
+        assert!(router.recognize(&method::Get, "/get").is_ok());
+    }
+
+    #[test]
+    fn test_request() {
+        let mut router = Router::new();
+        router.post("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        router.get("/post", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+
+        assert!(router.recognize(&method::Post, "/post").is_ok());
+        assert!(router.recognize(&method::Get, "/post").is_ok());
+        assert!(router.recognize(&method::Put, "/post").is_err());
+        assert!(router.recognize(&method::Get, "/post/").is_err());
+    }
+
+    #[test]
+    fn test_not_found() {
+        let mut router = Router::new();
+        router.put("/put", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "");
+        match router.recognize(&method::Patch, "/patch") {
+            Ok(_) => {
+                panic!();
+            },
+            Err(e) => {
+                assert_eq!(RouterError::NotFound, e);
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_same_route_id() {
+        let mut router = Router::new();
+        router.put("/put", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "my_route_id");
+        router.get("/get", |_: &mut Request| {
+            Ok(Response::with((status::Ok, "")))
+        }, "my_route_id");
     }
 }

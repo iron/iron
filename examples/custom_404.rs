@@ -8,7 +8,7 @@ extern crate router;
 use iron::{Iron, Request, Response, IronResult, AfterMiddleware, Chain};
 use iron::error::{IronError};
 use iron::status;
-use router::{Router, NoRoute};
+use router::{Router, RouterError};
 
 struct Custom404;
 
@@ -16,11 +16,13 @@ impl AfterMiddleware for Custom404 {
     fn catch(&self, _: &mut Request, err: IronError) -> IronResult<Response> {
         println!("Hitting custom 404 middleware");
 
-        if let Some(_) = err.error.downcast::<NoRoute>() {
-            Ok(Response::with((status::NotFound, "Custom 404 response")))
-        } else {
-            Err(err)
+        if let Some(e) = err.error.downcast::<RouterError>() {
+            if e == &RouterError::NotFound {
+                return Ok(Response::with((status::NotFound, "Custom 404 response")))
+            }
         }
+
+        Err(err)
     }
 }
 
