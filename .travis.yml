@@ -1,6 +1,7 @@
 language: rust
 sudo: false
-version:
+rust:
+  - stable
   - nightly
 env:
   global:
