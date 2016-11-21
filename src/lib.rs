@@ -122,6 +122,7 @@ pub type IronResult<T> = Result<T, IronError>;
 /// of the convenience methods in Iron, as well as `Request`, `Response`
 /// `IronResult`, `IronError` and `Iron`.
 pub mod prelude {
+    #[doc(no_inline)]
     pub use {Set, Plugin, Chain, Request, Response,
              IronResult, IronError, Iron};
 }
