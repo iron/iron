@@ -11,15 +11,16 @@ fn main() {
     Iron::new(|_: &mut Request| {
         Ok(Response::with((status::Ok, "Hello world!")))
     })
-    .listen_with("localhost:3000",
-                 8, // thread num
-                 Protocol::Http,
-                 Some(Timeouts{
-                     keep_alive: Some(Duration::from_secs(10)),
-                     read: Some(Duration::from_secs(10)),
-                     write: Some(Duration::from_secs(10))
-                 })
-                )   
-        .unwrap();
+    .listen_with(
+        "localhost:3000",
+        8, // thread num
+        Protocol::Http,
+        Some(
+            Timeouts{
+                keep_alive: Some(Duration::from_secs(10)),
+                read: Some(Duration::from_secs(10)),
+                write: Some(Duration::from_secs(10))
+            }))
+    .unwrap();
 }
 
