@@ -15,13 +15,12 @@ authors = [
 ]
 
 [lib]
-
 name = "iron"
 path = "src/lib.rs"
 
 [features]
 default = []
-ssl = ["hyper/ssl"]
+native-tls-example = ["hyper-native-tls"]
 
 [dependencies]
 typemap = "0.3"
@@ -33,10 +32,8 @@ log = "0.3"
 conduit-mime-types = "0.7"
 lazy_static = "0.2"
 num_cpus = "1.0"
-
-[dependencies.hyper]
-version = "0.9"
-default-features = false
+hyper = { version = "0.9", default-features = false }
+hyper-native-tls = { version = "0.1", optional = true }
 
 [dev-dependencies]
 time = "0.1"
