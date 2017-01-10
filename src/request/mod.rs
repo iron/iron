@@ -16,6 +16,9 @@ use method::Method;
 pub use hyper::server::request::Request as HttpRequest;
 use hyper::buffer;
 
+#[cfg(test)]
+use std::net::ToSocketAddrs;
+
 pub use self::url::Url;
 
 use {Protocol, Plugin, Headers, Set, headers};
@@ -46,7 +49,12 @@ pub struct Request<'a, 'b: 'a> {
     pub method: Method,
 
     /// Extensible storage for data passed between middleware.
-    pub extensions: TypeMap
+    pub extensions: TypeMap,
+
+    /// The version of the HTTP protocol used.
+    pub version: HttpVersion,
+
+    _p: (),
 }
 
 impl<'a, 'b> Debug for Request<'a, 'b> {
@@ -116,8 +124,25 @@ impl<'a, 'b> Request<'a, 'b> {
             headers: headers,
             body: Body::new(reader),
             method: method,
-            extensions: TypeMap::new()
+            extensions: TypeMap::new(),
+            version: version,
+            _p: (),
         })
+    }
+
+    #[cfg(test)]
+    pub fn stub() -> Request<'a, 'b> {
+        Request {
+            url: Url::parse("http://www.rust-lang.org").unwrap(),
+            remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+            local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+            headers: Headers::new(),
+            body: unsafe { ::std::mem::uninitialized() }, // FIXME(reem): Ugh
+            method: Method::Get,
+            extensions: TypeMap::new(),
+            version: HttpVersion::Http11,
+            _p: (),
+        }
     }
 }
 
