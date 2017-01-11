@@ -67,7 +67,7 @@ extern crate hyper;
 extern crate typemap as tmap;
 extern crate plugin;
 extern crate error as err;
-extern crate url;
+extern crate url as url_ext;
 extern crate num_cpus;
 extern crate conduit_mime_types as mime_types;
 #[macro_use]
@@ -140,7 +140,7 @@ pub mod modifier {
 
 /// Re-exports from the url crate.
 pub mod url {
-    pub use url::Url;
+    pub use url_ext::*;
 }
 
 /// Status Codes
