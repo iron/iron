@@ -138,6 +138,11 @@ pub mod modifier {
     pub use self::modfier::*;
 }
 
+/// Re-exports from the url crate.
+pub mod url {
+    pub use url::Url;
+}
+
 /// Status Codes
 pub mod status {
     pub use hyper::status::StatusCode as Status;
