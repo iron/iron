@@ -32,8 +32,8 @@ log = "0.3"
 conduit-mime-types = "0.7"
 lazy_static = "0.2"
 num_cpus = "1.0"
-hyper = { version = "0.9", default-features = false }
-hyper-native-tls = { version = "0.1", optional = true }
+hyper = "0.10"
+hyper-native-tls = { version = "0.2", optional = true }
 
 [dev-dependencies]
 time = "0.1"
