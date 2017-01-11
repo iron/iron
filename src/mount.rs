@@ -117,9 +117,7 @@ impl Handler for Mount {
         // will be the empty list. For the purposes of redirection, conveying that the path
         // did not include a trailing slash is more important than providing a non-empty list.
         let path = req.url.path()[matched.length..].join("/");
-        let mut nu = req.url.clone().into_generic_url();
-        nu.set_path(&path);
-        req.url = Url::from_generic_url(nu).unwrap();
+        req.url.as_mut().set_path(&path);
 
         let res = matched.handler.handle(req);
 
