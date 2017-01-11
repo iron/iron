@@ -15,9 +15,9 @@ pub fn url_for(request: &Request, route_id: &str, params: HashMap<String, String
     let inner = request.extensions.get::<RouterInner>().expect("Couldn\'t find router set up properly.");
     let glob = inner.route_ids.get(route_id).expect("No route with that ID");
 
-    let mut url = request.url.clone().into_generic_url();
-    url_for_impl(&mut url, glob, params);
-    ::iron::Url::from_generic_url(url).unwrap()
+    let mut url = request.url.clone();
+    url_for_impl(url.as_mut(), glob, params);
+    url
 }
 
 fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) {

@@ -7,7 +7,6 @@ use iron::{Request, Response, Handler, IronResult, IronError};
 use iron::{status, method, headers};
 use iron::typemap::Key;
 use iron::modifiers::Redirect;
-use iron::Url;
 
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
@@ -187,10 +186,8 @@ impl Router {
         let mut path = url.path().join("/");
 
         if let Some(last_char) = path.chars().last() {
-            // Unwrap generic URL to get access to its path components.
-            let mut generic_url = url.into_generic_url();
             {
-                let mut path_segments = generic_url.path_segments_mut().unwrap();
+                let mut path_segments = url.as_mut().path_segments_mut().unwrap();
                 if last_char == '/' {
                     // We didn't recognize anything without a trailing slash; try again with one appended.
                     path.pop();
@@ -201,7 +198,6 @@ impl Router {
                     path_segments.push("");
                 }
             }
-            url = Url::from_generic_url(generic_url).unwrap();
         }
 
         self.recognize(&req.method, &path).ok().and(
