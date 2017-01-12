@@ -143,16 +143,19 @@ impl Router {
 
     fn recognize(&self, method: &method::Method, path: &str)
                       -> Result<Match<&Arc<Handler>>, RouterError> {
-        match self.inner.routers.recognize(path)
-            .map(|s|
-                match s.handler.get(method) {
-                    Some(h) => Ok(Match::new(h, s.params)),
-                    None => self.inner.wildcard.recognize(path).ok().map_or(Err(RouterError::MethodNotAllowed), |s| Ok(s))
-                }
-        ).map_err(|_| self.inner.wildcard.recognize(path).ok().map_or(Err(RouterError::NotFound), |s| Ok(s))) {
-            Ok(s) => s,
-            Err(e) => e
-        }
+        let mut found_path = false;
+        if let Ok(s) = self.inner.routers.recognize(path) {
+            found_path = true;
+            if let Some(h) = s.handler.get(method) {
+                return Ok(Match::new(h, s.params));
+            }
+        };
+
+        if let Ok(x) = self.inner.wildcard.recognize(path) {
+            return Ok(x)
+        };
+
+        Err(if found_path { RouterError::MethodNotAllowed } else { RouterError::NotFound })
     }
 
     fn handle_options(&self, path: &str) -> Response {
