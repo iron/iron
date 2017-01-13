@@ -160,6 +160,7 @@ impl Modifier<Response> for status::Status {
 }
 
 /// A modifier for changing headers on requests and responses.
+#[derive(Clone)]
 pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
 
 impl<H> Modifier<Response> for Header<H>
