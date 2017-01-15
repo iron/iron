@@ -3,6 +3,7 @@
 use std::default::Default;
 use std::str::Chars;
 use std::iter::Peekable;
+use std::fmt::Formatter;
 
 use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
 
@@ -43,6 +44,16 @@ impl Format {
         }
 
         Some(Format(results))
+    }
+
+    /// Turn a `Format` into something that can be displayed.
+    pub fn display_with<'a>(&'a self,
+                            render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
+                            -> FormatDisplay<'a> {
+        FormatDisplay {
+            format: self,
+            render: render,
+        }
     }
 }
 
@@ -172,4 +183,23 @@ pub enum FormatText {
 #[doc(hidden)]
 pub struct FormatUnit {
     pub text: FormatText,
+}
+
+
+/// A helper for displaying a log message.
+#[doc(hidden)]
+pub struct FormatDisplay<'a> {
+    format: &'a Format,
+    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
+}
+
+use std::fmt;
+impl<'a> fmt::Display for FormatDisplay<'a> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        let Format(ref format) = *self.format;
+        for unit in format {
+            (self.render)(fmt, &unit.text)?;
+        }
+        Ok(())
+    }
 }
