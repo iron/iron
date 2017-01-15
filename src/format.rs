@@ -3,13 +3,14 @@
 use std::default::Default;
 use std::str::Chars;
 use std::iter::Peekable;
+use std::fmt::Formatter;
 
 use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
 #[derive(Clone)]
-pub struct Format(pub Vec<FormatUnit>);
+pub struct Format(Vec<FormatUnit>);
 
 impl Default for Format {
     /// Return the default formatting style for the `Logger`:
@@ -43,6 +44,28 @@ impl Format {
         }
 
         Some(Format(results))
+    }
+}
+
+pub trait ContextDisplay<'a> {
+    type Item;
+    type Display: fmt::Display;
+    fn display_with(&'a self,
+                    render: &'a Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>)
+                    -> Self::Display;
+}
+
+
+impl<'a> ContextDisplay<'a> for Format {
+    type Item = FormatText;
+    type Display = FormatDisplay<'a>;
+    fn display_with(&'a self,
+                    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
+                    -> FormatDisplay<'a> {
+        FormatDisplay {
+            format: self,
+            render: render,
+        }
     }
 }
 
@@ -163,4 +186,21 @@ pub enum FormatText {
 #[doc(hidden)]
 pub struct FormatUnit {
     pub text: FormatText,
+}
+
+
+pub struct FormatDisplay<'a> {
+    format: &'a Format,
+    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
+}
+
+use std::fmt;
+impl<'a> fmt::Display for FormatDisplay<'a> {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        let Format(ref format) = *self.format;
+        for unit in format {
+            (self.render)(fmt, &unit.text)?;
+        }
+        Ok(())
+    }
 }

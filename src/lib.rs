@@ -10,13 +10,16 @@ use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Re
 use iron::typemap::Key;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
-use format::{Format, FormatText};
+use format::{ContextDisplay, FormatText};
 
-pub mod format;
+use std::fmt::{Display, Formatter};
+
+mod format;
+pub use format::Format;
 
 /// `Middleware` for logging request and response info to the terminal.
 pub struct Logger {
-    format: Option<Format>
+    format: Format,
 }
 
 impl Logger {
@@ -37,6 +40,7 @@ impl Logger {
     /// chain.link_after(logger_after);
     /// ```
     pub fn new(format: Option<Format>) -> (Logger, Logger) {
+        let format = format.unwrap_or_default();
         (Logger { format: format.clone() }, Logger { format: format })
     }
 }
@@ -54,25 +58,30 @@ impl Logger {
 
         let response_time = time::now() - entry_time;
         let response_time_ms = (response_time.num_seconds() * 1000) as f64 + (response_time.num_nanoseconds().unwrap_or(0) as f64) / 1000000.0;
-        let Format(format) = self.format.clone().unwrap_or_default();
 
         {
-            let render = |text: &FormatText| {
+            let render = |fmt: &mut Formatter, text: &FormatText| {
                 match *text {
-                    Str(ref string) => string.clone(),
-                    Method => format!("{}", req.method),
-                    URI => format!("{}", req.url),
-                    Status => res.status
-                        .map(|status| format!("{}", status))
-                        .unwrap_or("<missing status code>".to_owned()),
-                    ResponseTime => format!("{} ms", response_time_ms),
-                    RemoteAddr => format!("{}", req.remote_addr),
-                    RequestTime => format!("{}", entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z").unwrap()),
+                    Str(ref string) => fmt.write_str(string),
+                    Method => req.method.fmt(fmt),
+                    URI => req.url.fmt(fmt),
+                    Status => {
+                        match res.status {
+                            Some(status) => status.fmt(fmt),
+                            None => fmt.write_str("<missing status code>"),
+                        }
+                    }
+                    ResponseTime => fmt.write_fmt(format_args!("{} ms", response_time_ms)),
+                    RemoteAddr => req.remote_addr.fmt(fmt),
+                    RequestTime => {
+                        entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z")
+                            .unwrap()
+                            .fmt(fmt)
+                    }
                 }
             };
 
-            let lg = format.iter().map(|unit| render(&unit.text)).collect::<Vec<String>>().join("");
-            info!("{}", lg);
+            info!("{}", self.format.display_with(&render));
         }
 
         Ok(())
