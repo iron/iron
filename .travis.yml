@@ -7,5 +7,17 @@ sudo: false
 env:
     global:
         secure: GBUs51VTpYXiQMunI1tslOpRpLweMdQG5Pnf+8k54tbhGDWjdlGssuhf7k9VknskpfBi3D2CesVsAI/rLJ6vkahCPpKj2uHZbmU1I8/z3ram+2/M1pcV5ehW3Cgf5oK/CsI3rzyDZhszmuQWqEpd6Q+rvcFqbKzM8+cBdyPpEVo=
+matrix:
+  include:
+    - rust: stable
+      env: IRON_VERSION=0.4.0
+    - rust: stable
+      env: IRON_VERSION=0.5.0
+script:
+# We need to crate a Cargo.lock before updating to a precise version.
+- "cargo update"
+- '[[ -z "$IRON_VERSION" ]] || cargo update -p iron --precise "$IRON_VERSION"'
+- 'cargo build --verbose'
+- 'cargo test --verbose'
 
 after_success: 'curl https://raw.githubusercontent.com/iron-bot/build-doc/master/build-doc.sh | sh'
