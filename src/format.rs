@@ -8,9 +8,9 @@ use std::fmt::Formatter;
 use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
 
 /// A formatting style for the `Logger`, consisting of multiple
-/// `FormatUnit`s concatenated into one line.
+/// `FormatText`s concatenated into one line.
 #[derive(Clone)]
-pub struct Format(Vec<FormatUnit>);
+pub struct Format(Vec<FormatText>);
 
 impl Default for Format {
     /// Return the default formatting style for the `Logger`:
@@ -94,13 +94,13 @@ impl<'a> FormatParser<'a> {
 
 // Some(None) means there was a parse error and this FormatParser should be abandoned.
 impl<'a> Iterator for FormatParser<'a> {
-    type Item = Option<FormatUnit>;
+    type Item = Option<FormatText>;
 
-    fn next(&mut self) -> Option<Option<FormatUnit>> {
+    fn next(&mut self) -> Option<Option<FormatText>> {
         // If the parser has been cancelled or errored for some reason.
         if self.finished { return None }
 
-        // Try to parse a new FormatUnit.
+        // Try to parse a new FormatText.
         match self.chars.next() {
             // Parse a recognized object.
             //
@@ -139,8 +139,8 @@ impl<'a> Iterator for FormatParser<'a> {
                     }
                 };
 
-                Some(Some(FormatUnit {text: text}))
-            },
+                Some(Some(text))
+            }
 
             // Parse a regular string part of the format string.
             Some(c) => {
@@ -150,9 +150,7 @@ impl<'a> Iterator for FormatParser<'a> {
                 loop {
                     match self.chars.peek() {
                         // Done parsing.
-                        Some(&'{') | None => {
-                            return Some(Some(FormatUnit {text: FormatText::Str(buffer)}))
-                        },
+                        Some(&'{') | None => return Some(Some(FormatText::Str(buffer))),
 
                         Some(_) => {
                             buffer.push(self.chars.next().unwrap())
@@ -181,13 +179,6 @@ pub enum FormatText {
     RequestTime
 }
 
-/// A `FormatText` with associated style information.
-#[derive(Clone)]
-#[doc(hidden)]
-pub struct FormatUnit {
-    pub text: FormatText,
-}
-
 
 pub struct FormatDisplay<'a> {
     format: &'a Format,
@@ -199,7 +190,7 @@ impl<'a> fmt::Display for FormatDisplay<'a> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
         let Format(ref format) = *self.format;
         for unit in format {
-            (self.render)(fmt, &unit.text)?;
+            (self.render)(fmt, unit)?;
         }
         Ok(())
     }
