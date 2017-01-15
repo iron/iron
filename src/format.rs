@@ -45,15 +45,27 @@ impl Format {
 
         Some(Format(results))
     }
-
 }
 
-pub fn display_with<'a>(format: &'a Format,
-                        render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
-                        -> FormatDisplay<'a> {
-    FormatDisplay {
-        format: format,
-        render: render,
+pub trait ContextDisplay<'a> {
+    type Item;
+    type Display: fmt::Display;
+    fn display_with(&'a self,
+                    render: &'a Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>)
+                    -> Self::Display;
+}
+
+
+impl<'a> ContextDisplay<'a> for Format {
+    type Item = FormatText;
+    type Display = FormatDisplay<'a>;
+    fn display_with(&'a self,
+                    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
+                    -> FormatDisplay<'a> {
+        FormatDisplay {
+            format: self,
+            render: render,
+        }
     }
 }
 

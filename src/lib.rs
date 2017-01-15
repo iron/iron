@@ -10,7 +10,7 @@ use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Re
 use iron::typemap::Key;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
-use format::{FormatText};
+use format::{ContextDisplay, FormatText};
 
 use std::fmt::{Display, Formatter};
 
@@ -81,7 +81,7 @@ impl Logger {
                 }
             };
 
-            info!("{}", format::display_with(&self.format, &render));
+            info!("{}", self.format.display_with(&render));
         }
 
         Ok(())
