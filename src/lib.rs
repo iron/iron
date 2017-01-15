@@ -12,7 +12,7 @@ use iron::typemap::Key;
 use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
 use format::{FormatText};
 
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 
 mod format;
 pub use format::Format;
@@ -63,19 +63,21 @@ impl Logger {
             let render = |fmt: &mut Formatter, text: &FormatText| {
                 match *text {
                     Str(ref string) => fmt.write_str(string),
-                    Method => fmt.write_fmt(format_args!("{}", req.method)),
-                    URI => fmt.write_fmt(format_args!("{}", req.url)),
-                    Status => match res.status {
-                        Some(status) => fmt.write_fmt(format_args!("{}", status)),
-                        None => fmt.write_str("<missing status code>"),
-                    },
+                    Method => req.method.fmt(fmt),
+                    URI => req.url.fmt(fmt),
+                    Status => {
+                        match res.status {
+                            Some(status) => status.fmt(fmt),
+                            None => fmt.write_str("<missing status code>"),
+                        }
+                    }
                     ResponseTime => fmt.write_fmt(format_args!("{} ms", response_time_ms)),
-                    RemoteAddr => fmt.write_fmt(format_args!("{}", req.remote_addr)),
+                    RemoteAddr => req.remote_addr.fmt(fmt),
                     RequestTime => {
-                        fmt.write_fmt(format_args!("{}",
-                                                   entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z")
-                                                   .unwrap()))
-                    },
+                        entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z")
+                            .unwrap()
+                            .fmt(fmt)
+                    }
                 }
             };
 
