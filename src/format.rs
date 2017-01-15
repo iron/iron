@@ -53,10 +53,6 @@ struct FormatParser<'a> {
     // A reusable buffer for parsing style attributes.
     object_buffer: String,
 
-    // A queue of waiting format units to avoid full-on
-    // state-machine parsing.
-    waitqueue: Vec<FormatUnit>,
-
     finished: bool
 }
 
@@ -68,7 +64,6 @@ impl<'a> FormatParser<'a> {
             // No attributes are longer than 14 characters, so we can avoid reallocating.
             object_buffer: String::with_capacity(14),
 
-            waitqueue: vec![],
             finished: false
         }
     }
@@ -81,10 +76,6 @@ impl<'a> Iterator for FormatParser<'a> {
     fn next(&mut self) -> Option<Option<FormatUnit>> {
         // If the parser has been cancelled or errored for some reason.
         if self.finished { return None }
-
-        if self.waitqueue.len() != 0 {
-            return Some(Some(self.waitqueue.remove(0)));
-        }
 
         // Try to parse a new FormatUnit.
         match self.chars.next() {
