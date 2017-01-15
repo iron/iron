@@ -186,7 +186,6 @@ pub struct FormatUnit {
 }
 
 
-#[doc(hidden)]
 pub struct FormatDisplay<'a> {
     format: &'a Format,
     render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
