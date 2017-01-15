@@ -6,7 +6,7 @@ extern crate env_logger;
 use iron::prelude::*;
 
 use logger::Logger;
-use logger::format::Format;
+use logger::Format;
 
 static FORMAT: &'static str =
     "Uri: {uri}, Method: {method}, Status: {status}, Duration: {response-time}, Time: {request-time}";
@@ -19,7 +19,7 @@ fn main() {
     let mut chain = Chain::new(no_op_handler);
     let format = Format::new(FORMAT);
     chain.link(Logger::new(Some(format.unwrap())));
-	
+
     println!("Run `RUST_LOG=info cargo run --example formatstring` to see logs.");
     match Iron::new(chain).http("127.0.0.1:3000") {
         Result::Ok(listening) => println!("{:?}", listening),

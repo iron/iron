@@ -10,11 +10,12 @@ use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Re
 use iron::typemap::Key;
 
 use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
-use format::{Format, FormatText};
+use format::{FormatText};
 
 use std::fmt::Formatter;
 
-pub mod format;
+mod format;
+pub use format::Format;
 
 /// `Middleware` for logging request and response info to the terminal.
 pub struct Logger {
@@ -78,7 +79,7 @@ impl Logger {
                 }
             };
 
-            info!("{}", self.format.display_with(&render));
+            info!("{}", format::display_with(&self.format, &render));
         }
 
         Ok(())

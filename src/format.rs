@@ -10,7 +10,7 @@ use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTim
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatUnit`s concatenated into one line.
 #[derive(Clone)]
-pub struct Format(pub Vec<FormatUnit>);
+pub struct Format(Vec<FormatUnit>);
 
 impl Default for Format {
     /// Return the default formatting style for the `Logger`:
@@ -46,14 +46,14 @@ impl Format {
         Some(Format(results))
     }
 
-    /// Turn a `Format` into something that can be displayed.
-    pub fn display_with<'a>(&'a self,
-                            render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
-                            -> FormatDisplay<'a> {
-        FormatDisplay {
-            format: self,
-            render: render,
-        }
+}
+
+pub fn display_with<'a>(format: &'a Format,
+                        render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
+                        -> FormatDisplay<'a> {
+    FormatDisplay {
+        format: format,
+        render: render,
     }
 }
 
@@ -186,7 +186,6 @@ pub struct FormatUnit {
 }
 
 
-/// A helper for displaying a log message.
 #[doc(hidden)]
 pub struct FormatDisplay<'a> {
     format: &'a Format,
