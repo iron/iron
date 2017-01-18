@@ -127,7 +127,7 @@ pub mod prelude {
              IronResult, IronError, Iron};
 }
 
-/// Re-exports from the TypeMap crate.
+/// Re-exports from the `TypeMap` crate.
 pub mod typemap {
     pub use tmap::{TypeMap, Key};
 }

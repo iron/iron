@@ -15,9 +15,9 @@
 //! [b] -> [b] -> [b] -> [[[[h]]]] -> [a] -> [a] -> [a] -> [a]
 //! ```
 //!
-//! A request first travels through all BeforeMiddleware, then a Response is generated
-//! by the Handler, which can be an arbitrary nesting of AroundMiddleware, then all
-//! AfterMiddleware are called with both the Request and Response. After all AfterMiddleware
+//! A request first travels through all `BeforeMiddleware`, then a Response is generated
+//! by the `Handler`, which can be an arbitrary nesting of `AroundMiddleware`, then all
+//! `AfterMiddleware` are called with both the `Request` and `Response`. After all `AfterMiddleware`
 //! have been fired, the response is written back to the client.
 //!
 //! Iron's error handling system is pragmatic and focuses on tracking two pieces
@@ -107,10 +107,10 @@ pub trait AfterMiddleware: Send + Sync + 'static {
     }
 }
 
-/// AroundMiddleware are used to wrap and replace the `Handler` in a `Chain`.
+/// `AroundMiddleware` are used to wrap and replace the `Handler` in a `Chain`.
 ///
-/// AroundMiddleware produce `Handler`s through their `around` method, which is
-/// called once on insertion into a Chain or can be called manually outside of a
+/// `AroundMiddleware` produce `Handler`s through their `around` method, which is
+/// called once on insertion into a `Chain` or can be called manually outside of a
 /// `Chain`.
 pub trait AroundMiddleware {
     /// Produce a `Handler` from this `AroundMiddleware` given another `Handler`.

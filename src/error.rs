@@ -10,7 +10,7 @@ pub use hyper::error::Result as HttpResult;
 
 /// The type of Errors inside and when using Iron.
 ///
-/// IronError informs its receivers of two things:
+/// `IronError` informs its receivers of two things:
 ///
 /// * What went wrong
 /// * What to do about it
@@ -36,7 +36,7 @@ pub struct IronError {
 }
 
 impl IronError {
-    /// Create a new IronError from an error and a modifier.
+    /// Create a new `IronError` from an error and a modifier.
     pub fn new<E: Error, M: Modifier<Response>>(e: E, m: M) -> IronError {
         IronError {
             error: Box::new(e),
