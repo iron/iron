@@ -170,7 +170,7 @@ impl<H: Handler> ::hyper::server::Handler for RawHandler<H> {
         *http_res.status_mut() = status::InternalServerError;
 
         // Create `Request` wrapper.
-        match Request::from_http(http_req, self.addr.clone(), &self.protocol) {
+        match Request::from_http(http_req, self.addr, &self.protocol) {
             Ok(mut req) => {
                 // Dispatch the request, write the response back to http_res
                 self.handler.handle(&mut req).unwrap_or_else(|e| {
