@@ -116,7 +116,7 @@ impl Response {
         *http_res.headers_mut() = self.headers;
 
         // Default to a 404 if no response code was set
-        *http_res.status_mut() = self.status.clone().unwrap_or(status::NotFound);
+        *http_res.status_mut() = self.status.unwrap_or(status::NotFound);
 
         let out = match self.body {
             Some(body) => write_with_body(http_res, body),
