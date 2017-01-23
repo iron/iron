@@ -421,4 +421,14 @@ mod test {
             Ok(Response::with((status::Ok, "")))
         }, "my_route_id");
     }
+
+    #[test]
+    fn test_wildcard_regression() {
+        let mut router = Router::new();
+        router.options("*", |_: &mut Request| Ok(Response::with((status::Ok, ""))), "id1");
+        router.put("/upload/*filename", |_: &mut Request| Ok(Response::with((status::Ok, ""))), "id2");
+        assert!(router.recognize(&method::Options, "/foo").is_ok());
+        assert!(router.recognize(&method::Put, "/foo").is_err());
+        assert!(router.recognize(&method::Put, "/upload/foo").is_ok());
+    }
 }
