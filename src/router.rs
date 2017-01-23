@@ -300,8 +300,8 @@ mod test {
             Ok(Response::with((status::Ok, "")))
         }, "any");
 
-        assert!(router.recognize(&method::Get, "/post").is_ok());
-        assert!(router.recognize(&method::Get, "/get").is_ok());
+        assert!(router.recognize(&method::Get, "/post").is_some());
+        assert!(router.recognize(&method::Get, "/get").is_some());
     }
 
     #[test]
@@ -314,10 +314,10 @@ mod test {
             Ok(Response::with((status::Ok, "")))
         }, "");
 
-        assert!(router.recognize(&method::Post, "/post").is_ok());
-        assert!(router.recognize(&method::Get, "/post").is_ok());
-        assert!(router.recognize(&method::Put, "/post").is_err());
-        assert!(router.recognize(&method::Get, "/post/").is_err());
+        assert!(router.recognize(&method::Post, "/post").is_some());
+        assert!(router.recognize(&method::Get, "/post").is_some());
+        assert!(router.recognize(&method::Put, "/post").is_none());
+        assert!(router.recognize(&method::Get, "/post/").is_none());
     }
 
     #[test]
@@ -326,14 +326,7 @@ mod test {
         router.put("/put", |_: &mut Request| {
             Ok(Response::with((status::Ok, "")))
         }, "");
-        match router.recognize(&method::Patch, "/patch") {
-            Ok(_) => {
-                panic!();
-            },
-            Err(e) => {
-                assert_eq!(RouterError::NotFound, e);
-            }
-        }
+        assert!(router.recognize(&method::Patch, "/patch").is_none());
     }
 
     #[test]
@@ -353,8 +346,8 @@ mod test {
         let mut router = Router::new();
         router.options("*", |_: &mut Request| Ok(Response::with((status::Ok, ""))), "id1");
         router.put("/upload/*filename", |_: &mut Request| Ok(Response::with((status::Ok, ""))), "id2");
-        assert!(router.recognize(&method::Options, "/foo").is_ok());
-        assert!(router.recognize(&method::Put, "/foo").is_err());
-        assert!(router.recognize(&method::Put, "/upload/foo").is_ok());
+        assert!(router.recognize(&method::Options, "/foo").is_some());
+        assert!(router.recognize(&method::Put, "/foo").is_none());
+        assert!(router.recognize(&method::Put, "/upload/foo").is_some());
     }
 }
