@@ -181,7 +181,7 @@ impl Router {
     }
 
     // Tests for a match by adding or removing a trailing slash.
-    fn redirect_slash(&self, req: &Request) -> Option<IronError> {
+    fn redirect_slash(&self, req : &Request) -> Option<IronResult<Response>> {
         let mut url = req.url.clone();
         let mut path = url.path().join("/");
 
@@ -201,35 +201,23 @@ impl Router {
         }
 
         self.recognize(&req.method, &path).ok().and(
-            Some(IronError::new(RouterError::TrailingSlash,
-                                (status::MovedPermanently, Redirect(url))))
+            Some(Err(IronError::new(RouterError::TrailingSlash,
+                                (status::MovedPermanently, Redirect(url)))))
         )
     }
 
-    fn handle_method(&self, req: &mut Request, path: &str) -> IronResult<Response> {
+    fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
         match self.recognize(&req.method, path) {
             Ok(matched) => {
                 req.extensions.insert::<Router>(matched.params);
                 req.extensions.insert::<RouterInner>(self.inner.clone());
-                matched.handler.handle(req)
+                Some(matched.handler.handle(req))
             },
             Err(RouterError::MethodNotAllowed) => {
-                Err(IronError::new(RouterError::MethodNotAllowed, status::MethodNotAllowed))
+                Some(Err(IronError::new(RouterError::MethodNotAllowed, status::MethodNotAllowed)))
             },
             Err(_) => {
-                if let Some(err) = self.redirect_slash(req) {
-                    return Err(err)
-                };
-
-                match req.method {
-                    method::Options => Ok(self.handle_options(path)),
-                    // For HEAD, fall back to GET. Hyper ensures no response body is written.
-                    method::Head => {
-                        req.method = method::Get;
-                        self.handle_method(req, path)
-                    },
-                    _ => Err(IronError::new(RouterError::NotFound, status::NotFound))
-                }
+                self.redirect_slash(req)
             }
         }
     }
@@ -242,7 +230,20 @@ impl Key for RouterInner { type Value = Arc<RouterInner>; }
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let path = req.url.path().join("/");
-        self.handle_method(req, &path)
+
+        self.handle_method(req, &path).unwrap_or_else(||
+            match req.method {
+                method::Options => Ok(self.handle_options(&path)),
+                // For HEAD, fall back to GET. Hyper ensures no response body is written.
+                method::Head => {
+                    req.method = method::Get;
+                    self.handle_method(req, &path).unwrap_or(
+                        Err(IronError::new(RouterError::NotFound, status::NotFound))
+                    )
+                }
+                _ => Err(IronError::new(RouterError::NotFound, status::NotFound))
+            }
+        )
     }
 }
 
