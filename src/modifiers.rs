@@ -146,10 +146,9 @@ impl Modifier<Response> for PathBuf {
     /// ## Panics
     ///
     /// Panics if there is no file at the passed-in Path.
+    #[inline]
     fn modify(self, res: &mut Response) {
-        File::open(&self)
-            .expect(&format!("No such file: {}", self.display()))
-            .modify(res);
+        self.as_path().modify(res);
     }
 }
 
