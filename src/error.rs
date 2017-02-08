@@ -1,10 +1,9 @@
-use std::error::Error as StdError;
 use std::fmt;
 
 use modifier::Modifier;
 use {Response};
 
-pub use err::Error;
+pub use std::error::Error;
 pub use hyper::Error as HttpError;
 pub use hyper::error::Result as HttpResult;
 
@@ -37,7 +36,7 @@ pub struct IronError {
 
 impl IronError {
     /// Create a new `IronError` from an error and a modifier.
-    pub fn new<E: Error, M: Modifier<Response>>(e: E, m: M) -> IronError {
+    pub fn new<E: 'static + Error + Send, M: Modifier<Response>>(e: E, m: M) -> IronError {
         IronError {
             error: Box::new(e),
             response: Response::with(m)
@@ -51,12 +50,12 @@ impl fmt::Display for IronError {
     }
 }
 
-impl StdError for IronError {
+impl Error for IronError {
     fn description(&self) -> &str {
         self.error.description()
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&Error> {
         self.error.cause()
     }
 }
