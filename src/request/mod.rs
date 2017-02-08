@@ -89,7 +89,7 @@ impl<'a, 'b> Request<'a, 'b> {
 
             AbsolutePath(ref path) => {
                 let url_string = match (version, headers.get::<headers::Host>()) {
-                    (_, Some(ref host)) => {
+                    (_, Some(host)) => {
                         // Attempt to prepend the Host header (mandatory in HTTP/1.1)
                         if let Some(port) = host.port {
                             format!("{}://{}:{}{}", protocol.name(), host.hostname, port, path)

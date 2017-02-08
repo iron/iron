@@ -96,7 +96,7 @@ impl Url {
         // Map empty passwords to None.
         match self.generic_url.password() {
             None => None,
-            Some(ref x) if x.is_empty() => None,
+            Some(x) if x.is_empty() => None,
             Some(password) => Some(password)
         }
     }

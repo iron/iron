@@ -146,10 +146,9 @@ impl Modifier<Response> for PathBuf {
     /// ## Panics
     ///
     /// Panics if there is no file at the passed-in Path.
+    #[inline]
     fn modify(self, res: &mut Response) {
-        File::open(&self)
-            .expect(&format!("No such file: {}", self.display()))
-            .modify(res);
+        self.as_path().modify(res);
     }
 }
 
@@ -160,6 +159,7 @@ impl Modifier<Response> for status::Status {
 }
 
 /// A modifier for changing headers on requests and responses.
+#[derive(Clone)]
 pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
 
 impl<H> Modifier<Response> for Header<H>
