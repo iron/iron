@@ -146,7 +146,16 @@ impl<'a, 'b> Request<'a, 'b> {
     }
 }
 
-/// The body of an Iron request,
+/// The body of an Iron request.
+///
+/// To pass the body to other APIs that expect a `io::Read`, use a `&mut` reference:
+///
+/// ```no_run
+/// |request: &mut Request| {
+///     let parsed_request = parse_request_from_read(&mut request.body);
+///     ...
+/// }
+/// ```
 pub struct Body<'a, 'b: 'a>(HttpReader<&'a mut buffer::BufReader<&'b mut NetworkStream>>);
 
 impl<'a, 'b> Body<'a, 'b> {
