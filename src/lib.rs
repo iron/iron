@@ -69,6 +69,8 @@ extern crate plugin;
 extern crate url as url_ext;
 extern crate num_cpus;
 extern crate conduit_mime_types as mime_types;
+extern crate futures;
+extern crate futures_cpupool;
 #[macro_use]
 extern crate lazy_static;
 
@@ -151,8 +153,8 @@ pub mod status {
 
 /// HTTP Methods
 pub mod method {
-    pub use hyper::method::Method;
-    pub use hyper::method::Method::*;
+    pub use hyper::Method;
+    pub use hyper::Method::*;
 }
 
 // Publicized to show the documentation
