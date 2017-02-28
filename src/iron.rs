@@ -5,11 +5,14 @@ use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, BoxFuture};
+use futures::{future, Future, BoxFuture, Stream};
 use futures_cpupool::CpuPool;
 
+use tokio_core::net::TcpListener;
+use tokio_core::reactor::Core;
+
 use hyper::{Body, Error};
-use hyper::server::Http;
+use hyper::server::{NewService, Http};
 
 use request::HttpRequest;
 use response::HttpResponse;
@@ -114,22 +117,30 @@ impl<H: Handler> Iron<H> {
     /// Kick off the server process using the HTTP protocol.
     ///
     /// Call this once to begin listening for requests on the server.
-    /// This consumes the Iron instance, but does the listening on
-    /// another task, so is not blocking.
-    ///
-    /// The thread returns a guard that will automatically join with the parent
-    /// once it is dropped, blocking until this happens.
     pub fn http<A>(self, addr: A) -> HttpResult<()>
         where A: ToSocketAddrs
     {
-        let addr = addr.to_socket_addrs().unwrap().next().unwrap();
+        let addr = addr.to_socket_addrs()?.next().unwrap();
+
+        let mut core = Core::new().unwrap();
+        let handle = core.handle();
+
+        let sock = TcpListener::bind(&addr, &handle).unwrap();
+
         let handler = RawService{
             addr: addr,
             handler: Arc::new(self.handler),
             protocol: Protocol::http(),
             pool: CpuPool::new(self.threads),
         };
-        Http::new().bind(&addr.clone(), handler).and_then(|server| server.run())
+
+        let http = Http::new();
+        let server = sock.incoming().for_each(|(sock, remote_addr)| {
+            http.bind_connection(&handle, sock, remote_addr, handler.new_service().unwrap());
+            future::ok(())
+        });
+
+        core.run(server).map_err(|e| e.into())
     }
 }
 

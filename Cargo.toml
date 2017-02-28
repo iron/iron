@@ -34,6 +34,7 @@ num_cpus = "1.0"
 hyper = { git = "https://github.com/hyperium/hyper" }
 hyper-native-tls = { version = "0.2", optional = true }
 futures = "0.1"
+tokio-core = "0.1"
 futures-cpupool = "0.1"
 
 [dev-dependencies]

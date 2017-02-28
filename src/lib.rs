@@ -70,6 +70,7 @@ extern crate url as url_ext;
 extern crate num_cpus;
 extern crate conduit_mime_types as mime_types;
 extern crate futures;
+extern crate tokio_core;
 extern crate futures_cpupool;
 #[macro_use]
 extern crate lazy_static;
