@@ -14,17 +14,25 @@
 
 extern crate iron;
 #[cfg(feature = "native-tls-example")]
-extern crate hyper_native_tls;
+extern crate native_tls;
+extern crate tokio_tls;
 
 #[cfg(feature = "native-tls-example")]
 fn main() {
     // Avoid unused errors due to conditional compilation ('native-tls-example' feature is not default)
-    use hyper_native_tls::NativeTlsServer;
+    use native_tls::{Pkcs12, TlsAcceptor};
     use iron::{Iron, Request, Response};
     use iron::status;
+    use std::io::prelude::*;
     use std::result::Result;
+    use std::fs::File;
 
-    let ssl = NativeTlsServer::new("identity.p12", "mypass").unwrap();
+    let mut file = File::open("identity.p12").unwrap();
+    let mut pkcs12 = vec![];
+    file.read_to_end(&mut pkcs12).unwrap();
+    let pkcs12 = Pkcs12::from_der(&pkcs12, "mypass").unwrap();
+
+    let ssl = TlsAcceptor::builder(pkcs12).unwrap().build().unwrap();
 
     match Iron::new(|_: &mut Request| {
         Ok(Response::with((status::Ok, "Hello world!")))

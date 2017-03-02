@@ -71,6 +71,7 @@ extern crate num_cpus;
 extern crate conduit_mime_types as mime_types;
 extern crate futures;
 extern crate tokio_core;
+extern crate tokio_tls;
 extern crate futures_cpupool;
 #[macro_use]
 extern crate lazy_static;

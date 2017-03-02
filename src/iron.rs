@@ -1,15 +1,19 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
+use std::io::{Error as IoError, ErrorKind};
 use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, BoxFuture, Stream};
+use futures::{future, Future, BoxFuture, Sink, Stream};
+use futures::sync::mpsc;
 use futures_cpupool::CpuPool;
 
+use tokio_core::io::Io;
 use tokio_core::net::TcpListener;
-use tokio_core::reactor::Core;
+use tokio_core::reactor::{Core, Handle};
+use tokio_tls::TlsAcceptorExt;
 
 use hyper::{Body, Error};
 use hyper::server::{NewService, Http};
@@ -122,20 +126,63 @@ impl<H: Handler> Iron<H> {
     {
         let addr = addr.to_socket_addrs()?.next().unwrap();
 
-        let mut core = Core::new().unwrap();
+        let core = Core::new().unwrap();
         let handle = core.handle();
 
-        let sock = TcpListener::bind(&addr, &handle).unwrap();
+        let sock = TcpListener::bind(&addr, &handle).unwrap().incoming();
 
+        return self.listen(sock, addr, Protocol::http(), core, handle);
+    }
+
+    /// Kick off the server process using the HTTPS protocol.
+    ///
+    /// Call this once to begin listening for requests on the server.
+    pub fn https<A, Tls>(self, addr: A, tls: Tls) -> HttpResult<()>
+        where A: ToSocketAddrs, Tls: TlsAcceptorExt + 'static
+    {
+        let addr = addr.to_socket_addrs()?.next().unwrap();
+
+        let core = Core::new().unwrap();
+        let handle = core.handle();
+
+        let listener_tcp = TcpListener::bind(&addr, &handle).unwrap();
+
+        let (tx, rx) = mpsc::channel(1);
+
+        let ssl_acceptor = listener_tcp.incoming().for_each(move |(sock, remote_addr)| {
+            let tx = tx.clone();
+            tls.accept_async(sock).map_err(|e| IoError::new(ErrorKind::Other, e)).and_then(move |sock| {
+                future::ok((sock, remote_addr))
+            }).then(|r| {
+                tx.send(r).map_err(|e| IoError::new(ErrorKind::Other, e))
+            }).and_then(|_| future::ok(()))
+        }).then(|_| future::ok(()));
+        handle.spawn(ssl_acceptor);
+
+        let listener = rx.then(|r| match r {
+            Ok(real_r) => real_r,
+            Err(e) => panic!(e),
+        });
+
+        return self.listen(listener, addr, Protocol::https(), core, handle);
+    }
+
+    /// Kick off a server process on an arbitrary `Listener`.
+    ///
+    /// Most use cases may call `http` and `https` methods instead of this.
+    pub fn listen<L, S>(self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
+        where L: Stream<Item=(S, SocketAddr), Error=IoError>,
+        S: Io + 'static,
+    {
         let handler = RawService{
             addr: addr,
             handler: Arc::new(self.handler),
-            protocol: Protocol::http(),
+            protocol: protocol,
             pool: CpuPool::new(self.threads),
         };
 
         let http = Http::new();
-        let server = sock.incoming().for_each(|(sock, remote_addr)| {
+        let server = listener.for_each(|(sock, remote_addr)| {
             http.bind_connection(&handle, sock, remote_addr, handler.new_service().unwrap());
             future::ok(())
         });
