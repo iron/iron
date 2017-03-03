@@ -1,19 +1,17 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-use std::io::{Error as IoError, ErrorKind};
+use std::io::{Error as IoError};
 use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, BoxFuture, Sink, Stream};
-use futures::sync::mpsc;
+use futures::{future, Future, BoxFuture, Stream};
 use futures_cpupool::CpuPool;
 
 use tokio_core::net::TcpListener;
 use tokio_core::reactor::{Core, Handle};
 use tokio_io::{AsyncRead, AsyncWrite};
-use tokio_tls::TlsAcceptorExt;
 
 use hyper::{Body, Error};
 use hyper::server::{NewService, Http};
@@ -22,6 +20,15 @@ use request::HttpRequest;
 use response::HttpResponse;
 
 use error::HttpResult;
+
+#[cfg(feature = "ssl")]
+use tokio_tls::TlsAcceptorExt;
+#[cfg(feature = "ssl")]
+use futures::sync::mpsc;
+#[cfg(feature = "ssl")]
+use futures::Sink;
+#[cfg(feature = "ssl")]
+use std::io::ErrorKind;
 
 use {Request, Handler};
 use status;
@@ -137,6 +144,7 @@ impl<H: Handler> Iron<H> {
     /// Kick off the server process using the HTTPS protocol.
     ///
     /// Call this once to begin listening for requests on the server.
+    #[cfg(feature = "ssl")]
     pub fn https<A, Tls>(self, addr: A, tls: Tls) -> HttpResult<()>
         where A: ToSocketAddrs, Tls: TlsAcceptorExt + 'static
     {
@@ -161,7 +169,7 @@ impl<H: Handler> Iron<H> {
 
         let listener = rx.then(|r| match r {
             Ok(real_r) => real_r,
-            Err(e) => panic!(e),
+            Err(_) => unreachable!(),
         });
 
         return self.listen(listener, addr, Protocol::https(), core, handle);

@@ -13,11 +13,12 @@
 // ```
 
 extern crate iron;
-#[cfg(feature = "native-tls-example")]
+#[cfg(feature = "ssl")]
 extern crate native_tls;
+#[cfg(feature = "ssl")]
 extern crate tokio_tls;
 
-#[cfg(feature = "native-tls-example")]
+#[cfg(feature = "ssl")]
 fn main() {
     // Avoid unused errors due to conditional compilation ('native-tls-example' feature is not default)
     use native_tls::{Pkcs12, TlsAcceptor};
@@ -43,7 +44,7 @@ fn main() {
     // curl -vvvv https://127.0.0.1:3000/ -k
 }
 
-#[cfg(not(feature = "native-tls-example"))]
+#[cfg(not(feature = "ssl"))]
 fn main() {
     // We need to do this to make sure `cargo test` passes.
 }

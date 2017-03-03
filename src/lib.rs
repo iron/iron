@@ -72,6 +72,7 @@ extern crate mime_guess;
 extern crate futures;
 extern crate tokio_core;
 extern crate tokio_io;
+#[cfg(feature = "ssl")]
 extern crate tokio_tls;
 extern crate futures_cpupool;
 

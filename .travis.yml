@@ -6,8 +6,8 @@ sudo: false
 script:
     - cargo build
     - cargo test
-    - cargo build --features native-tls-example
-    - cargo test --features native-tls-example
+    - cargo build --features ssl
+    - cargo test --features ssl
 env:
     global:
         secure: DUE2yG7/ASacYARIs7nysUAUhK86AqwE/PdQ3j+D5dqzxs3IOMSOcc7PA1r2w3FkXd52rENCYqKz2iReniJn4fG5S3Q+NbcfaYkhS/6P1y0sQB8yIIVeBRf/Bo2bR2P5TRh+piYWDmqYLUvsQ0+DpQ78MRA6HSxz7gCKpkZS4Y4=
