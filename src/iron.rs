@@ -9,9 +9,9 @@ use std::time::Duration;
 use futures::{future, Future, BoxFuture, Stream};
 use futures_cpupool::CpuPool;
 
-use tokio_core::io::Io;
 use tokio_core::net::TcpListener;
 use tokio_core::reactor::{Core, Handle};
+use tokio_io::{AsyncRead, AsyncWrite};
 
 use hyper::{Body, Error};
 use hyper::server::{NewService, Http};
@@ -180,7 +180,7 @@ impl<H: Handler> Iron<H> {
     /// Most use cases may call `http` and `https` methods instead of this.
     pub fn listen<L, S>(self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
         where L: Stream<Item=(S, SocketAddr), Error=IoError>,
-        S: Io + 'static,
+        S: AsyncRead + AsyncWrite + 'static,
     {
         let handler = RawService{
             addr: addr,
