@@ -1,9 +1,14 @@
+extern crate futures;
 extern crate iron;
 extern crate time;
 
 use iron::prelude::*;
-use iron::{Handler, AroundMiddleware};
+use iron::{AsyncHandler, AroundMiddleware};
 use iron::status;
+
+use futures::{future, Future};
+
+use std::rc::Rc;
 
 enum LoggerMode {
     Silent,
@@ -15,42 +20,44 @@ struct Logger {
     mode: LoggerMode
 }
 
-struct LoggerHandler<H: Handler> { logger: Logger, handler: H }
+struct LoggerHandler<H: AsyncHandler> { logger: Rc<Logger>, handler: H }
 
 impl Logger {
     fn new(mode: LoggerMode) -> Logger {
         Logger { mode: mode }
     }
 
-    fn log(&self, req: &Request, res: Result<&Response, &IronError>, time: u64) {
+    fn log(&self, res: Result<&(Request, Response), &IronError>, time: u64) {
         match self.mode {
             LoggerMode::Silent => {},
-            LoggerMode::Tiny => println!("Req: {:?}\nRes: {:?}\nTook: {}", req, res, time),
-            LoggerMode::Large => println!("Request: {:?}\nResponse: {:?}\nResponse-Time: {}", req, res, time)
+            LoggerMode::Tiny => println!("Res: {:?}\nTook: {}", res, time),
+            LoggerMode::Large => println!("Response: {:?}\nResponse-Time: {}", res, time)
         }
     }
 }
 
-impl<H: Handler> Handler for LoggerHandler<H> {
-    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+impl<H: AsyncHandler> AsyncHandler for LoggerHandler<H> {
+    fn async_handle(&self, req: Request) -> BoxIronFuture<(Request, Response)> {
         let entry = ::time::precise_time_ns();
-        let res = self.handler.handle(req);
-        self.logger.log(req, res.as_ref(), ::time::precise_time_ns() - entry);
-        res
+        let logger = self.logger.clone();
+        Box::new(self.handler.async_handle(req).then(move |res| {
+            logger.log(res.as_ref(), ::time::precise_time_ns() - entry);
+            return res;
+        }))
     }
 }
 
 impl AroundMiddleware for Logger {
-    fn around(self, handler: Box<Handler>) -> Box<Handler> {
+    fn around(self, handler: Box<AsyncHandler>) -> Box<AsyncHandler> {
         Box::new(LoggerHandler {
-            logger: self,
-            handler: handler
-        }) as Box<Handler>
+            logger: Rc::new(self),
+            handler: handler,
+        })
     }
 }
 
-fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Hello World!")))
+fn hello_world(req: Request) -> BoxIronFuture<(Request, Response)> {
+    Box::new(future::ok((req, Response::with((status::Ok, "Hello World!")))))
 }
 
 fn main() {

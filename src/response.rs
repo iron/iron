@@ -5,7 +5,6 @@ use std::fmt::{self, Debug};
 use std::fs::File;
 
 use typemap::TypeMap;
-use plugin::Extensible;
 use modifier::{Set, Modifier};
 use hyper::header::Headers;
 
@@ -97,7 +96,7 @@ impl Response {
             status: None, // Start with no response code.
             body: None, // Start with no body.
             headers: Headers::new(),
-            extensions: TypeMap::new()
+            extensions: TypeMap::custom()
         }
     }
 
@@ -157,17 +156,6 @@ impl Debug for Response {
 impl fmt::Display for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(self, f)
-    }
-}
-
-// Allow plugins to attach to responses.
-impl Extensible for Response {
-    fn extensions(&self) -> &TypeMap {
-        &self.extensions
-    }
-
-    fn extensions_mut(&mut self) -> &mut TypeMap {
-        &mut self.extensions
     }
 }
 

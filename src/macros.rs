@@ -12,19 +12,19 @@
 ///
 ///
 /// ```ignore
-/// let f = itry!(fs::File::create("foo.txt"), status::BadRequest);
-/// let f = itry!(fs::File::create("foo.txt"), (status::NotFound, "Not Found"));
-/// let f = itry!(fs::File::create("foo.txt"));  // HTTP 500
+/// let f = itry!(fs::File::create("foo.txt"), request, status::BadRequest);
+/// let f = itry!(fs::File::create("foo.txt"), request, (status::NotFound, "Not Found"));
+/// let f = itry!(fs::File::create("foo.txt"), request);  // HTTP 500
 /// ```
 ///
 #[macro_export]
 macro_rules! itry {
-    ($result:expr) => (itry!($result, $crate::status::InternalServerError));
+    ($result:expr, $req:expr) => (itry!($result, $req, $crate::status::InternalServerError));
 
-    ($result:expr, $modifier:expr) => (match $result {
+    ($result:expr, $req:expr, $modifier:expr) => (match $result {
         ::std::result::Result::Ok(val) => val,
-        ::std::result::Result::Err(err) => return ::std::result::Result::Err(
-            $crate::IronError::new(err, $modifier))
+        ::std::result::Result::Err(err) => return ::std::boxed::Box::new(::futures::future::err(
+            $crate::IronError::new(err, $req, $modifier))) as $crate::BoxIronFuture<($crate::Request, $crate::Response)>
     })
 }
 
@@ -32,10 +32,10 @@ macro_rules! itry {
 /// modifier. The default modifier is `status::BadRequest`.
 #[macro_export]
 macro_rules! iexpect {
-    ($option:expr) => (iexpect!($option, $crate::status::BadRequest));
-    ($option:expr, $modifier:expr) => (match $option {
+    ($option:expr, $req:expr) => (iexpect!($option, $req, $crate::status::BadRequest));
+    ($option:expr, $req:expr, $modifier:expr) => (match $option {
         ::std::option::Option::Some(x) => x,
-        ::std::option::Option::None => return ::std::result::Result::Ok(
-            $crate::response::Response::with($modifier))
+        ::std::option::Option::None => return ::std::boxed::Box::new(::futures::future::ok(
+            ($req, $crate::response::Response::with($modifier),))) as $crate::BoxIronFuture<($crate::Request, $crate::Response)>
     })
 }

@@ -1,11 +1,16 @@
+use std::rc::Rc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;
 
+use futures::{future, Future};
+
 use self::Kind::{Fine, Prob};
 
+use {BoxIronFuture};
+
 use prelude::*;
-use {AfterMiddleware, BeforeMiddleware, Handler};
+use {AfterMiddleware, BeforeMiddleware, AsyncHandler};
 
 #[test] fn test_chain_normal() {
     test_chain(
@@ -63,7 +68,7 @@ use {AfterMiddleware, BeforeMiddleware, Handler};
 }
 
 // Used to indicate the action taken by a middleware or handler.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Kind {
     Fine,
     Prob
@@ -76,57 +81,57 @@ struct Middleware {
 }
 
 impl BeforeMiddleware for Middleware {
-    fn before(&self, _: &mut Request) -> IronResult<()> {
+    fn before(&self, req: Request) -> BoxIronFuture<Request> {
         assert!(!self.normal.load(Relaxed));
         self.normal.store(true, Relaxed);
 
         match self.mode {
-            Fine => { Ok(()) },
-            Prob => { Err(error()) }
+            Fine => { future::ok(req).boxed() },
+            Prob => { future::err(error(req)).boxed() }
         }
     }
 
-    fn catch(&self, _: &mut Request, _: IronError) -> IronResult<()> {
+    fn catch(&self, err: IronError) -> BoxIronFuture<Request> {
         assert!(!self.error.load(Relaxed));
         self.error.store(true, Relaxed);
 
         match self.mode {
-            Fine => { Ok(()) },
-            Prob => { Err(error()) },
+            Fine => { future::ok(err.request).boxed() },
+            Prob => { future::err(error(err.request)).boxed() },
         }
     }
 }
 
-impl Handler for Middleware {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
+impl AsyncHandler for Middleware {
+    fn async_handle(&self, req: Request) -> BoxIronFuture<(Request, Response)> {
         assert!(!self.normal.load(Relaxed));
         self.normal.store(true, Relaxed);
 
         match self.mode {
-            Fine => { Ok(response()) },
-            Prob => { Err(error()) }
+            Fine => { future::ok((req, response())).boxed() },
+            Prob => { future::err(error(req)).boxed() },
         }
     }
 }
 
 impl AfterMiddleware for Middleware {
-    fn after(&self, _: &mut Request, _: Response) -> IronResult<Response> {
+    fn after(&self, req: Request, _: Response) -> BoxIronFuture<(Request, Response)> {
         assert!(!self.normal.load(Relaxed));
         self.normal.store(true, Relaxed);
 
         match self.mode {
-            Fine => { Ok(response()) },
-            Prob => { Err(error()) }
+            Fine => { future::ok((req, response())).boxed() },
+            Prob => { future::err(error(req)).boxed() }
         }
     }
 
-    fn catch(&self, _: &mut Request, _: IronError) -> IronResult<Response> {
+    fn catch(&self, err: IronError) -> BoxIronFuture<(Request, Response)> {
         assert!(!self.error.load(Relaxed));
         self.error.store(true, Relaxed);
 
         match self.mode {
-            Fine => { Ok(response()) },
-            Prob => { Err(error()) },
+            Fine => { future::ok((err.request, response())).boxed() },
+            Prob => { future::err(error(err.request)).boxed() }
         }
     }
 }
@@ -140,7 +145,7 @@ fn request() -> Request {
 fn response() -> Response { Response::new() }
 
 // Stub error
-fn error() -> IronError {
+fn error(request: Request) -> IronError {
     use std::fmt::{self, Debug, Display};
     use std::error::Error as StdError;
 
@@ -159,6 +164,7 @@ fn error() -> IronError {
 
     IronError {
         error: Box::new(SomeError),
+        request: request,
         response: response()
     }
 }
@@ -193,19 +199,19 @@ fn to_chain(counters: &ChainLike<Twice<Arc<AtomicBool>>>,
 
     let befores = befores.into_iter().zip(beforec.iter())
         .map(into_middleware)
-        .map(|m| Box::new(m) as Box<BeforeMiddleware>)
+        .map(|m| Rc::new(m) as Rc<BeforeMiddleware>)
         .collect::<Vec<_>>();
 
     let handler = into_middleware((handler, handlerc));
 
     let afters = afters.into_iter().zip(afterc.iter())
         .map(into_middleware)
-        .map(|m| Box::new(m) as Box<AfterMiddleware>)
+        .map(|m| Rc::new(m) as Rc<AfterMiddleware>)
         .collect::<Vec<_>>();
 
     Chain {
         befores: befores,
-        handler: Some(Box::new(handler) as Box<Handler>),
+        handler: Some(Rc::new(Box::new(handler) as Box<AsyncHandler>)),
         afters: afters
     }
 }
@@ -221,8 +227,8 @@ fn into_middleware(input: (Kind, &Twice<Arc<AtomicBool>>)) -> Middleware {
     }
 }
 
-fn to_kind(val: bool) -> Kind {
-    if val { Fine } else { Prob }
+fn to_kind(normal: bool, error: bool) -> Option<Kind> {
+    if normal { Some(Fine) } else if error { Some(Prob) } else { None }
 }
 
 fn test_chain(chain: ChainLike<Kind>, expected: ChainLike<Kind>) {
@@ -230,16 +236,16 @@ fn test_chain(chain: ChainLike<Kind>, expected: ChainLike<Kind>) {
     let chain = to_chain(&actual, chain);
 
     // Run the chain
-    let _ = chain.handle(&mut request());
+    let _ = chain.async_handle(request()).wait();
 
     // Get all the results
     let outbefores = actual.0.into_iter()
-        .map(|(normal, _)| to_kind(normal.load(Relaxed))).collect::<Vec<_>>();
+        .map(|(normal, error)| to_kind(normal.load(Relaxed), error.load(Relaxed)).unwrap()).collect::<Vec<_>>();
 
-    let outhandler = to_kind((actual.1).0.load(Relaxed));
+    let outhandler = to_kind((actual.1).0.load(Relaxed), (actual.1).1.load(Relaxed)).unwrap_or_else(|| outbefores.iter().last().cloned().unwrap());
 
     let outafters = actual.2.into_iter()
-        .map(|(normal, _)| to_kind(normal.load(Relaxed))).collect::<Vec<_>>();
+        .map(|(normal, error)| to_kind(normal.load(Relaxed), error.load(Relaxed)).unwrap()).collect::<Vec<_>>();
 
     let outchain = (outbefores, outhandler, outafters);
 

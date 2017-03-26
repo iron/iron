@@ -6,7 +6,7 @@ use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, BoxFuture, Stream};
+use futures::{future, Future, Stream};
 use futures_cpupool::CpuPool;
 
 use tokio_core::net::TcpListener;
@@ -30,7 +30,7 @@ use futures::Sink;
 #[cfg(feature = "ssl")]
 use std::io::ErrorKind;
 
-use {Request, Handler};
+use {Request, AsyncHandler, Handler, BoxIronFuture, Response};
 use status;
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
@@ -112,7 +112,7 @@ impl Protocol {
     }
 }
 
-impl<H: Handler> Iron<H> {
+impl<H: AsyncHandler> Iron<H> {
     /// Instantiate a new instance of `Iron`.
     ///
     /// This will create a new `Iron`, the base unit of the server, using the
@@ -199,6 +199,16 @@ impl<H: Handler> Iron<H> {
     }
 }
 
+impl<H: Handler> Iron<H> {
+    /// Instantiate a new instance of `Iron`.
+    ///
+    /// This will create a new `Iron`, the base unit of the server, using the
+    /// passed in `Handler`.
+    pub fn new_sync(handler: H) -> Iron<Arc<H>> {
+        Iron::new(Arc::new(handler))
+    }
+}
+
 struct RawService<H> {
     handler: Arc<H>,
     addr: SocketAddr,
@@ -206,7 +216,7 @@ struct RawService<H> {
     pool: CpuPool,
 }
 
-impl<H: Handler> ::hyper::server::NewService for RawService<H> {
+impl<H: AsyncHandler> ::hyper::server::NewService for RawService<H> {
     type Request = HttpRequest;
     type Response = HttpResponse;
     type Error = ::hyper::Error;
@@ -229,38 +239,49 @@ struct RawHandler<H> {
     pool: CpuPool,
 }
 
-impl<H: Handler> ::hyper::server::Service for RawHandler<H> {
+impl<H: AsyncHandler> ::hyper::server::Service for RawHandler<H> {
     type Request = HttpRequest;
     type Response = HttpResponse;
     type Error = Error;
-    type Future = BoxFuture<Self::Response,Self::Error>;
+    type Future = Box<Future<Item=Self::Response,Error=Self::Error>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
         let addr = self.addr.clone();
         let proto = self.protocol.clone();
         let handler = self.handler.clone();
-        self.pool.spawn_fn(move || {
-            let mut http_res = HttpResponse::<Body>::new().with_status(status::InternalServerError);
 
-            match Request::from_http(req, addr, &proto) {
-                Ok(mut req) => {
-                    // Dispatch the request, write the response back to http_res
-                    handler.handle(&mut req).unwrap_or_else(|e| {
-                        error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
-                            e.response
-                    }).write_back(&mut http_res)
-                },
-                Err(e) => {
-                    error!("Error creating request:\n    {}", e);
-                    bad_request(&mut http_res)
-                }
-            };
-            future::ok(http_res)
-        }).boxed()
+        Box::new(match Request::from_http(req, addr, &proto) {
+            Ok(mut req) => {
+                req.extensions.insert::<CpuPoolKey>(self.pool.clone());
+                Box::new(handler.async_handle(req).and_then(|(_, resp)| future::ok(resp)).or_else(move |e| {
+                    error!("Error handling:\n{:?}\nError was: {:?}", e.request, e.error);
+                    future::ok(e.response)
+                })) as Box<Future<Item=Response,Error=Self::Error>>
+            },
+            Err(e) => {
+                error!("Error creating request:\n    {}", e);
+                Box::new(future::ok(Response::with((status::BadRequest))))
+            },
+        }.and_then(|resp| {
+            let mut http_res = HttpResponse::<Body>::new().with_status(status::InternalServerError);
+            resp.write_back(&mut http_res);
+            Box::new(future::ok(http_res))
+        }))
     }
 }
 
-fn bad_request(mut http_res: &mut HttpResponse<Body>) {
-    http_res.set_status(status::BadRequest);
+impl<T: Handler> AsyncHandler for Arc<T> {
+    fn async_handle(&self, mut req: Request) -> BoxIronFuture<(Request, Response)> {
+        let me = self.clone();
+        Box::new(req.extensions.get::<CpuPoolKey>().unwrap().clone().spawn_fn(move || {
+            match me.handle(&mut req) {
+                Ok(x) => future::ok((req, x)),
+                Err(x) => future::err(x),
+            }
+        }))
+    }
 }
 
+struct CpuPoolKey;
+
+impl ::tmap::Key for CpuPoolKey { type Value = CpuPool; }

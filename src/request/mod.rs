@@ -8,7 +8,6 @@ use futures::Stream;
 use hyper::HttpVersion;
 
 use typemap::{Key, TypeMap};
-use plugin::Extensible;
 use method::Method;
 
 pub use hyper::Body;
@@ -113,7 +112,7 @@ impl Request {
             headers: headers,
             body: Some(body),
             method: method,
-            extensions: TypeMap::new(),
+            extensions: TypeMap::custom(),
             version: version,
             _p: (),
         })
@@ -140,7 +139,7 @@ impl Request {
             headers: Headers::new(),
             body: Some(Body::empty()),
             method: Method::Get,
-            extensions: TypeMap::new(),
+            extensions: TypeMap::custom(),
             version: HttpVersion::Http11,
             _p: (),
         }
@@ -151,17 +150,6 @@ struct RequestBodyKey;
 
 impl Key for RequestBodyKey {
     type Value = Vec<u8>;
-}
-
-// Allow plugins to attach to requests.
-impl Extensible for Request {
-    fn extensions(&self) -> &TypeMap {
-        &self.extensions
-    }
-
-    fn extensions_mut(&mut self) -> &mut TypeMap {
-        &mut self.extensions
-    }
 }
 
 impl Plugin for Request {}

@@ -12,6 +12,7 @@
 //
 // ```
 
+extern crate futures;
 extern crate iron;
 #[cfg(feature = "ssl")]
 extern crate native_tls;
@@ -22,11 +23,12 @@ extern crate tokio_tls;
 fn main() {
     // Avoid unused errors due to conditional compilation ('native-tls-example' feature is not default)
     use native_tls::{Pkcs12, TlsAcceptor};
-    use iron::{Iron, Request, Response};
+    use iron::{Iron, Request, Response, BoxIronFuture};
     use iron::status;
     use std::io::prelude::*;
     use std::result::Result;
     use std::fs::File;
+    use futures::future;
 
     let mut file = File::open("identity.p12").unwrap();
     let mut pkcs12 = vec![];
@@ -35,8 +37,8 @@ fn main() {
 
     let ssl = TlsAcceptor::builder(pkcs12).unwrap().build().unwrap();
 
-    match Iron::new(|_: &mut Request| {
-        Ok(Response::with((status::Ok, "Hello world!")))
+    match Iron::new(|req: Request| {
+       Box::new(future::ok((req, Response::with((status::Ok, "Hello world!"))))) as BoxIronFuture<(Request, Response)>
     }).https("127.0.0.1:3000", ssl) {
         Result::Ok(listening) => println!("{:?}", listening),
         Result::Err(err) => panic!("{:?}", err),
