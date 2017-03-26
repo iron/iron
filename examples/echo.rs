@@ -11,9 +11,8 @@ use iron::status;
 fn echo(request: &mut Request) -> IronResult<Response> {
     let body = request
                 .get_body_contents()
-                .unwrap()
                 .map_err(|e| IronError::new(e, (status::InternalServerError, "Error reading request")))?;
-    Ok(Response::with((status::Ok, body)))
+    Ok(Response::with((status::Ok, body.clone())))
 }
 
 fn main() {

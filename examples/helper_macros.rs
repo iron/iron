@@ -22,7 +22,7 @@ fn main() {
                 // If creating the file fails, something is messed up on our side. We probably want
                 // to log the error, so we use `itry` instead of `iexpect`.
                 let mut f = itry!(fs::File::create("foo.txt"));
-                itry!(io::copy(&mut Cursor::new(itry!(req.get_body_contents().unwrap())), &mut f));
+                itry!(io::copy(&mut Cursor::new(itry!(req.get_body_contents())), &mut f));
                 Response::with(status::Created)
             },
             _ => Response::with(status::BadRequest)
