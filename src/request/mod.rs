@@ -7,7 +7,7 @@ use futures::Stream;
 
 use hyper::HttpVersion;
 
-use typemap::TypeMap;
+use typemap::{Key, TypeMap};
 use plugin::Extensible;
 use method::Method;
 
@@ -123,8 +123,12 @@ impl Request {
     ///
     /// This consumes the body future and turns it into Vec<u8>.  Note this should not be called
     /// from the main hyper thread, as it will potentially deadlock.
-    pub fn get_body_contents(&mut self) -> Option<Vec<u8>> {
-        self.body.take().map(|reader| reader.wait().fold(Vec::new(), |mut v, input| { v.extend_from_slice(&input.unwrap()); v }))
+    pub fn get_body_contents(&mut self) -> &Vec<u8> {
+        if let Some(reader) = self.body.take() {
+            let body = reader.wait().fold(Vec::new(), |mut v, input| { v.extend_from_slice(&input.unwrap()); v });
+            self.extensions.insert::<RequestBodyKey>(body);
+        }
+        self.extensions.get::<RequestBodyKey>().unwrap()
     }
 
     #[cfg(test)]
@@ -141,6 +145,12 @@ impl Request {
             _p: (),
         }
     }
+}
+
+struct RequestBodyKey;
+
+impl Key for RequestBodyKey {
+    type Value = Vec<u8>;
 }
 
 // Allow plugins to attach to requests.
