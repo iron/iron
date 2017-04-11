@@ -142,7 +142,7 @@ impl FromStr for Url {
     type Err = String;
     #[inline]
     fn from_str(input: &str) -> Result<Url, Self::Err> {
-        Ok(Url::parse(input).unwrap())
+        Url::parse(input)
     }
 }
 
