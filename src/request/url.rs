@@ -1,6 +1,7 @@
 //! HTTP/HTTPS URL type for Iron.
 
 use url::{self, Host};
+use std::str::FromStr;
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
@@ -137,6 +138,13 @@ impl AsMut<url::Url> for Url {
     fn as_mut(&mut self) -> &mut url::Url { &mut self.generic_url }
 }
 
+impl FromStr for Url {
+    type Err = String;
+    #[inline]
+    fn from_str(input: &str) -> Result<Url, Self::Err> {
+        Ok(Url::parse(input).unwrap())
+    }
+}
 
 #[cfg(test)]
 mod test {
