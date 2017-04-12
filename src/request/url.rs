@@ -222,4 +222,17 @@ mod test {
         let parsed = Url::parse("https://example.com:443").unwrap().to_string();
         assert_eq!(parsed, "https://example.com/");
     }
+
+    #[test]
+    fn test_from_str_positive() {
+        let u = "http://example.com".parse::<Url>();
+        assert!(u.is_ok());
+        assert_eq!(u.unwrap(), Url::parse("http://example.com").unwrap());
+    }
+
+    #[test]
+    fn test_from_str_negative() {
+        let u = "not a url".parse::<Url>();
+        assert!(u.is_err());
+    }
 }
