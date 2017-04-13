@@ -60,7 +60,8 @@
 //!
 
 // Stdlib dependencies
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
 // Third party packages
 extern crate hyper;
@@ -77,8 +78,7 @@ pub use request::{Request, Url};
 pub use response::Response;
 
 // Middleware system
-pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain};
+pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware, Handler, Chain};
 
 // Server
 pub use iron::*;
@@ -122,8 +122,7 @@ pub type IronResult<T> = Result<T, IronError>;
 /// `IronResult`, `IronError` and `Iron`.
 pub mod prelude {
     #[doc(no_inline)]
-    pub use {Set, Plugin, Chain, Request, Response,
-             IronResult, IronError, Iron};
+    pub use {Set, Plugin, Chain, Request, Response, IronResult, IronError, Iron};
 }
 
 /// Re-exports from the `TypeMap` crate.

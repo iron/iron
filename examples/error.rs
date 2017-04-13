@@ -21,7 +21,9 @@ impl fmt::Display for StringError {
 }
 
 impl Error for StringError {
-    fn description(&self) -> &str { &*self.0 }
+    fn description(&self) -> &str {
+        &*self.0
+    }
 }
 
 impl Handler for ErrorHandler {
@@ -50,4 +52,3 @@ fn main() {
 
     Iron::new(chain).http("localhost:3000").unwrap();
 }
-

@@ -75,7 +75,9 @@ impl<'a, 'b> Request<'a, 'b> {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest<'a, 'b>, local_addr: SocketAddr, protocol: &Protocol)
+    pub fn from_http(req: HttpRequest<'a, 'b>,
+                     local_addr: SocketAddr,
+                     protocol: &Protocol)
                      -> Result<Request<'a, 'b>, String> {
         let (addr, method, headers, uri, version, reader) = req.deconstruct();
 
@@ -83,9 +85,9 @@ impl<'a, 'b> Request<'a, 'b> {
             AbsoluteUri(ref url) => {
                 match Url::from_generic_url(url.clone()) {
                     Ok(url) => url,
-                    Err(e) => return Err(e)
+                    Err(e) => return Err(e),
                 }
-            },
+            }
 
             AbsolutePath(ref path) => {
                 let url_string = match (version, headers.get::<headers::Host>()) {
@@ -96,46 +98,64 @@ impl<'a, 'b> Request<'a, 'b> {
                         } else {
                             format!("{}://{}{}", protocol.name(), host.hostname, path)
                         }
-                    },
+                    }
                     (v, None) if v < HttpVersion::Http11 => {
                         // Attempt to use the local address? (host header is not required in HTTP/1.0).
                         match local_addr {
-                            SocketAddr::V4(addr4) => format!("{}://{}:{}{}", protocol.name(), addr4.ip(), local_addr.port(), path),
-                            SocketAddr::V6(addr6) => format!("{}://[{}]:{}{}", protocol.name(), addr6.ip(), local_addr.port(), path),
+                            SocketAddr::V4(addr4) => {
+                                format!("{}://{}:{}{}",
+                                        protocol.name(),
+                                        addr4.ip(),
+                                        local_addr.port(),
+                                        path)
+                            }
+                            SocketAddr::V6(addr6) => {
+                                format!("{}://[{}]:{}{}",
+                                        protocol.name(),
+                                        addr6.ip(),
+                                        local_addr.port(),
+                                        path)
+                            }
                         }
-                    },
-                    (_, None) => {
-                        return Err("No host specified in request".into())
                     }
+                    (_, None) => return Err("No host specified in request".into()),
                 };
 
                 match Url::parse(&url_string) {
                     Ok(url) => url,
-                    Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
+                    Err(e) => return Err(format!("Couldn't parse requested URL: {}", e)),
                 }
-            },
-            _ => return Err("Unsupported request URI".into())
+            }
+            _ => return Err("Unsupported request URI".into()),
         };
 
         Ok(Request {
-            url: url,
-            remote_addr: addr,
-            local_addr: local_addr,
-            headers: headers,
-            body: Body::new(reader),
-            method: method,
-            extensions: TypeMap::new(),
-            version: version,
-            _p: (),
-        })
+               url: url,
+               remote_addr: addr,
+               local_addr: local_addr,
+               headers: headers,
+               body: Body::new(reader),
+               method: method,
+               extensions: TypeMap::new(),
+               version: version,
+               _p: (),
+           })
     }
 
     #[cfg(test)]
     pub fn stub() -> Request<'a, 'b> {
         Request {
             url: Url::parse("http://www.rust-lang.org").unwrap(),
-            remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
-            local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+            remote_addr: "localhost:3000"
+                .to_socket_addrs()
+                .unwrap()
+                .next()
+                .unwrap(),
+            local_addr: "localhost:3000"
+                .to_socket_addrs()
+                .unwrap()
+                .next()
+                .unwrap(),
             headers: Headers::new(),
             body: unsafe { ::std::mem::uninitialized() }, // FIXME(reem): Ugh
             method: Method::Get,
@@ -151,7 +171,8 @@ pub struct Body<'a, 'b: 'a>(HttpReader<&'a mut buffer::BufReader<&'b mut Network
 
 impl<'a, 'b> Body<'a, 'b> {
     /// Create a new reader for use in an Iron request from a hyper HttpReader.
-    pub fn new(reader: HttpReader<&'a mut buffer::BufReader<&'b mut NetworkStream>>) -> Body<'a, 'b> {
+    pub fn new(reader: HttpReader<&'a mut buffer::BufReader<&'b mut NetworkStream>>)
+               -> Body<'a, 'b> {
         Body(reader)
     }
 }

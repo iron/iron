@@ -52,7 +52,7 @@ pub struct Timeouts {
     /// Controls the timeout for writes on existing connections.
     ///
     /// The default is `Some(Duration::from_secs(1))`
-    pub write: Option<Duration>
+    pub write: Option<Duration>,
 }
 
 impl Default for Timeouts {
@@ -60,7 +60,7 @@ impl Default for Timeouts {
         Timeouts {
             keep_alive: Some(Duration::from_secs(5)),
             read: Some(Duration::from_secs(30)),
-            write: Some(Duration::from_secs(1))
+            write: Some(Duration::from_secs(1)),
         }
     }
 }
@@ -173,11 +173,16 @@ impl<H: Handler> ::hyper::server::Handler for RawHandler<H> {
         match Request::from_http(http_req, self.addr, &self.protocol) {
             Ok(mut req) => {
                 // Dispatch the request, write the response back to http_res
-                self.handler.handle(&mut req).unwrap_or_else(|e| {
-                    error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
-                    e.response
-                }).write_back(http_res)
-            },
+                self.handler
+                    .handle(&mut req)
+                    .unwrap_or_else(|e| {
+                                        error!("Error handling:\n{:?}\nError was: {:?}",
+                                               req,
+                                               e.error);
+                                        e.response
+                                    })
+                    .write_back(http_res)
+            }
             Err(e) => {
                 error!("Error creating request:\n    {}", e);
                 bad_request(http_res)
@@ -191,9 +196,7 @@ fn bad_request(mut http_res: HttpResponse<Fresh>) {
 
     // Consume and flush the response.
     // We would like this to work, but can't do anything if it doesn't.
-    if let Ok(res) = http_res.start()
-    {
+    if let Ok(res) = http_res.start() {
         let _ = res.end();
     }
 }
-

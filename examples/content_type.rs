@@ -21,19 +21,25 @@ fn variant2(_: &mut Request) -> IronResult<Response> {
 }
 
 fn variant3(_: &mut Request) -> IronResult<Response> {
-    let content_type = mime!(Application/Json);
+    let content_type = mime!(Application / Json);
     Ok(Response::with((content_type, status::Ok, "{}")))
 }
 
 fn variant4(_: &mut Request) -> IronResult<Response> {
     use iron::mime;
-    let content_type = mime::Mime(iron::mime::TopLevel::Application, iron::mime::SubLevel::Json, vec![]);
+    let content_type = mime::Mime(iron::mime::TopLevel::Application,
+                                  iron::mime::SubLevel::Json,
+                                  vec![]);
     Ok(Response::with((content_type, status::Ok, "{}")))
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let variant_index = if args.len() > 1 { args[1].parse().unwrap() } else { 1 };
+    let variant_index = if args.len() > 1 {
+        args[1].parse().unwrap()
+    } else {
+        1
+    };
     let handler = match variant_index {
         1 => variant1,
         2 => variant2,

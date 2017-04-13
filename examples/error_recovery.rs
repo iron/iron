@@ -29,7 +29,9 @@ impl fmt::Display for StringError {
 }
 
 impl Error for StringError {
-    fn description(&self) -> &str { &*self.0 }
+    fn description(&self) -> &str {
+        &*self.0
+    }
 }
 
 impl Handler for HelloWorldHandler {
@@ -49,7 +51,8 @@ impl BeforeMiddleware for ErrorProducer {
         // IronError::error tells the next middleware what went wrong.
         // IronError::response is the Response that will be sent back to the client if this error is not handled.
         // Here status::BadRequest acts as modifier, thus we can put more there than just a status.
-        Err(IronError::new(StringError("Error in ErrorProducer BeforeMiddleware".to_string()), status::BadRequest))
+        Err(IronError::new(StringError("Error in ErrorProducer BeforeMiddleware".to_string()),
+                           status::BadRequest))
     }
 }
 
@@ -57,7 +60,8 @@ impl AfterMiddleware for ErrorProducer {
     fn after(&self, _: &mut Request, _: Response) -> IronResult<Response> {
         // The behavior here is the same as in ErrorProducer::before.
         // The previous response (from the Handler) is discarded and replaced with a new response (created from the modifier).
-        Err(IronError::new(StringError("Error in ErrorProducer AfterMiddleware".to_string()), (status::BadRequest, "Response created in ErrorProducer")))
+        Err(IronError::new(StringError("Error in ErrorProducer AfterMiddleware".to_string()),
+                           (status::BadRequest, "Response created in ErrorProducer")))
     }
 }
 
@@ -69,7 +73,7 @@ impl BeforeMiddleware for ErrorRecover {
         println!("{} caught in ErrorRecover BeforeMiddleware.", err.error);
         match err.response.status {
             Some(status::BadRequest) => Ok(()),
-            _ => Err(err)
+            _ => Err(err),
         }
     }
 }
@@ -82,7 +86,7 @@ impl AfterMiddleware for ErrorRecover {
         println!("{} caught in ErrorRecover AfterMiddleware.", err.error);
         match err.response.status {
             Some(status::BadRequest) => Ok(err.response.set(status::Ok)),
-            _ => Err(err)
+            _ => Err(err),
         }
     }
 }
