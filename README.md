@@ -146,6 +146,10 @@ FIXME: expand on when it is necessary to user hyper for serving,
 e.g. when doing HTTPS.
 -->
 
+## Usage warning
+
+Iron is based on Hyper, which is **synchronous**. Hyper has a lot of limitations right now, and can't handle many simultaneous connections, especially with keep-alive. So it is highly recommended to use some light asynchronous web server such as Nginx as a reverse proxy server with Iron.
+
 ## Installation
 
 If you're using `Cargo`, just add Iron to your `Cargo.toml`:
