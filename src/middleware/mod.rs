@@ -4,9 +4,9 @@
 //! # Handlers
 //!
 //! A [`Handler`] will produce a [`Response`] given a [`Request`]. Most handlers
-//! are functions or closures that accept a `&mut Response` as an argument and
-//! return an [`IronError`] containing a [`Request`]. A [`IronError`] is
-//! returned instead of directly returning a [`Request`] in order to indicate a
+//! are functions or closures that accept a `&mut Request` as an argument and
+//! return an [`IronError`] containing a [`Response`]. A [`IronError`] is
+//! returned instead of directly returning a [`Response`] in order to indicate a
 //! possibility of failure (e.g. database timeout).
 //!
 //! Here's an example of a [`Handler`]:
@@ -24,12 +24,12 @@
 //! # Middleware
 //!
 //! In situations involving more complex logic, it may be desirable to transform
-//! a [`Request`] before passing it to a [`Handler`] or altering a [`Response`]
-//! before it is sent to the clients. For example, an authorization step could
-//! only allow requests sent by authorized users to be passed to a [`Handler`]
-//! and deny all other requests with a 403 status code. To faciliate such use
-//! cases, Iron's middleware system allows [`Handler`]s to be extended by
-//! defining middleware, which will perform transformations.
+//! [`Request`]s passed to a [`Handler`] or altering [`Response`]s sent to the
+//! clients. For example, an authorization step could only allow requests sent
+//! by authorized users to be passed to a [`Handler`] and respond to all other
+//! requests with a 403 status code. To faciliate such use cases, Iron's
+//! middleware system allows [`Handler`]s to be extended by defining middleware,
+//! which will perform transformations.
 //!
 //! There are three types of middleware:
 //!
@@ -38,7 +38,7 @@
 //! * An [`AroundMiddleware`] wraps a [`Handler`], changing both the [`Response`]
 //!   passed to the [`Handler`] and the returned [`Response`].
 //! * An [`AfterMiddleware`] performs [`Response`] post-processing. It can be used
-//!   for editing headers or logging [`Requests`], but it should _not_ be used for
+//!   for editing headers or logging [`Response`]s, but it should _not_ be used for
 //!   changing the body of a [`Response`].
 //!
 //! See the documentation for each middleware for more details.
