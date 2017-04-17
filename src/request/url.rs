@@ -177,6 +177,15 @@ mod test {
     }
 
     #[test]
+    fn test_not_empty_username() {
+        let user = Url::parse("http://john:pass@example.com").unwrap().username;
+        assert_eq!(user.unwrap(), "john");
+
+        let user = Url::parse("http://john:@example.com").unwrap().username;
+        assert_eq!(user.unwrap(), "john");
+    }
+
+    #[test]
     fn test_empty_password() {
         assert!(Url::parse("http://michael@example.com").unwrap().password().is_none());
         assert!(Url::parse("http://:@example.com").unwrap().password().is_none());
@@ -189,6 +198,15 @@ mod test {
 
         let url = Url::parse("http://:pass@example.com").unwrap();
         assert_eq!(url.password().unwrap(), "pass");
+    }
+
+    #[test]
+    fn test_not_empty_password() {
+        let pass = Url::parse("http://michael:pass@example.com").unwrap().password;
+        assert_eq!(pass.unwrap(), "pass");
+
+        let pass = Url::parse("http://:pass@example.com").unwrap().password;
+        assert_eq!(pass.unwrap(), "pass");
     }
 
     #[test]
