@@ -84,7 +84,7 @@ pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
 pub use iron::*;
 
 // Extensions
-pub use typemap::TypeMap;
+pub use typemap::{mod, TypeMap};
 
 // Headers
 pub use hyper::header as headers;
