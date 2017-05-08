@@ -114,6 +114,8 @@ Middleware:
 - [Mounting](https://github.com/iron/mount)
 - [Static File Serving](https://github.com/iron/staticfile)
 - [Logging](https://github.com/iron/logger)
+- [CSRF Protection](https://github.com/heartsucker/iron-csrf)
+- [Encrypted Session Cookies](https://github.com/heartsucker/rust-secure-session)
 
 Plugins:
 - [JSON Body Parsing](https://github.com/iron/body-parser)
