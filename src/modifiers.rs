@@ -135,8 +135,9 @@ impl<'a> Modifier<Response> for &'a Path {
             .expect(&format!("No such file: {}", self.display()))
             .modify(res);
 
-        let mime_str = MIME_TYPES.mime_for_path(self);
-        let _ = mime_str.parse().map(|mime: Mime| res.set_mut(mime));
+        if let Some(mime) = mime_for_path(self) {
+            res.set_mut(mime);
+        }
     }
 }
 
@@ -193,5 +194,28 @@ impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
         let RedirectRaw(path) = self;
         res.headers.set(headers::Location(path));
+    }
+}
+
+fn mime_for_path(path: &Path) -> Option<Mime> {
+    let mime_str = MIME_TYPES.mime_for_path(path);
+    mime_str.parse().ok()
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_mime_for_path() {
+        assert_eq!(mime_for_path(Path::new("foo.txt")),
+                   Some("text/plain".parse().unwrap()));
+        assert_eq!(mime_for_path(Path::new("foo.jpg")),
+                   Some("image/jpeg".parse().unwrap()));
+        assert_eq!(mime_for_path(Path::new("foo.zip")),
+                   Some("application/zip".parse().unwrap()));
+        assert_eq!(mime_for_path(Path::new("foo")),
+                   Some("text/plain".parse().unwrap()));
     }
 }
