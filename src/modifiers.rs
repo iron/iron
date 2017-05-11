@@ -52,16 +52,13 @@ use std::path::{Path, PathBuf};
 
 use modifier::Modifier;
 
-use hyper::mime::Mime;
+use hyper::mime::{Mime, SubLevel, TopLevel};
 
 use {status, headers, Request, Response, Set, Url};
 
-use mime_types;
+use mime_guess::guess_mime_type_opt;
 use response::{WriteBody, BodyReader};
 
-lazy_static! {
-    static ref MIME_TYPES: mime_types::Types = mime_types::Types::new().unwrap();
-}
 
 impl Modifier<Response> for Mime {
     #[inline]
@@ -135,9 +132,8 @@ impl<'a> Modifier<Response> for &'a Path {
             .expect(&format!("No such file: {}", self.display()))
             .modify(res);
 
-        if let Some(mime) = mime_for_path(self) {
-            res.set_mut(mime);
-        }
+        let mime = mime_for_path(self);
+        res.set_mut(mime);
     }
 }
 
@@ -197,9 +193,9 @@ impl Modifier<Response> for RedirectRaw {
     }
 }
 
-fn mime_for_path(path: &Path) -> Option<Mime> {
-    let mime_str = MIME_TYPES.mime_for_path(path);
-    mime_str.parse().ok()
+fn mime_for_path(path: &Path) -> Mime {
+    guess_mime_type_opt(path)
+        .unwrap_or_else(|| Mime(TopLevel::Text, SubLevel::Plain, vec![]))
 }
 
 
@@ -210,12 +206,12 @@ mod test {
     #[test]
     fn test_mime_for_path() {
         assert_eq!(mime_for_path(Path::new("foo.txt")),
-                   Some("text/plain".parse().unwrap()));
+                   "text/plain".parse().unwrap());
         assert_eq!(mime_for_path(Path::new("foo.jpg")),
-                   Some("image/jpeg".parse().unwrap()));
+                   "image/jpeg".parse().unwrap());
         assert_eq!(mime_for_path(Path::new("foo.zip")),
-                   Some("application/zip".parse().unwrap()));
+                   "application/zip".parse().unwrap());
         assert_eq!(mime_for_path(Path::new("foo")),
-                   Some("text/plain".parse().unwrap()));
+                   "text/plain".parse().unwrap());
     }
 }
