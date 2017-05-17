@@ -5,7 +5,7 @@
 //!
 //! A `Handler` will produce a `Response` given a `Request`. Most handlers are
 //! functions or closures that accept a `&mut Request` as an argument and return
-//! an `IronError` containing a `Response`. A `IronError` is returned instead of
+//! an `IronResult` containing a `Response`. An `IronResult` is returned instead of
 //! directly returning a `Response` in order to indicate a possibility of
 //! failure (e.g. database timeout).
 //!
