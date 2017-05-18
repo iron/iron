@@ -25,7 +25,7 @@
 //! use iron::status;
 //!
 //! fn main() {
-//!     Iron::new(|_: &mut Request| {
+//!     Iron::new_sync(|_: &mut Request| {
 //!         Ok(Response::with((status::Ok, "Hello World!")))
 //!     }).http("localhost:3000").unwrap();
 //! }
@@ -69,6 +69,12 @@ extern crate plugin;
 extern crate url as url_ext;
 extern crate num_cpus;
 extern crate conduit_mime_types as mime_types;
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio_io;
+#[cfg(feature = "ssl")]
+extern crate tokio_tls;
+extern crate futures_cpupool;
 #[macro_use]
 extern crate lazy_static;
 
@@ -78,7 +84,7 @@ pub use response::Response;
 
 // Middleware system
 pub use middleware::{BeforeMiddleware, AfterMiddleware, AroundMiddleware,
-                     Handler, Chain};
+                     AsyncHandler, Handler, Chain};
 
 // Server
 pub use iron::*;
@@ -109,6 +115,11 @@ pub mod error;
 /// The Result alias used throughout Iron and in clients of Iron.
 pub type IronResult<T> = Result<T, IronError>;
 
+/// The Future alias that is a compliment to IronResult
+pub type IronFuture<T> = futures::Future<Item=T, Error=IronError>;
+/// BoxIronFuture is used instead of IronFuture until impl Trait is stable.
+pub type BoxIronFuture<T> = Box<futures::Future<Item=T, Error=IronError>>;
+
 /// A module meant to be glob imported when using Iron.
 ///
 /// For instance:
@@ -123,12 +134,12 @@ pub type IronResult<T> = Result<T, IronError>;
 pub mod prelude {
     #[doc(no_inline)]
     pub use {Set, Plugin, Chain, Request, Response,
-             IronResult, IronError, Iron};
+             IronResult, IronError, Iron, BoxIronFuture};
 }
 
 /// Re-exports from the `TypeMap` crate.
 pub mod typemap {
-    pub use tmap::{TypeMap, Key};
+    pub use tmap::{SendMap as TypeMap, Key};
 }
 
 /// Re-exports from the Modifier crate.
@@ -151,8 +162,8 @@ pub mod status {
 
 /// HTTP Methods
 pub mod method {
-    pub use hyper::method::Method;
-    pub use hyper::method::Method::*;
+    pub use hyper::Method;
+    pub use hyper::Method::*;
 }
 
 // Publicized to show the documentation

@@ -12,10 +12,11 @@
 //! return status code:
 //!
 //! ```
+//! # use std::convert::Into;
 //! # use iron::prelude::*;
 //! # use iron::status;
 //! let r = Response::with(status::NotFound);
-//! assert_eq!(r.status.unwrap().to_u16(), 404);
+//! assert_eq!(404 as u16, r.status.unwrap().into());
 //! ```
 //!
 //! You can also pass in a tuple of modifiers, they will all be applied. Here's
@@ -160,17 +161,17 @@ impl Modifier<Response> for status::Status {
 
 /// A modifier for changing headers on requests and responses.
 #[derive(Clone)]
-pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
+pub struct Header<H: headers::Header>(pub H);
 
 impl<H> Modifier<Response> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+where H: headers::Header {
     fn modify(self, res: &mut Response) {
         res.headers.set(self.0);
     }
 }
 
-impl<'a, 'b, H> Modifier<Request<'a, 'b>> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+impl<H> Modifier<Request> for Header<H>
+where H: headers::Header {
     fn modify(self, res: &mut Request) {
         res.headers.set(self.0);
     }

@@ -7,7 +7,7 @@ use iron::{Url, status};
 fn main() {
     let url = Url::parse("http://rust-lang.org").unwrap();
 
-    Iron::new(move |_: &mut Request | {
+    Iron::new_sync(move |_: &mut Request | {
         Ok(Response::with((status::Found, Redirect(url.clone()))))
     }).http("localhost:3000").unwrap();
 }

@@ -1,7 +1,7 @@
 [package]
 
 name = "iron"
-version = "0.5.1"
+version = "0.6.0"
 description = "Extensible, Concurrency Focused Web Development in Rust."
 readme = "README.md"
 repository = "https://github.com/iron/iron"
@@ -20,7 +20,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-native-tls-example = ["hyper-native-tls"]
+ssl = ["native-tls", "tokio-tls"]
 
 [dependencies]
 typemap = "0.3"
@@ -31,8 +31,13 @@ log = "0.3"
 conduit-mime-types = "0.7"
 lazy_static = "0.2"
 num_cpus = "1.0"
-hyper = "0.10"
-hyper-native-tls = { version = "0.2", optional = true }
+hyper = { git = "https://github.com/hyperium/hyper" }
+futures = "0.1"
+tokio-core = "0.1"
+tokio-io = "0.1"
+futures-cpupool = "0.1"
+tokio-tls = { version = "0.1.1", optional = true }
+native-tls = { version = "0.1.1", optional = true }
 
 [dev-dependencies]
 time = "0.1"

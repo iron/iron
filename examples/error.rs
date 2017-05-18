@@ -1,3 +1,4 @@
+extern crate futures;
 extern crate iron;
 extern crate time;
 
@@ -5,8 +6,11 @@ use iron::prelude::*;
 use iron::{Handler, BeforeMiddleware};
 use iron::status;
 
+use futures::future;
+
 use std::error::Error;
 use std::fmt::{self, Debug};
+use std::sync::Arc;
 
 struct ErrorHandler;
 struct ErrorProducer;
@@ -36,14 +40,14 @@ impl Handler for ErrorHandler {
 }
 
 impl BeforeMiddleware for ErrorProducer {
-    fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(IronError::new(StringError("Error".to_string()), status::BadRequest))
+    fn before(&self, req: Request) -> BoxIronFuture<Request> {
+        Box::new(future::err(IronError::new(StringError("Error".to_string()), req, status::BadRequest)))
     }
 }
 
 fn main() {
     // Handler is attached here.
-    let mut chain = Chain::new(ErrorHandler);
+    let mut chain = Chain::new(Arc::new(ErrorHandler));
 
     // Link our error maker.
     chain.link_before(ErrorProducer);

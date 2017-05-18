@@ -7,7 +7,7 @@ use iron::status;
 use iron::Timeouts;
 
 fn main() {
-    let mut iron = Iron::new(|_: &mut Request| {
+    let mut iron = Iron::new_sync(|_: &mut Request| {
         Ok(Response::with((status::Ok, "Hello world!")))
     });
     iron.threads = 8;

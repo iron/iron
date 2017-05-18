@@ -1,7 +1,7 @@
 use std::fmt;
 
 use modifier::Modifier;
-use {Response};
+use {Request, Response};
 
 pub use std::error::Error;
 pub use hyper::Error as HttpError;
@@ -27,6 +27,11 @@ pub struct IronError {
     /// This can be layered and will be logged at the end of an errored
     /// request.
     pub error: Box<Error + Send>,
+    
+    /// The request that caused this error
+    ///
+    /// The request responsible for causing this error.
+    pub request: Request,
 
     /// What to do about this error.
     ///
@@ -36,9 +41,10 @@ pub struct IronError {
 
 impl IronError {
     /// Create a new `IronError` from an error and a modifier.
-    pub fn new<E: 'static + Error + Send, M: Modifier<Response>>(e: E, m: M) -> IronError {
+    pub fn new<E: 'static + Error + Send, M: Modifier<Response>>(e: E, request: Request, m: M) -> IronError {
         IronError {
             error: Box::new(e),
+            request: request,
             response: Response::with(m)
         }
     }
