@@ -1,4 +1,4 @@
-Router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router)
+Router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router) [![Crates.io Status](https://meritbadge.herokuapp.com/router)](https://crates.io/crates/router)
 ====
 
 > Routing handler for the [Iron](https://github.com/iron/iron) web framework.
@@ -62,4 +62,3 @@ you can build a local copy with `make doc`.
 One of us is usually on `#iron` on the mozilla irc.
 Come say hi and ask any questions you might have.
 We are also usually on `#rust` and `#rust-webdev`.
-
