@@ -68,9 +68,7 @@ extern crate typemap as tmap;
 extern crate plugin;
 extern crate url as url_ext;
 extern crate num_cpus;
-extern crate conduit_mime_types as mime_types;
-#[macro_use]
-extern crate lazy_static;
+extern crate mime_guess;
 
 // Request + Response
 pub use request::{Request, Url};
