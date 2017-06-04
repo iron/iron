@@ -6,7 +6,7 @@ extern crate iron;
 use std::collections::HashMap;
 
 use iron::prelude::*;
-use iron::{Handler};
+use iron::Handler;
 use iron::status;
 
 struct Router {
