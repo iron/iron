@@ -13,6 +13,7 @@ deps/
 *.exe
 *-test
 /src/generated/mimes.txt
+/src/response/mimes/mimegen.rs
 /src/generated/mimegen
 /src/response/mimes/mod.rs
 /bin/main
