@@ -1,7 +1,6 @@
 //! Iron's HTTP Request representation and associated methods.
 
 use std::fmt::{self, Debug};
-use std::io::Cursor;
 use std::net::SocketAddr;
 
 use futures::Stream;
@@ -21,6 +20,7 @@ use std::net::ToSocketAddrs;
 pub use self::url::Url;
 
 use {Protocol, Plugin, Headers, Set, headers};
+use error::HttpError;
 
 mod url;
 
@@ -42,7 +42,7 @@ pub struct Request {
     pub headers: Headers,
 
     /// The request body as a reader.
-    pub body: Cursor<Vec<u8>>,
+    pub body: Option<Body>,
 
     /// The request method.
     pub method: Method,
@@ -77,8 +77,7 @@ impl Request {
     pub fn from_http(req: HttpRequest, local_addr: SocketAddr, protocol: &Protocol)
                      -> Result<Request, String> {
         let addr = req.remote_addr().take();
-        let (method, uri, version, headers, reader) = req.deconstruct();
-        let body = Cursor::new(reader.wait().fold(Vec::new(), |mut v, input| { v.extend_from_slice(&input.unwrap()); v }));
+        let (method, uri, version, headers, body) = req.deconstruct();
         let url = {
             let path = uri.path();
             let url_string = match (version, headers.get::<headers::Host>()) {
@@ -113,12 +112,26 @@ impl Request {
             remote_addr: addr,
             local_addr: local_addr,
             headers: headers,
-            body: body,
+            body: Some(body),
             method: method,
             extensions: TypeMap::new(),
             version: version,
             _p: (),
         })
+    }
+
+    /// Get the contents of the body as a Vec<u8>
+    ///
+    /// This consumes the body future and turns it into Vec<u8>.  Note this should not be called
+    /// from the main hyper thread, as it will potentially deadlock.
+    pub fn get_body_contents(&mut self) -> Option<Result<Vec<u8>, HttpError>> {
+        self.body.take().map(|reader| reader.wait().fold(Ok(Vec::new()), |r, input| {
+            if let Ok(mut v) = r {
+                input.map(move |next_body_chunk| { v.extend_from_slice(&next_body_chunk); v })
+            } else {
+                r
+            }
+        }))
     }
 
     #[cfg(test)]
@@ -128,7 +141,7 @@ impl Request {
             remote_addr: "localhost:3000".to_socket_addrs().unwrap().next(),
             local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
             headers: Headers::new(),
-            body: Cursor::new(Vec::new()),
+            body: Some(Body::empty()),
             method: Method::Get,
             extensions: TypeMap::new(),
             version: HttpVersion::Http11,

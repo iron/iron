@@ -5,17 +5,14 @@
 
 extern crate iron;
 
-use std::io::Read;
-
 use iron::prelude::*;
 use iron::status;
 
 fn echo(request: &mut Request) -> IronResult<Response> {
-    let mut body = Vec::new();
-    request
-        .body
-        .read_to_end(&mut body)
-        .map_err(|e| IronError::new(e, (status::InternalServerError, "Error reading request")))?;
+    let body = request
+                .get_body_contents()
+                .unwrap()
+                .map_err(|e| IronError::new(e, (status::InternalServerError, "Error reading request")))?;
     Ok(Response::with((status::Ok, body)))
 }
 
