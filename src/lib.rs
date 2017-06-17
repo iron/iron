@@ -71,6 +71,8 @@ extern crate num_cpus;
 extern crate mime_guess;
 extern crate futures;
 extern crate tokio_core;
+extern crate tokio_io;
+extern crate tokio_tls;
 extern crate futures_cpupool;
 
 // Request + Response

@@ -20,7 +20,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-native-tls-example = ["hyper-native-tls"]
+native-tls-example = ["native-tls"]
 
 [dependencies]
 typemap = "0.3"
@@ -31,10 +31,12 @@ modifier = "0.1"
 log = "0.3"
 num_cpus = "1.0"
 hyper = "0.11"
-hyper-native-tls = { version = "0.2", optional = true }
 futures = "0.1"
 tokio-core = "0.1"
+tokio-io = "0.1"
 futures-cpupool = "0.1"
+tokio-tls = "0.1.1"
+native-tls = { version = "0.1.1", optional = true }
 
 [dev-dependencies]
 time = "0.1"
