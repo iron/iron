@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate mime;
 extern crate iron;
 
@@ -16,18 +15,13 @@ fn variant1(_: &mut Request) -> IronResult<Response> {
 
 fn variant2(_: &mut Request) -> IronResult<Response> {
     use iron::mime;
-    let content_type = "application/json".parse::<mime::Mime>().unwrap();
+    let content_type = mime::APPLICATION_JSON;
     Ok(Response::with((content_type, status::Ok, "{}")))
 }
 
 fn variant3(_: &mut Request) -> IronResult<Response> {
-    let content_type = mime!(Application/Json);
-    Ok(Response::with((content_type, status::Ok, "{}")))
-}
-
-fn variant4(_: &mut Request) -> IronResult<Response> {
     use iron::mime;
-    let content_type = mime::Mime(iron::mime::TopLevel::Application, iron::mime::SubLevel::Json, vec![]);
+    let content_type = "application/json".parse::<mime::Mime>().unwrap();
     Ok(Response::with((content_type, status::Ok, "{}")))
 }
 
@@ -38,7 +32,6 @@ fn main() {
         1 => variant1,
         2 => variant2,
         3 => variant3,
-        4 => variant4,
         _ => panic!("No such variant"),
     };
     println!("Using variant{}", variant_index);

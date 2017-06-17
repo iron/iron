@@ -69,6 +69,8 @@ extern crate plugin;
 extern crate url as url_ext;
 extern crate num_cpus;
 extern crate mime_guess;
+extern crate futures;
+extern crate futures_cpupool;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -142,15 +144,14 @@ pub mod url {
 
 /// Status Codes
 pub mod status {
-    pub use hyper::status::StatusCode as Status;
-    pub use hyper::status::StatusCode::*;
-    pub use hyper::status::StatusClass;
+    pub use hyper::StatusCode as Status;
+    pub use hyper::StatusCode::*;
 }
 
 /// HTTP Methods
 pub mod method {
-    pub use hyper::method::Method;
-    pub use hyper::method::Method::*;
+    pub use hyper::Method;
+    pub use hyper::Method::*;
 }
 
 // Publicized to show the documentation

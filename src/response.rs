@@ -12,8 +12,8 @@ use hyper::header::Headers;
 use status::{self, Status};
 use {Plugin, headers};
 
-pub use hyper::server::response::Response as HttpResponse;
-use hyper::net::Fresh;
+pub use hyper::server::Response as HttpResponse;
+use hyper::Body;
 
 /// Wrapper type to set `Read`ers as response bodies
 pub struct BodyReader<R: Send>(pub R);
@@ -112,17 +112,17 @@ impl Response {
     //
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
-    pub fn write_back(self, mut http_res: HttpResponse<Fresh>) {
+    pub fn write_back(self, http_res: &mut HttpResponse<Body>) {
         *http_res.headers_mut() = self.headers;
 
         // Default to a 404 if no response code was set
-        *http_res.status_mut() = self.status.unwrap_or(status::NotFound);
+        http_res.set_status(self.status.unwrap_or(status::NotFound));
 
         let out = match self.body {
             Some(body) => write_with_body(http_res, body),
             None => {
                 http_res.headers_mut().set(headers::ContentLength(0));
-                http_res.start().and_then(|res| res.end())
+                Ok(())
             }
         };
 
@@ -132,16 +132,17 @@ impl Response {
     }
 }
 
-fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>)
+fn write_with_body(res: &mut HttpResponse<Body>, mut body: Box<WriteBody>)
                    -> io::Result<()> {
     let content_type = res.headers().get::<headers::ContentType>()
                            .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),
                                         |cx| cx.clone());
     res.headers_mut().set(content_type);
 
-    let mut raw_res = try!(res.start());
-    try!(body.write_body(&mut raw_res));
-    raw_res.end()
+    let mut body_contents: Vec<u8> = vec![];
+    try!(body.write_body(&mut body_contents));
+    res.set_body(Body::from(body_contents));
+    Ok(())
 }
 
 impl Debug for Response {

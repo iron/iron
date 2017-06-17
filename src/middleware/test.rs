@@ -132,7 +132,7 @@ impl AfterMiddleware for Middleware {
 }
 
 // Stub request
-fn request<'a, 'b>() -> Request<'a, 'b> {
+fn request() -> Request {
     Request::stub()
 }
 

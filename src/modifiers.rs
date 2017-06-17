@@ -12,10 +12,11 @@
 //! return status code:
 //!
 //! ```
+//! # use std::convert::Into;
 //! # use iron::prelude::*;
 //! # use iron::status;
 //! let r = Response::with(status::NotFound);
-//! assert_eq!(r.status.unwrap().to_u16(), 404);
+//! assert_eq!(404 as u16, r.status.unwrap().into());
 //! ```
 //!
 //! You can also pass in a tuple of modifiers, they will all be applied. Here's
@@ -52,7 +53,8 @@ use std::path::{Path, PathBuf};
 
 use modifier::Modifier;
 
-use hyper::mime::{Mime, SubLevel, TopLevel};
+use hyper::mime;
+use hyper::mime::Mime;
 
 use {status, headers, Request, Response, Set, Url};
 
@@ -157,17 +159,17 @@ impl Modifier<Response> for status::Status {
 
 /// A modifier for changing headers on requests and responses.
 #[derive(Clone)]
-pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
+pub struct Header<H: headers::Header>(pub H);
 
 impl<H> Modifier<Response> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+where H: headers::Header {
     fn modify(self, res: &mut Response) {
         res.headers.set(self.0);
     }
 }
 
-impl<'a, 'b, H> Modifier<Request<'a, 'b>> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+impl<H> Modifier<Request> for Header<H>
+where H: headers::Header {
     fn modify(self, res: &mut Request) {
         res.headers.set(self.0);
     }
@@ -179,7 +181,7 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.set(headers::Location(url.to_string()));
+        res.headers.set(headers::Location::new(url.to_string()));
     }
 }
 
@@ -189,13 +191,13 @@ pub struct RedirectRaw(pub String);
 impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
         let RedirectRaw(path) = self;
-        res.headers.set(headers::Location(path));
+        res.headers.set(headers::Location::new(path));
     }
 }
 
 fn mime_for_path(path: &Path) -> Mime {
     guess_mime_type_opt(path)
-        .unwrap_or_else(|| Mime(TopLevel::Text, SubLevel::Plain, vec![]))
+        .unwrap_or(mime::TEXT_PLAIN)
 }
 
 
@@ -206,12 +208,12 @@ mod test {
     #[test]
     fn test_mime_for_path() {
         assert_eq!(mime_for_path(Path::new("foo.txt")),
-                   "text/plain".parse().unwrap());
+                   mime::TEXT_PLAIN);
         assert_eq!(mime_for_path(Path::new("foo.jpg")),
-                   "image/jpeg".parse().unwrap());
+                   mime::IMAGE_JPEG);
         assert_eq!(mime_for_path(Path::new("foo.zip")),
-                   "application/zip".parse().unwrap());
+                   "application/zip".parse::<Mime>().unwrap());
         assert_eq!(mime_for_path(Path::new("foo")),
-                   "text/plain".parse().unwrap());
+                   mime::TEXT_PLAIN);
     }
 }
