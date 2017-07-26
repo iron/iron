@@ -130,6 +130,11 @@ impl<'a, 'b> Request<'a, 'b> {
         })
     }
 
+    /// Get a reference to the underlying `NetworkStream`.
+    pub fn downcast_ref<T: NetworkStream>(&self) -> Option<&T> {
+        self.body.0.get_ref().get_ref().downcast_ref()
+    }
+
     #[cfg(test)]
     pub fn stub() -> Request<'a, 'b> {
         Request {
