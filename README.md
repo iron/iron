@@ -63,7 +63,7 @@ writes and locking in the core framework.
 Iron is 100% safe code:
 
 ```sh
-$ ack unsafe src | wc
+$ rg unsafe src | wc
        0       0       0
 ```
 
