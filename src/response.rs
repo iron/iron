@@ -9,7 +9,7 @@ use plugin::Extensible;
 use modifier::{Set, Modifier};
 use hyper::header::Headers;
 
-use status::{self, Status};
+use status::{self, Status, StatusClass};
 use {Plugin, headers};
 
 pub use hyper::server::response::Response as HttpResponse;
@@ -121,7 +121,16 @@ impl Response {
         let out = match self.body {
             Some(body) => write_with_body(http_res, body),
             None => {
-                http_res.headers_mut().set(headers::ContentLength(0));
+                if http_res.status() == Status::NoContent
+                    || http_res.status().class() == StatusClass::Informational {
+                    // RFC7230 s3.3.2: strip Content-Length
+                    http_res.headers_mut().remove::<headers::ContentLength>();
+                } else if http_res.status() == Status::NotModified {
+                    // RFC7230 s3.3.2: allow but don't require Content-Length
+                }
+                 else {
+                    http_res.headers_mut().set(headers::ContentLength(0));
+                }
                 http_res.start().and_then(|res| res.end())
             }
         };
