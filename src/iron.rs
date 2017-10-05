@@ -6,7 +6,7 @@ use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, BoxFuture, Stream};
+use futures::{future, Future, Stream};
 use futures_cpupool::CpuPool;
 
 use tokio_core::net::TcpListener;
@@ -40,15 +40,29 @@ use status;
 pub struct Iron<H> {
     /// Iron contains a `Handler`, which it uses to create responses for client
     /// requests.
-    pub handler: H,
+    pub handler: Arc<H>,
 
     /// Server timeouts.
     pub timeouts: Timeouts,
 
-    /// The number of request handling threads.
+    /// Cpu pool to run synchronus requests on.
     ///
-    /// Defaults to `8 * num_cpus`.
-    pub threads: usize,
+    /// Defaults to `num_cpus`.  Note that reading/writing to the client is
+    /// handled asyncronusly in a single thread.
+    pub pool: CpuPool,
+
+    /// Protocol of the incoming requests
+    ///
+    /// This is automatically set by the `http` and `https` functions, but
+    /// can be set if you are manually constructing the hyper `http` instance.
+    pub protocol: Protocol,
+
+    /// Default host address to use when none is provided
+    ///
+    /// When set, this provides a default host for any requests that don't
+    /// provide one.  When unset, any request without a host specified
+    /// will fail.
+    pub local_address: Option<SocketAddr>,
 }
 
 /// A settings struct containing a set of timeouts which can be applied to a server.
@@ -119,9 +133,11 @@ impl<H: Handler> Iron<H> {
     /// passed in `Handler`.
     pub fn new(handler: H) -> Iron<H> {
         Iron {
-            handler: handler,
+            handler: Arc::new(handler),
+            protocol: Protocol::http(),
+            local_address: None,
             timeouts: Timeouts::default(),
-            threads: 8 * ::num_cpus::get(),
+            pool: CpuPool::new_num_cpus(),
         }
     }
 
@@ -178,20 +194,16 @@ impl<H: Handler> Iron<H> {
     /// Kick off a server process on an arbitrary `Listener`.
     ///
     /// Most use cases may call `http` and `https` methods instead of this.
-    pub fn listen<L, S>(self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
+    pub fn listen<L, S>(mut self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
         where L: Stream<Item=(S, SocketAddr), Error=IoError>,
         S: AsyncRead + AsyncWrite + 'static,
     {
-        let handler = RawService{
-            addr: addr,
-            handler: Arc::new(self.handler),
-            protocol: protocol,
-            pool: CpuPool::new(self.threads),
-        };
+        self.protocol = protocol;
+        self.local_address = Some(addr);
 
         let http = Http::new();
         let server = listener.for_each(|(sock, remote_addr)| {
-            http.bind_connection(&handle, sock, remote_addr, handler.new_service().unwrap());
+            http.bind_connection(&handle, sock, remote_addr, self.new_service().unwrap());
             future::ok(())
         });
 
@@ -199,47 +211,41 @@ impl<H: Handler> Iron<H> {
     }
 }
 
-struct RawService<H> {
-    handler: Arc<H>,
-    addr: SocketAddr,
-    protocol: Protocol,
-    pool: CpuPool,
-}
-
-impl<H: Handler> ::hyper::server::NewService for RawService<H> {
+impl<H: Handler> ::hyper::server::NewService for Iron<H> {
     type Request = HttpRequest;
     type Response = HttpResponse;
     type Error = ::hyper::Error;
-    type Instance = RawHandler<H>;
+    type Instance = IronHandler<H>;
 
     fn new_service(&self) -> Result<Self::Instance, ::std::io::Error> {
-        Ok(RawHandler{
+        Ok(IronHandler{
             handler: self.handler.clone(),
-            addr: self.addr.clone(),
+            addr: self.local_address.clone(),
             protocol: self.protocol.clone(),
             pool: self.pool.clone(),
         })
     }
 }
 
-struct RawHandler<H> {
+/// This is the internal struct that translates between hyper and iron.
+pub struct IronHandler<H> {
     handler: Arc<H>,
-    addr: SocketAddr,
+    addr: Option<SocketAddr>,
     protocol: Protocol,
     pool: CpuPool,
 }
 
-impl<H: Handler> ::hyper::server::Service for RawHandler<H> {
+impl<H: Handler> ::hyper::server::Service for IronHandler<H> {
     type Request = HttpRequest;
     type Response = HttpResponse;
     type Error = Error;
-    type Future = BoxFuture<Self::Response,Self::Error>;
+    type Future = Box<Future<Item=Self::Response,Error=Self::Error>>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
         let addr = self.addr.clone();
         let proto = self.protocol.clone();
         let handler = self.handler.clone();
-        self.pool.spawn_fn(move || {
+        Box::new(self.pool.spawn_fn(move || {
             let mut http_res = HttpResponse::<Body>::new().with_status(status::InternalServerError);
 
             match Request::from_http(req, addr, &proto) {
@@ -256,11 +262,11 @@ impl<H: Handler> ::hyper::server::Service for RawHandler<H> {
                 }
             };
             future::ok(http_res)
-        }).boxed()
+        }))
     }
 }
 
-fn bad_request(mut http_res: &mut HttpResponse<Body>) {
+fn bad_request(http_res: &mut HttpResponse<Body>) {
     http_res.set_status(status::BadRequest);
 }
 

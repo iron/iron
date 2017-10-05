@@ -67,7 +67,6 @@ extern crate hyper;
 extern crate typemap as tmap;
 extern crate plugin;
 extern crate url as url_ext;
-extern crate num_cpus;
 extern crate mime_guess;
 extern crate futures;
 extern crate tokio_core;

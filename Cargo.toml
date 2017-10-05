@@ -29,7 +29,6 @@ plugin = "0.2"
 mime_guess = "2.0.0-alpha.1"
 modifier = "0.1"
 log = "0.3"
-num_cpus = "1.0"
 hyper = "0.11"
 futures = "0.1"
 tokio-core = "0.1"
@@ -41,3 +40,4 @@ native-tls = { version = "0.1.1", optional = true }
 [dev-dependencies]
 time = "0.1"
 mime = "0.3"
+tokio-proto = "0.1.1"
