@@ -9,9 +9,10 @@ use std::time::Duration;
 use futures::{future, Future, Stream};
 use futures_cpupool::CpuPool;
 
-use tokio_core::net::TcpListener;
 use tokio_core::reactor::{Core, Handle};
 use tokio_io::{AsyncRead, AsyncWrite};
+
+use tokio_proto::TcpServer;
 
 use hyper::{Body, Error};
 use hyper::server::{NewService, Http};
@@ -22,13 +23,9 @@ use response::HttpResponse;
 use error::HttpResult;
 
 #[cfg(feature = "ssl")]
-use tokio_tls::TlsAcceptorExt;
+use native_tls::TlsAcceptor;
 #[cfg(feature = "ssl")]
-use futures::sync::mpsc;
-#[cfg(feature = "ssl")]
-use futures::Sink;
-#[cfg(feature = "ssl")]
-use std::io::ErrorKind;
+use tokio_tls::proto::Server as TlsServer;
 
 use {Request, Handler};
 use status;
@@ -144,51 +141,36 @@ impl<H: Handler> Iron<H> {
     /// Kick off the server process using the HTTP protocol.
     ///
     /// Call this once to begin listening for requests on the server.
-    pub fn http<A>(self, addr: A) -> HttpResult<()>
+    pub fn http<A>(mut self, addr: A)
         where A: ToSocketAddrs
     {
-        let addr = addr.to_socket_addrs()?.next().unwrap();
+        let addr: SocketAddr = addr.to_socket_addrs().unwrap().next().unwrap();
+        self.local_address = Some(addr.clone());
 
-        let core = Core::new().unwrap();
-        let handle = core.handle();
+        let http = Http::new();
 
-        let sock = TcpListener::bind(&addr, &handle).unwrap().incoming();
-
-        return self.listen(sock, addr, Protocol::http(), core, handle);
+        let tcp_server = TcpServer::new(http, addr);
+        tcp_server.serve(self);
     }
 
     /// Kick off the server process using the HTTPS protocol.
     ///
     /// Call this once to begin listening for requests on the server.
     #[cfg(feature = "ssl")]
-    pub fn https<A, Tls>(self, addr: A, tls: Tls) -> HttpResult<()>
-        where A: ToSocketAddrs, Tls: TlsAcceptorExt + 'static
+    pub fn https<A>(mut self, addr: A, tls: TlsAcceptor)
+        where A: ToSocketAddrs
     {
-        let addr = addr.to_socket_addrs()?.next().unwrap();
+        let addr = addr.to_socket_addrs().unwrap().next().unwrap();
 
-        let core = Core::new().unwrap();
-        let handle = core.handle();
+        self.local_address = Some(addr.clone());
+        self.protocol = Protocol::https();
 
-        let listener_tcp = TcpListener::bind(&addr, &handle).unwrap();
+        let http = Http::new();
 
-        let (tx, rx) = mpsc::channel(1);
+        let tls_server = TlsServer::new(http, tls);
 
-        let ssl_acceptor = listener_tcp.incoming().for_each(move |(sock, remote_addr)| {
-            let tx = tx.clone();
-            tls.accept_async(sock).map_err(|e| IoError::new(ErrorKind::Other, e)).and_then(move |sock| {
-                future::ok((sock, remote_addr))
-            }).then(|r| {
-                tx.send(r).map_err(|e| IoError::new(ErrorKind::Other, e))
-            }).and_then(|_| future::ok(()))
-        }).then(|_| future::ok(()));
-        handle.spawn(ssl_acceptor);
-
-        let listener = rx.then(|r| match r {
-            Ok(real_r) => real_r,
-            Err(_) => unreachable!(),
-        });
-
-        return self.listen(listener, addr, Protocol::https(), core, handle);
+        let tcp_server = TcpServer::new(tls_server, addr);
+        tcp_server.serve(self);
     }
 
     /// Kick off a server process on an arbitrary `Listener`.

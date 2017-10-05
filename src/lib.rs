@@ -27,7 +27,7 @@
 //! fn main() {
 //!     Iron::new(|_: &mut Request| {
 //!         Ok(Response::with((status::Ok, "Hello World!")))
-//!     }).http("localhost:3000").unwrap();
+//!     }).http("localhost:3000");
 //! }
 //! ```
 //!
@@ -69,8 +69,12 @@ extern crate plugin;
 extern crate url as url_ext;
 extern crate mime_guess;
 extern crate futures;
+#[cfg(feature = "ssl")]
+extern crate native_tls;
 extern crate tokio_core;
 extern crate tokio_io;
+#[cfg(feature = "ssl")]
+extern crate tokio_proto;
 #[cfg(feature = "ssl")]
 extern crate tokio_tls;
 extern crate futures_cpupool;

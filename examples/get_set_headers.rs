@@ -36,6 +36,5 @@ fn main() {
     let mut chain = Chain::new(info);
     chain.link_after(DefaultContentType);
     Iron::new(chain)
-        .http(format!("localhost:{}", 3000))
-        .unwrap();
+        .http(format!("localhost:{}", 3000));
 }

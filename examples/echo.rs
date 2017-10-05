@@ -16,5 +16,5 @@ fn echo(request: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    Iron::new(echo).http("localhost:3000").unwrap();
+    Iron::new(echo).http("localhost:3000");
 }

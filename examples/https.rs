@@ -15,8 +15,6 @@
 extern crate iron;
 #[cfg(feature = "ssl")]
 extern crate native_tls;
-#[cfg(feature = "ssl")]
-extern crate tokio_tls;
 
 #[cfg(feature = "ssl")]
 fn main() {
@@ -25,7 +23,6 @@ fn main() {
     use iron::{Iron, Request, Response};
     use iron::status;
     use std::io::prelude::*;
-    use std::result::Result;
     use std::fs::File;
 
     let mut file = File::open("identity.p12").unwrap();
@@ -35,12 +32,9 @@ fn main() {
 
     let ssl = TlsAcceptor::builder(pkcs12).unwrap().build().unwrap();
 
-    match Iron::new(|_: &mut Request| {
+    Iron::new(|_: &mut Request| {
         Ok(Response::with((status::Ok, "Hello world!")))
-    }).https("127.0.0.1:3000", ssl) {
-        Result::Ok(listening) => println!("{:?}", listening),
-        Result::Err(err) => panic!("{:?}", err),
-    }
+    }).https("127.0.0.1:3000", ssl);
     // curl -vvvv https://127.0.0.1:3000/ -k
 }
 

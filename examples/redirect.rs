@@ -9,6 +9,6 @@ fn main() {
 
     Iron::new(move |_: &mut Request | {
         Ok(Response::with((status::Found, Redirect(url.clone()))))
-    }).http("localhost:3000").unwrap();
+    }).http("localhost:3000");
 }
 

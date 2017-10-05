@@ -95,5 +95,5 @@ fn main() {
     chain.link_after(ErrorProducer);
     chain.link_after(ErrorRecover);
 
-    Iron::new(chain).http("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000");
 }

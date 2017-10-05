@@ -27,6 +27,6 @@ fn main() {
             },
             _ => Response::with(status::BadRequest)
         })
-    }).http("localhost:3000").unwrap();
+    }).http("localhost:3000");
 }
 

@@ -48,5 +48,5 @@ fn main() {
        Ok(Response::with(status::BadRequest))
     });
 
-    Iron::new(router).http("localhost:3000").unwrap();
+    Iron::new(router).http("localhost:3000");
 }

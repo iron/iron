@@ -1,4 +1,3 @@
-extern crate mime;
 extern crate iron;
 
 use std::env;
@@ -35,5 +34,5 @@ fn main() {
         _ => panic!("No such variant"),
     };
     println!("Using variant{}", variant_index);
-    Iron::new(handler).http("localhost:3000").unwrap();
+    Iron::new(handler).http("localhost:3000");
 }
