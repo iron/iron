@@ -73,7 +73,6 @@ extern crate futures;
 extern crate native_tls;
 extern crate tokio_core;
 extern crate tokio_io;
-#[cfg(feature = "ssl")]
 extern crate tokio_proto;
 #[cfg(feature = "ssl")]
 extern crate tokio_tls;
