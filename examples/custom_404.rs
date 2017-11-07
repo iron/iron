@@ -16,7 +16,7 @@ impl AfterMiddleware for Custom404 {
     fn catch(&self, _: &mut Request, err: IronError) -> IronResult<Response> {
         println!("Hitting custom 404 middleware");
 
-        if let Some(_) = err.error.downcast::<NoRoute>() {
+        if err.error.is::<NoRoute>() {
             Ok(Response::with((status::NotFound, "Custom 404 response")))
         } else {
             Err(err)

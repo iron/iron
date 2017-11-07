@@ -81,8 +81,8 @@ impl Router {
     }
 
     fn route_id(&mut self, id: &str, glob: &str) {
-        let mut mut_inner = self.mut_inner();
-        let ref mut route_ids = mut_inner.route_ids;
+        let inner = self.mut_inner();
+        let ref mut route_ids = inner.route_ids;
 
         match route_ids.get(id) {
             Some(other_glob) if glob != other_glob => panic!("Duplicate route_id: {}", id),
