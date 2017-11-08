@@ -7,6 +7,7 @@ use std::fmt::{self, Debug};
 use hyper::uri::RequestUri::{AbsoluteUri, AbsolutePath};
 use hyper::net::NetworkStream;
 use hyper::http::h1::HttpReader;
+use hyper::version::HttpVersion;
 
 use typemap::TypeMap;
 use plugin::Extensible;
@@ -14,6 +15,9 @@ use method::Method;
 
 pub use hyper::server::request::Request as HttpRequest;
 use hyper::buffer;
+
+#[cfg(test)]
+use std::net::ToSocketAddrs;
 
 pub use self::url::Url;
 
@@ -45,7 +49,12 @@ pub struct Request<'a, 'b: 'a> {
     pub method: Method,
 
     /// Extensible storage for data passed between middleware.
-    pub extensions: TypeMap
+    pub extensions: TypeMap,
+
+    /// The version of the HTTP protocol used.
+    pub version: HttpVersion,
+
+    _p: (),
 }
 
 impl<'a, 'b> Debug for Request<'a, 'b> {
@@ -68,7 +77,7 @@ impl<'a, 'b> Request<'a, 'b> {
     /// This constructor consumes the HttpRequest.
     pub fn from_http(req: HttpRequest<'a, 'b>, local_addr: SocketAddr, protocol: &Protocol)
                      -> Result<Request<'a, 'b>, String> {
-        let (addr, method, headers, uri, _, reader) = req.deconstruct();
+        let (addr, method, headers, uri, version, reader) = req.deconstruct();
 
         let url = match uri {
             AbsoluteUri(ref url) => {
@@ -79,13 +88,25 @@ impl<'a, 'b> Request<'a, 'b> {
             },
 
             AbsolutePath(ref path) => {
-                // Attempt to prepend the Host header (mandatory in HTTP/1.1)
-                let url_string = match headers.get::<headers::Host>() {
-                    Some(ref host) => {
-                        format!("{}://{}:{}{}", protocol.name(), host.hostname, local_addr.port(),
-                                path)
+                let url_string = match (version, headers.get::<headers::Host>()) {
+                    (_, Some(host)) => {
+                        // Attempt to prepend the Host header (mandatory in HTTP/1.1)
+                        if let Some(port) = host.port {
+                            format!("{}://{}:{}{}", protocol.name(), host.hostname, port, path)
+                        } else {
+                            format!("{}://{}{}", protocol.name(), host.hostname, path)
+                        }
                     },
-                    None => return Err("No host specified in request".into())
+                    (v, None) if v < HttpVersion::Http11 => {
+                        // Attempt to use the local address? (host header is not required in HTTP/1.0).
+                        match local_addr {
+                            SocketAddr::V4(addr4) => format!("{}://{}:{}{}", protocol.name(), addr4.ip(), local_addr.port(), path),
+                            SocketAddr::V6(addr6) => format!("{}://[{}]:{}{}", protocol.name(), addr6.ip(), local_addr.port(), path),
+                        }
+                    },
+                    (_, None) => {
+                        return Err("No host specified in request".into())
+                    }
                 };
 
                 match Url::parse(&url_string) {
@@ -103,8 +124,25 @@ impl<'a, 'b> Request<'a, 'b> {
             headers: headers,
             body: Body::new(reader),
             method: method,
-            extensions: TypeMap::new()
+            extensions: TypeMap::new(),
+            version: version,
+            _p: (),
         })
+    }
+
+    #[cfg(test)]
+    pub fn stub() -> Request<'a, 'b> {
+        Request {
+            url: Url::parse("http://www.rust-lang.org").unwrap(),
+            remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+            local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
+            headers: Headers::new(),
+            body: unsafe { ::std::mem::uninitialized() }, // FIXME(reem): Ugh
+            method: Method::Get,
+            extensions: TypeMap::new(),
+            version: HttpVersion::Http11,
+            _p: (),
+        }
     }
 }
 

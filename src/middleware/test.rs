@@ -1,4 +1,3 @@
-use std::net::ToSocketAddrs;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::Arc;
@@ -6,8 +5,7 @@ use std::sync::Arc;
 use self::Kind::{Fine, Prob};
 
 use prelude::*;
-use {method, headers};
-use {AfterMiddleware, BeforeMiddleware, Handler, TypeMap, Url};
+use {AfterMiddleware, BeforeMiddleware, Handler};
 
 #[test] fn test_chain_normal() {
     test_chain(
@@ -135,15 +133,7 @@ impl AfterMiddleware for Middleware {
 
 // Stub request
 fn request<'a, 'b>() -> Request<'a, 'b> {
-    Request {
-        url: Url::parse("http://www.rust-lang.org").unwrap(),
-        remote_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
-        local_addr: "localhost:3000".to_socket_addrs().unwrap().next().unwrap(),
-        headers: headers::Headers::new(),
-        body: unsafe { ::std::mem::uninitialized() }, // FIXME(reem): Ugh
-        method: method::Get,
-        extensions: TypeMap::new()
-    }
+    Request::stub()
 }
 
 // Stub response

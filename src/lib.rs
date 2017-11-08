@@ -66,12 +66,9 @@
 extern crate hyper;
 extern crate typemap as tmap;
 extern crate plugin;
-extern crate error as err;
-extern crate url;
+extern crate url as url_ext;
 extern crate num_cpus;
-extern crate conduit_mime_types as mime_types;
-#[macro_use]
-extern crate lazy_static;
+extern crate mime_guess;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -122,11 +119,12 @@ pub type IronResult<T> = Result<T, IronError>;
 /// of the convenience methods in Iron, as well as `Request`, `Response`
 /// `IronResult`, `IronError` and `Iron`.
 pub mod prelude {
+    #[doc(no_inline)]
     pub use {Set, Plugin, Chain, Request, Response,
              IronResult, IronError, Iron};
 }
 
-/// Re-exports from the TypeMap crate.
+/// Re-exports from the `TypeMap` crate.
 pub mod typemap {
     pub use tmap::{TypeMap, Key};
 }
@@ -135,6 +133,11 @@ pub mod typemap {
 pub mod modifier {
     extern crate modifier as modfier;
     pub use self::modfier::*;
+}
+
+/// Re-exports from the url crate.
+pub mod url {
+    pub use url_ext::*;
 }
 
 /// Status Codes

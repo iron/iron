@@ -63,7 +63,7 @@ writes and locking in the core framework.
 Iron is 100% safe code:
 
 ```sh
-$ ack unsafe src | wc
+$ rg unsafe src | wc
        0       0       0
 ```
 
@@ -96,7 +96,7 @@ middleware. No plugins or middleware are bundled with Iron.
 
 ## Performance
 
-Iron averages [84,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example)
+Iron averages [72,000+ requests per second for hello world](https://github.com/iron/iron/wiki/How-to-Benchmark-hello.rs-Example)
 and is mostly IO-bound, spending over 70% of its time in the kernel send-ing or
 recv-ing data.\*
 
@@ -107,8 +107,7 @@ recv-ing data.\*
 Iron aims to fill a void in the Rust web stack - a high level framework that is
 *extensible* and makes organizing complex server code easy.
 
-Extensions are painless to build, and the [core bundle](https://github.com/iron/common)
-already includes\*:
+Extensions are painless to build. Some important ones are:
 
 Middleware:
 - [Routing](https://github.com/iron/router)
@@ -120,11 +119,10 @@ Plugins:
 - [JSON Body Parsing](https://github.com/iron/body-parser)
 - [URL Encoded Data Parsing](https://github.com/iron/urlencoded)
 - [All-In-One (JSON, URL, & Form Data) Parameter Parsing](https://github.com/iron/params)
-- [Cookies](https://github.com/iron/cookie)
-- [Sessions](https://github.com/iron/session)
 
 Both:
 - [Shared Memory (also used for Plugin configuration)](https://github.com/iron/persistent)
+- [Sessions](https://github.com/iron/iron-sessionstorage)
 
 This allows for extremely flexible and powerful setups and allows nearly all
 of Iron's features to be swappable - you can even change the middleware

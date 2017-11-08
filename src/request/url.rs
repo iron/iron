@@ -1,6 +1,7 @@
 //! HTTP/HTTPS URL type for Iron.
 
 use url::{self, Host};
+use std::str::FromStr;
 use std::fmt;
 
 /// HTTP/HTTPS URL type for Iron.
@@ -96,7 +97,7 @@ impl Url {
         // Map empty passwords to None.
         match self.generic_url.password() {
             None => None,
-            Some(ref x) if x.is_empty() => None,
+            Some(x) if x.is_empty() => None,
             Some(password) => Some(password)
         }
     }
@@ -137,6 +138,13 @@ impl AsMut<url::Url> for Url {
     fn as_mut(&mut self) -> &mut url::Url { &mut self.generic_url }
 }
 
+impl FromStr for Url {
+    type Err = String;
+    #[inline]
+    fn from_str(input: &str) -> Result<Url, Self::Err> {
+        Url::parse(input)
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -213,5 +221,18 @@ mod test {
     fn test_https_default_port() {
         let parsed = Url::parse("https://example.com:443").unwrap().to_string();
         assert_eq!(parsed, "https://example.com/");
+    }
+
+    #[test]
+    fn test_from_str_positive() {
+        let u = "http://example.com".parse::<Url>();
+        assert!(u.is_ok());
+        assert_eq!(u.unwrap(), Url::parse("http://example.com").unwrap());
+    }
+
+    #[test]
+    fn test_from_str_negative() {
+        let u = "not a url".parse::<Url>();
+        assert!(u.is_err());
     }
 }
