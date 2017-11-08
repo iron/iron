@@ -134,7 +134,7 @@ impl<H: Handler> Iron<H> {
         where A: ToSocketAddrs,
               S: 'static + SslServer + Send + Clone
     {
-        HttpsListener::new(addr, ssl).and_then(|l| self.listen(l, Protocol::http()))
+        HttpsListener::new(addr, ssl).and_then(|l| self.listen(l, Protocol::https()))
     }
 
     /// Kick off a server process on an arbitrary `Listener`.
