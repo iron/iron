@@ -74,7 +74,7 @@ impl Modifier<Response> for Box<WriteBody> {
     }
 }
 
-impl <R: io::Read + Send + 'static> Modifier<Response> for BodyReader<R> {
+impl<R: io::Read + Send + 'static> Modifier<Response> for BodyReader<R> {
     #[inline]
     fn modify(self, res: &mut Response) {
         res.body = Some(Box::new(self));
@@ -91,7 +91,8 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.set(headers::ContentLength(self.len() as u64));
+        res.headers
+            .set(headers::ContentLength(self.len() as u64));
         res.body = Some(Box::new(self));
     }
 }
@@ -160,14 +161,16 @@ impl Modifier<Response> for status::Status {
 pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
 
 impl<H> Modifier<Response> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+    where H: headers::Header + headers::HeaderFormat
+{
     fn modify(self, res: &mut Response) {
         res.headers.set(self.0);
     }
 }
 
 impl<'a, 'b, H> Modifier<Request<'a, 'b>> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+    where H: headers::Header + headers::HeaderFormat
+{
     fn modify(self, res: &mut Request) {
         res.headers.set(self.0);
     }

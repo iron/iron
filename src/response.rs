@@ -60,7 +60,7 @@ impl WriteBody for Box<io::Read + Send> {
     }
 }
 
-impl <R: io::Read + Send> WriteBody for BodyReader<R> {
+impl<R: io::Read + Send> WriteBody for BodyReader<R> {
     fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
         io::copy(&mut self.0, res).map(|_| ())
     }
@@ -87,7 +87,7 @@ pub struct Response {
     pub extensions: TypeMap,
 
     /// The body of the response.
-    pub body: Option<Box<WriteBody>>
+    pub body: Option<Box<WriteBody>>,
 }
 
 impl Response {
@@ -97,7 +97,7 @@ impl Response {
             status: None, // Start with no response code.
             body: None, // Start with no body.
             headers: Headers::new(),
-            extensions: TypeMap::new()
+            extensions: TypeMap::new(),
         }
     }
 
@@ -132,11 +132,11 @@ impl Response {
     }
 }
 
-fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>)
-                   -> io::Result<()> {
-    let content_type = res.headers().get::<headers::ContentType>()
-                           .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),
-                                        |cx| cx.clone());
+fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>) -> io::Result<()> {
+    let content_type = res.headers()
+        .get::<headers::ContentType>()
+        .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),
+                     |cx| cx.clone());
     res.headers_mut().set(content_type);
 
     let mut raw_res = try!(res.start());
@@ -146,10 +146,10 @@ fn write_with_body(mut res: HttpResponse<Fresh>, mut body: Box<WriteBody>)
 
 impl Debug for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "HTTP/1.1 {}\n{}",
-            self.status.unwrap_or(status::NotFound),
-            self.headers
-        )
+        writeln!(f,
+                 "HTTP/1.1 {}\n{}",
+                 self.status.unwrap_or(status::NotFound),
+                 self.headers)
     }
 }
 
