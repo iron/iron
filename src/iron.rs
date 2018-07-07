@@ -1,26 +1,28 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-use std::io::{Error as IoError};
+// use std::io::{Error as IoError};
 use std::net::{ToSocketAddrs, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::{future, Future, Stream};
+use futures::{future, Future};
 use futures_cpupool::CpuPool;
 
-use tokio_core::reactor::{Core, Handle};
-use tokio_io::{AsyncRead, AsyncWrite};
+// use tokio_core::reactor::{Core, Handle};
+// use tokio_io::{AsyncRead, AsyncWrite};
 
-use tokio_proto::TcpServer;
+// use tokio_proto::TcpServer;
 
+use hyper;
+use hyper::server::conn::Http;
 use hyper::{Body, Error};
-use hyper::server::{NewService, Http};
+// use hyper::service::NewService;
 
 use request::HttpRequest;
 use response::HttpResponse;
 
-use error::HttpResult;
+// use error::HttpResult;
 
 #[cfg(feature = "ssl")]
 use native_tls::TlsAcceptor;
@@ -148,9 +150,9 @@ impl<H: Handler> Iron<H> {
         self.local_address = Some(addr.clone());
 
         let http = Http::new();
-
-        let tcp_server = TcpServer::new(http, addr);
-        tcp_server.serve(self);
+        let _ = http.serve_addr(&addr, self);
+        // let tcp_server = TcpServer::new(http, addr);
+        // tcp_server.serve(self);
     }
 
     /// Kick off the server process using the HTTPS protocol.
@@ -173,34 +175,36 @@ impl<H: Handler> Iron<H> {
         tcp_server.serve(self);
     }
 
-    /// Kick off a server process on an arbitrary `Listener`.
-    ///
-    /// Most use cases may call `http` and `https` methods instead of this.
-    pub fn listen<L, S>(mut self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
-        where L: Stream<Item=(S, SocketAddr), Error=IoError>,
-        S: AsyncRead + AsyncWrite + 'static,
-    {
-        self.protocol = protocol;
-        self.local_address = Some(addr);
+    // /// Kick off a server process on an arbitrary `Listener`.
+    // ///
+    // /// Most use cases may call `http` and `https` methods instead of this.
+    // pub fn listen<L, S>(mut self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
+    //     where L: Stream<Item=(S, SocketAddr), Error=IoError>,
+    //     S: AsyncRead + AsyncWrite + 'static,
+    // {
+    //     self.protocol = protocol;
+    //     self.local_address = Some(addr);
 
-        let http = Http::new();
-        let server = listener.for_each(|(sock, remote_addr)| {
-            http.bind_connection(&handle, sock, remote_addr, self.new_service().unwrap());
-            future::ok(())
-        });
+    //     let http = Http::new();
+    //     let server = listener.for_each(|(sock, remote_addr)| {
+    //         http.serve_connection(&handle, sock, remote_addr, self.new_service().unwrap());
+    //         future::ok(())
+    //     });
 
-        core.run(server).map_err(|e| e.into())
-    }
+    //     core.run(server).map_err(|e| e.into())
+    // }
 }
 
-impl<H: Handler> ::hyper::server::NewService for Iron<H> {
-    type Request = HttpRequest;
-    type Response = HttpResponse;
-    type Error = ::hyper::Error;
-    type Instance = IronHandler<H>;
+impl<H: Handler> ::hyper::service::NewService for Iron<H> {
+    type ReqBody = hyper::body::Body;
+    type ResBody = hyper::body::Body;
+    type Error = Error;
+    type Service = IronHandler<H>;
+    type InitError = Error;
+    type Future = future::FutureResult<Self::Service, Self::InitError>;
 
-    fn new_service(&self) -> Result<Self::Instance, ::std::io::Error> {
-        Ok(IronHandler{
+    fn new_service(&self) -> Self::Future {
+        future::ok(IronHandler {
             handler: self.handler.clone(),
             addr: self.local_address.clone(),
             protocol: self.protocol.clone(),
@@ -217,18 +221,19 @@ pub struct IronHandler<H> {
     pool: CpuPool,
 }
 
-impl<H: Handler> ::hyper::server::Service for IronHandler<H> {
-    type Request = HttpRequest;
-    type Response = HttpResponse;
+impl<H: Handler> ::hyper::service::Service for IronHandler<H> {
+    type ReqBody = hyper::body::Body;
+    type ResBody = hyper::body::Body;
     type Error = Error;
-    type Future = Box<Future<Item=Self::Response,Error=Self::Error>>;
+    type Future = Box<Future<Item=HttpResponse<Self::ResBody>, Error=Self::Error>>;
 
-    fn call(&self, req: Self::Request) -> Self::Future {
+    fn call(&mut self, req: HttpRequest<Self::ReqBody>) -> Self::Future {
         let addr = self.addr.clone();
         let proto = self.protocol.clone();
         let handler = self.handler.clone();
         Box::new(self.pool.spawn_fn(move || {
-            let mut http_res = HttpResponse::<Body>::new().with_status(status::InternalServerError);
+            let mut http_res = HttpResponse::<Body>::new(Body::empty());
+            *http_res.status_mut() = status::StatusCode::INTERNAL_SERVER_ERROR;
 
             match Request::from_http(req, addr, &proto) {
                 Ok(mut req) => {
@@ -249,6 +254,6 @@ impl<H: Handler> ::hyper::server::Service for IronHandler<H> {
 }
 
 fn bad_request(http_res: &mut HttpResponse<Body>) {
-    http_res.set_status(status::BadRequest);
+    *http_res.status_mut() = status::StatusCode::BAD_REQUEST;
 }
 

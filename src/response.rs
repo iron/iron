@@ -7,12 +7,11 @@ use std::fs::File;
 use typemap::TypeMap;
 use plugin::Extensible;
 use modifier::{Set, Modifier};
-use hyper::header::Headers;
 
-use status::{self, Status};
+use status::{StatusCode};
 use {Plugin, headers};
 
-pub use hyper::server::Response as HttpResponse;
+pub use hyper::Response as HttpResponse;
 use hyper::Body;
 
 /// Wrapper type to set `Read`ers as response bodies
@@ -77,10 +76,10 @@ impl<R: Read + Send> WriteBody for R {
 /// The response representation given to `Middleware`
 pub struct Response {
     /// The response status-code.
-    pub status: Option<Status>,
+    pub status: Option<StatusCode>,
 
     /// The headers of the response.
-    pub headers: Headers,
+    pub headers: headers::HeaderMap,
 
     /// A TypeMap to be used as an extensible storage for data
     /// associated with this Response.
@@ -96,7 +95,7 @@ impl Response {
         Response {
             status: None, // Start with no response code.
             body: None, // Start with no body.
-            headers: Headers::new(),
+            headers: headers::HeaderMap::new(),
             extensions: TypeMap::new()
         }
     }
@@ -116,12 +115,12 @@ impl Response {
         *http_res.headers_mut() = self.headers;
 
         // Default to a 404 if no response code was set
-        http_res.set_status(self.status.unwrap_or(status::NotFound));
+        *http_res.status_mut() = self.status.unwrap_or(StatusCode::NOT_FOUND);
 
         let out = match self.body {
             Some(body) => write_with_body(http_res, body),
             None => {
-                http_res.headers_mut().set(headers::ContentLength(0));
+                http_res.headers_mut().insert(headers::CONTENT_LENGTH, headers::HeaderValue::from_static("0"));
                 Ok(())
             }
         };
@@ -134,21 +133,21 @@ impl Response {
 
 fn write_with_body(res: &mut HttpResponse<Body>, mut body: Box<WriteBody>)
                    -> io::Result<()> {
-    let content_type = res.headers().get::<headers::ContentType>()
-                           .map_or_else(|| headers::ContentType("text/plain".parse().unwrap()),
+    let content_type = res.headers().get(headers::CONTENT_TYPE)
+                           .map_or_else(|| headers::HeaderValue::from_static("text/plain"),
                                         |cx| cx.clone());
-    res.headers_mut().set(content_type);
+    res.headers_mut().insert(headers::CONTENT_TYPE, content_type);
 
     let mut body_contents: Vec<u8> = vec![];
     try!(body.write_body(&mut body_contents));
-    res.set_body(Body::from(body_contents));
+    *res.body_mut() = Body::from(body_contents);
     Ok(())
 }
 
 impl Debug for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "HTTP/1.1 {}\n{}",
-            self.status.unwrap_or(status::NotFound),
+        writeln!(f, "HTTP/1.1 {}\n{:?}",
+            self.status.unwrap_or(StatusCode::NOT_FOUND),
             self.headers
         )
     }

@@ -67,16 +67,18 @@ extern crate hyper;
 extern crate typemap as tmap;
 extern crate plugin;
 extern crate url as url_ext;
+pub extern crate mime;
 extern crate mime_guess;
 extern crate futures;
 #[cfg(feature = "ssl")]
 extern crate native_tls;
-extern crate tokio_core;
 extern crate tokio_io;
 extern crate tokio_proto;
+extern crate tokio_reactor;
 #[cfg(feature = "ssl")]
 extern crate tokio_tls;
 extern crate futures_cpupool;
+extern crate http;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -94,7 +96,6 @@ pub use typemap::TypeMap;
 
 // Headers
 pub use hyper::header as headers;
-pub use hyper::header::Headers;
 
 // Expose `Pluggable` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::Pluggable as Plugin;
@@ -105,9 +106,6 @@ pub use modifier::Set;
 // Errors
 pub use error::Error;
 pub use error::IronError;
-
-// Mime types
-pub use hyper::mime;
 
 /// Iron's error type and associated utilities.
 pub mod error;
@@ -149,16 +147,10 @@ pub mod url {
 }
 
 /// Status Codes
-pub mod status {
-    pub use hyper::StatusCode as Status;
-    pub use hyper::StatusCode::*;
-}
+pub use http::status as status;
 
 /// HTTP Methods
-pub mod method {
-    pub use hyper::Method;
-    pub use hyper::Method::*;
-}
+pub use http::method as method;
 
 // Publicized to show the documentation
 pub mod middleware;

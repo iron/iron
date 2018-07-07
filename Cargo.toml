@@ -1,43 +1,53 @@
 [package]
-
-name = "iron"
-version = "0.6.0"
-description = "Extensible, Concurrency Focused Web Development in Rust."
-readme = "README.md"
-repository = "https://github.com/iron/iron"
-documentation = "http://ironframework.io/doc/iron/"
-license = "MIT"
 authors = [
     "Jonathan Reem <jonathan.reem@gmail.com>",
     "Zach Pomerantz <zmp@umich.edu>",
     "Michael Sproul <micsproul@gmail.com>",
-    "Patrick Tran <patrick.tran06@gmail.com>"
+    "Patrick Tran <patrick.tran06@gmail.com>",
+]
+description = "Extensible, Concurrency Focused Web Development in Rust."
+documentation = "http://ironframework.io/doc/iron/"
+license = "MIT"
+name = "iron"
+readme = "README.md"
+repository = "https://github.com/iron/iron"
+version = "0.6.0"
+
+[dependencies]
+futures = "0.1"
+futures-cpupool = "0.1"
+http = "0.1.7"
+hyper = "0.12"
+log = "0.3"
+mime = "0.3.8"
+mime_guess = "2.0.0-alpha.1"
+modifier = "0.1"
+plugin = "0.2"
+tokio-reactor = "0.1"
+tokio-io = "0.1"
+tokio-proto = "0.1"
+typemap = "0.3"
+url = "1.1"
+
+[dependencies.native-tls]
+optional = true
+version = "0.1.1"
+
+[dependencies.tokio-tls]
+features = ["tokio-proto"]
+optional = true
+version = "0.1.1"
+
+[dev-dependencies]
+time = "0.1"
+
+[features]
+default = []
+ssl = [
+    "native-tls",
+    "tokio-tls",
 ]
 
 [lib]
 name = "iron"
 path = "src/lib.rs"
-
-[features]
-default = []
-ssl = ["native-tls", "tokio-tls"]
-
-[dependencies]
-typemap = "0.3"
-url = "1.1"
-plugin = "0.2"
-mime_guess = "2.0.0-alpha.1"
-modifier = "0.1"
-log = "0.3"
-hyper = "0.11"
-futures = "0.1"
-tokio-core = "0.1"
-tokio-io = "0.1"
-tokio-proto = "0.1"
-futures-cpupool = "0.1"
-tokio-tls = { version = "0.1.1", optional = true, features = ["tokio-proto"] }
-native-tls = { version = "0.1.1", optional = true }
-
-[dev-dependencies]
-time = "0.1"
-mime = "0.3"

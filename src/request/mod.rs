@@ -1,25 +1,28 @@
 //! Iron's HTTP Request representation and associated methods.
 
+use std::u16;
 use std::fmt::{self, Debug};
 use std::net::SocketAddr;
 
 use futures::Stream;
 
-use hyper::HttpVersion;
+use http;
+use http::version::Version as HttpVersion;
 
 use typemap::{Key, TypeMap};
 use plugin::Extensible;
 use method::Method;
 
 pub use hyper::Body;
-pub use hyper::server::Request as HttpRequest;
+pub use hyper::Request as HttpRequest;
 
 #[cfg(test)]
 use std::net::ToSocketAddrs;
 
 pub use self::url::Url;
 
-use {Protocol, Plugin, Headers, Set, headers};
+use {Protocol, Plugin, Set};
+use headers::{self, HeaderMap};
 use error::HttpError;
 
 mod url;
@@ -32,14 +35,11 @@ pub struct Request {
     /// The requested URL.
     pub url: Url,
 
-    /// The originating address of the request.
-    pub remote_addr: Option<SocketAddr>,
-
     /// The local address of the request.
     pub local_addr: Option<SocketAddr>,
 
     /// The request headers.
-    pub headers: Headers,
+    pub headers: HeaderMap,
 
     /// The request body as a reader.
     pub body: Option<Body>,
@@ -62,7 +62,6 @@ impl Debug for Request {
 
         try!(writeln!(f, "    url: {:?}", self.url));
         try!(writeln!(f, "    method: {:?}", self.method));
-        try!(writeln!(f, "    remote_addr: {:?}", self.remote_addr));
         try!(writeln!(f, "    local_addr: {:?}", self.local_addr));
 
         try!(write!(f, "}}"));
@@ -74,19 +73,22 @@ impl Request {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest, local_addr: Option<SocketAddr>, protocol: &Protocol)
+    pub fn from_http(req: HttpRequest<Body>, local_addr: Option<SocketAddr>, protocol: &Protocol)
                      -> Result<Request, String> {
-        let addr = req.remote_addr().take();
-        let (method, uri, version, headers, body) = req.deconstruct();
+        let (http::request::Parts { method, uri, version, headers, ..}, body) = req.into_parts();
+
         let url = {
             let path = uri.path();
 
             let mut socket_ip = String::new();
-            let (host, port) = if uri.is_absolute() {
-                (uri.host().unwrap(), uri.port())
-            } else if let Some(host) = headers.get::<headers::Host>() {
-                (host.hostname(), host.port())
-            } else if version < HttpVersion::Http11 {
+            let (host, port) = if let Some(host) = uri.host() {
+                (host, uri.port())
+            } else if let Some(host) = headers.get(headers::HOST).and_then(|h| h.to_str().ok()) {
+                let mut parts = host.split(":");
+                let hostname = parts.next().unwrap();
+                let port = parts.next().and_then(|p| p.parse::<u16>().ok());
+                (hostname, port)
+            } else if version < HttpVersion::HTTP_11 {
                 if let Some(local_addr) = local_addr {
                      match local_addr {
                         SocketAddr::V4(addr4) => socket_ip.push_str(&format!("{}", addr4.ip())),
@@ -113,14 +115,13 @@ impl Request {
         };
 
         Ok(Request {
-            url: url,
-            remote_addr: addr,
-            local_addr: local_addr,
-            headers: headers,
+            url,
+            local_addr,
+            headers,
             body: Some(body),
-            method: method,
+            method,
             extensions: TypeMap::new(),
-            version: version,
+            version,
             _p: (),
         })
     }
@@ -150,13 +151,12 @@ impl Request {
     pub fn stub() -> Request {
         Request {
             url: Url::parse("http://www.rust-lang.org").unwrap(),
-            remote_addr: "localhost:3000".to_socket_addrs().unwrap().next(),
             local_addr: "localhost:3000".to_socket_addrs().unwrap().next(),
-            headers: Headers::new(),
+            headers: HeaderMap::new(),
             body: Some(Body::empty()),
-            method: Method::Get,
+            method: Method::GET,
             extensions: TypeMap::new(),
-            version: HttpVersion::Http11,
+            version: HttpVersion::HTTP_11,
             _p: (),
         }
     }
@@ -186,13 +186,15 @@ impl Set for Request {}
 mod test {
     use super::*;
 
-    use hyper::header::Host as HostHeader;
+    use headers::{self, HeaderValue};
 
     use url_ext::Host::*;
 
     #[test]
     fn test_request_parse_absolute_uri() {
-        let hyper_request = HttpRequest::new(Method::Get, "http://my-host/path".parse().unwrap());
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 
@@ -201,8 +203,10 @@ mod test {
 
     #[test]
     fn test_request_parse_host_header_only() {
-        let mut hyper_request = HttpRequest::new(Method::Get, "/path".parse().unwrap());
-        hyper_request.headers_mut().set(HostHeader::new("my-host", None));
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "/path".parse().unwrap();
+        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host"));
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 
@@ -211,8 +215,10 @@ mod test {
 
     #[test]
     fn test_request_parse_host_header_and_absolute_uri() {
-        let mut hyper_request = HttpRequest::new(Method::Get, "http://my-host-uri/path".parse().unwrap());
-        hyper_request.headers_mut().set(HostHeader::new("my-host-header", None));
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
+        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host-header"));
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 
@@ -221,8 +227,10 @@ mod test {
 
     #[test]
     fn test_request_parse_ipv4_socket_only() {
-        let mut hyper_request = HttpRequest::new(Method::Get, "/path".parse().unwrap());
-        hyper_request.set_version(HttpVersion::Http10);
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "/path".parse().unwrap();
+        *hyper_request.version_mut() = HttpVersion::HTTP_10;
 
         let socket_addr = Some("1.2.3.4:80".parse().unwrap());
         let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
@@ -232,8 +240,10 @@ mod test {
 
     #[test]
     fn test_request_parse_ipv6_socket_only() {
-        let mut hyper_request = HttpRequest::new(Method::Get, "/path".parse().unwrap());
-        hyper_request.set_version(HttpVersion::Http10);
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "/path".parse().unwrap();
+        *hyper_request.version_mut() = HttpVersion::HTTP_10;
 
         let socket_addr = Some("[1:2:3:4:5:6:7:8]:80".parse().unwrap());
         let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
@@ -243,8 +253,10 @@ mod test {
 
     #[test]
     fn test_request_parse_host_header_ipv4_socket_and_absolute_uri() {
-        let mut hyper_request = HttpRequest::new(Method::Get, "http://my-host-uri/path".parse().unwrap());
-        hyper_request.headers_mut().set(HostHeader::new("my-host-header", None));
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.method_mut() = Method::GET;
+        *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
+        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host-header"));
 
         let socket_addr = Some("1.2.3.4:80".parse().unwrap());
         let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
