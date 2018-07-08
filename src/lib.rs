@@ -148,6 +148,7 @@ pub mod url {
 
 /// Status Codes
 pub use http::status as status;
+pub use http::status::StatusCode;
 
 /// HTTP Methods
 pub use http::method as method;
