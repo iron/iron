@@ -19,7 +19,7 @@ deps/
 /bin/test-internal
 /bin/test-external
 /doc/
-/target/
+/target
 /build/
 /.rust/
 watch.sh

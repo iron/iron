@@ -19,7 +19,7 @@ struct LoggerHandler<H: Handler> { logger: Logger, handler: H }
 
 impl Logger {
     fn new(mode: LoggerMode) -> Logger {
-        Logger { mode: mode }
+        Logger { mode }
     }
 
     fn log(&self, req: &Request, res: Result<&Response, &IronError>, time: u64) {
@@ -44,7 +44,7 @@ impl AroundMiddleware for Logger {
     fn around(self, handler: Box<Handler>) -> Box<Handler> {
         Box::new(LoggerHandler {
             logger: self,
-            handler: handler
+            handler
         }) as Box<Handler>
     }
 }
