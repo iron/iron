@@ -22,11 +22,11 @@
 //! extern crate iron;
 //!
 //! use iron::prelude::*;
-//! use iron::status;
+//! use iron::StatusCode;
 //!
 //! fn main() {
 //!     Iron::new(|_: &mut Request| {
-//!         Ok(Response::with((status::Ok, "Hello World!")))
+//!         Ok(Response::with((StatusCode::OK, "Hello World!")))
 //!     }).http("localhost:3000");
 //! }
 //! ```
@@ -151,7 +151,8 @@ pub use http::status as status;
 pub use http::status::StatusCode;
 
 /// HTTP Methods
-pub use http::method as method;
+pub use http::method;
+pub use http::Method;
 
 // Publicized to show the documentation
 pub mod middleware;

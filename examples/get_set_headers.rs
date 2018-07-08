@@ -6,9 +6,9 @@ struct DefaultContentType;
 impl AfterMiddleware for DefaultContentType {
     // This is run for every requests, AFTER all handlers have been executed
     fn after(&self, _req: &mut Request, mut resp: Response) -> IronResult<Response> {
-        if resp.headers.get::<iron::headers::ContentType>() == None {
+        if resp.headers.get(iron::headers::CONTENT_TYPE) == None {
             // Set a standard header
-            resp.headers.set(iron::headers::ContentType::plaintext());
+            resp.headers.insert(iron::headers::CONTENT_TYPE, iron::headers::HeaderValue::from_static(iron::mime::TEXT_PLAIN.as_ref()));
         }
         Ok(resp)
     }
@@ -18,13 +18,13 @@ impl AfterMiddleware for DefaultContentType {
 
 fn info(req: &mut Request) -> IronResult<Response> {
     // Get a header using a standard iron::headers
-    let ua = match req.headers.get::<iron::headers::UserAgent>() {
-        Some(ua_header) => format!("User Agent: {}\n", ua_header),
+    let ua = match req.headers.get(iron::headers::USER_AGENT) {
+        Some(ua_header) => format!("User Agent: {}\n", ua_header.to_str().unwrap()),
         None => "No User Agent.\n".to_string(),
     };
-    // Get a non-standard header using the raw header
-    let x_forwarded_for = match req.headers.get_raw("X-Forwarded-For") {
-        Some(proxies) => format!("Proxies: {}\n", std::str::from_utf8(&proxies[0]).unwrap()),
+    // Get a non-standard header
+    let x_forwarded_for = match req.headers.get("X-Forwarded-For") {
+        Some(proxies) => format!("Proxies: {}\n", proxies.to_str().unwrap()),
         None => "No proxy.\n".to_string(),
     };
     let body = format!("{}{}\n", ua, x_forwarded_for);

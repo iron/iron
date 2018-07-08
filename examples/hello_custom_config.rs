@@ -1,7 +1,6 @@
 extern crate futures_cpupool;
 extern crate hyper;
 extern crate iron;
-extern crate tokio_proto;
 
 use std::time::Duration;
 

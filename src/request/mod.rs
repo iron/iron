@@ -84,7 +84,7 @@ impl Request {
             let (host, port) = if let Some(host) = uri.host() {
                 (host, uri.port())
             } else if let Some(host) = headers.get(headers::HOST).and_then(|h| h.to_str().ok()) {
-                let mut parts = host.split(":");
+                let mut parts = host.split(':');
                 let hostname = parts.next().unwrap();
                 let port = parts.next().and_then(|p| p.parse::<u16>().ok());
                 (hostname, port)
@@ -194,7 +194,7 @@ mod test {
     fn test_request_parse_absolute_uri() {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
-        *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
+        *hyper_request.uri_mut() = "http://my-host/path".parse().unwrap();
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 

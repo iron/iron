@@ -14,9 +14,9 @@
 //! ```
 //! # use std::convert::Into;
 //! # use iron::prelude::*;
-//! # use iron::status;
-//! let r = Response::with(status::NotFound);
-//! assert_eq!(404 as u16, r.status.unwrap().into());
+//! # use iron::StatusCode;
+//! let r = Response::with(StatusCode::NOT_FOUND);
+//! assert_eq!(404 as u16, r.status.unwrap().as_u16());
 //! ```
 //!
 //! You can also pass in a tuple of modifiers, they will all be applied. Here's
@@ -25,19 +25,19 @@
 //!
 //! ```
 //! # use iron::prelude::*;
-//! # use iron::status;
-//! Response::with((status::ImATeapot, "I am a tea pot!"));
+//! # use iron::StatusCode;
+//! Response::with((StatusCode::IM_A_TEAPOT, "I am a tea pot!"));
 //! ```
 //!
 //! There is also a `Redirect` modifier:
 //!
 //! ```
 //! # use iron::prelude::*;
-//! # use iron::status;
+//! # use iron::StatusCode;
 //! # use iron::modifiers;
 //! # use iron::Url;
 //! let url = Url::parse("http://doc.rust-lang.org").unwrap();
-//! Response::with((status::Found, modifiers::Redirect(url)));
+//! Response::with((StatusCode::FOUND, modifiers::Redirect(url)));
 //! ```
 //!
 //! The modifiers are applied depending on their type. Currently the easiest
@@ -131,7 +131,7 @@ impl<'a> Modifier<Response> for &'a Path {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(self)
-            .expect(&format!("No such file: {}", self.display()))
+            .unwrap_or_else(|_| panic!("No such file: {}", self.display()))
             .modify(res);
 
         let mime = mime_for_path(self);

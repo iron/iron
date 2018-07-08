@@ -20,23 +20,7 @@ http = "0.1.7"
 hyper = "0.12"
 log = "0.3"
 mime = "0.3.8"
-mime_guess = "2.0.0-alpha.1"
-modifier = "0.1"
-plugin = "0.2"
-tokio-reactor = "0.1"
-tokio-io = "0.1"
-tokio-proto = "0.1"
-typemap = "0.3"
-url = "1.1"
-
-[dependencies.native-tls]
-optional = true
-version = "0.1.1"
-
-[dependencies.tokio-tls]
-features = ["tokio-proto"]
-optional = true
-version = "0.1.1"
+mime_guess = "2.0.0-alpha.5"
 
 [dev-dependencies]
 time = "0.1"

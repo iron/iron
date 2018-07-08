@@ -89,6 +89,12 @@ pub struct Response {
     pub body: Option<Box<WriteBody>>
 }
 
+impl Default for Response {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Response {
     /// Construct a blank Response
     pub fn new() -> Response {

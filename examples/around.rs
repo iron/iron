@@ -50,7 +50,7 @@ impl AroundMiddleware for Logger {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Hello World!")))
+    Ok(Response::with((StatusCode::OK, "Hello World!")))
 }
 
 fn main() {
