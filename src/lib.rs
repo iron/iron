@@ -70,13 +70,6 @@ extern crate url as url_ext;
 pub extern crate mime;
 extern crate mime_guess;
 extern crate futures;
-#[cfg(feature = "ssl")]
-extern crate native_tls;
-extern crate tokio_io;
-extern crate tokio_proto;
-extern crate tokio_reactor;
-#[cfg(feature = "ssl")]
-extern crate tokio_tls;
 extern crate futures_cpupool;
 extern crate http;
 

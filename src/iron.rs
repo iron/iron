@@ -1,7 +1,6 @@
 //! Exposes the `Iron` type, the main entrance point of the
 //! `Iron` library.
 
-// use std::io::{Error as IoError};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
@@ -9,26 +8,14 @@ use std::time::Duration;
 use futures::{future, Future};
 use futures_cpupool::CpuPool;
 
-// use tokio_core::reactor::{Core, Handle};
-// use tokio_io::{AsyncRead, AsyncWrite};
-
-// use tokio_proto::TcpServer;
 
 use hyper;
 use hyper::Server;
-// use hyper::server::conn::Http;
 use hyper::service::{NewService, Service};
 use hyper::{Body, Error};
 
 use request::HttpRequest;
 use response::HttpResponse;
-
-// use error::HttpResult;
-
-#[cfg(feature = "ssl")]
-use native_tls::TlsAcceptor;
-#[cfg(feature = "ssl")]
-use tokio_tls::proto::Server as TlsServer;
 
 use status;
 use {Handler, Request};
@@ -137,7 +124,7 @@ impl<H: Handler> Iron<H> {
         A: ToSocketAddrs,
     {
         let addr: SocketAddr = addr.to_socket_addrs().unwrap().next().unwrap();
-        self.local_address = Some(addr.clone());
+        self.local_address = Some(addr);
 
         let server = Server::bind(&addr)
             .tcp_keepalive(self.timeouts.keep_alive)
@@ -146,46 +133,6 @@ impl<H: Handler> Iron<H> {
 
         hyper::rt::run(server);
     }
-
-    /// Kick off the server process using the HTTPS protocol.
-    ///
-    /// Call this once to begin listening for requests on the server.
-    #[cfg(feature = "ssl")]
-    pub fn https<A>(mut self, addr: A, tls: TlsAcceptor)
-    where
-        A: ToSocketAddrs,
-    {
-        let addr = addr.to_socket_addrs().unwrap().next().unwrap();
-
-        self.local_address = Some(addr.clone());
-        self.protocol = Protocol::https();
-
-        let http = Http::new();
-
-        let tls_server = TlsServer::new(http, tls);
-
-        let tcp_server = TcpServer::new(tls_server, addr);
-        tcp_server.serve(self);
-    }
-
-    // /// Kick off a server process on an arbitrary `Listener`.
-    // ///
-    // /// Most use cases may call `http` and `https` methods instead of this.
-    // pub fn listen<L, S>(mut self, listener: L, addr: SocketAddr, protocol: Protocol, mut core: Core, handle: Handle) -> HttpResult<()>
-    //     where L: Stream<Item=(S, SocketAddr), Error=IoError>,
-    //     S: AsyncRead + AsyncWrite + 'static,
-    // {
-    //     self.protocol = protocol;
-    //     self.local_address = Some(addr);
-
-    //     let http = Http::new();
-    //     let server = listener.for_each(|(sock, remote_addr)| {
-    //         http.serve_connection(&handle, sock, remote_addr, self.new_service().unwrap());
-    //         future::ok(())
-    //     });
-
-    //     core.run(server).map_err(|e| e.into())
-    // }
 }
 
 impl<H: Handler> NewService for Iron<H> {
@@ -199,7 +146,7 @@ impl<H: Handler> NewService for Iron<H> {
     fn new_service(&self) -> Self::Future {
         future::ok(IronHandler {
             handler: self.handler.clone(),
-            addr: self.local_address.clone(),
+            addr: self.local_address,
             protocol: self.protocol.clone(),
             pool: self.pool.clone(),
         })
@@ -221,7 +168,7 @@ impl<H: Handler> Service for IronHandler<H> {
     type Future = Box<Future<Item = HttpResponse<Self::ResBody>, Error = Self::Error> + Send>;
 
     fn call(&mut self, req: HttpRequest<Self::ReqBody>) -> Self::Future {
-        let addr = self.addr.clone();
+        let addr = self.addr;
         let proto = self.protocol.clone();
         let handler = self.handler.clone();
 
