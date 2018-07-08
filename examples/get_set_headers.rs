@@ -29,7 +29,7 @@ fn info(req: &mut Request) -> IronResult<Response> {
     };
     let body = format!("{}{}\n", ua, x_forwarded_for);
 
-    Ok(Response::with((iron::status::Ok, body)))
+    Ok(Response::with((iron::StatusCode::OK, body)))
 }
 
 fn main() {

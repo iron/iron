@@ -9,7 +9,7 @@
 extern crate iron;
 
 use iron::prelude::*;
-use iron::status;
+use iron::StatusCode;
 use iron::{Handler, BeforeMiddleware, AfterMiddleware};
 
 use std::error::Error;
@@ -37,7 +37,7 @@ impl Handler for HelloWorldHandler {
         // This will be called since we are in the normal flow before reaching the Handler.
         // However, the AfterMiddleware chain will override the Response.
         println!("The HelloWorldHandler has been called !");
-        Ok(Response::with((status::Ok, "Hello world !")))
+        Ok(Response::with((StatusCode::OK, "Hello world !")))
     }
 }
 
@@ -49,7 +49,7 @@ impl BeforeMiddleware for ErrorProducer {
         // IronError::error tells the next middleware what went wrong.
         // IronError::response is the Response that will be sent back to the client if this error is not handled.
         // Here status::BadRequest acts as modifier, thus we can put more there than just a status.
-        Err(IronError::new(StringError("Error in ErrorProducer BeforeMiddleware".to_string()), status::BadRequest))
+        Err(IronError::new(StringError("Error in ErrorProducer BeforeMiddleware".to_string()), StatusCode::BAD_REQUEST))
     }
 }
 
@@ -57,7 +57,7 @@ impl AfterMiddleware for ErrorProducer {
     fn after(&self, _: &mut Request, _: Response) -> IronResult<Response> {
         // The behavior here is the same as in ErrorProducer::before.
         // The previous response (from the Handler) is discarded and replaced with a new response (created from the modifier).
-        Err(IronError::new(StringError("Error in ErrorProducer AfterMiddleware".to_string()), (status::BadRequest, "Response created in ErrorProducer")))
+        Err(IronError::new(StringError("Error in ErrorProducer AfterMiddleware".to_string()), (StatusCode::BAD_REQUEST, "Response created in ErrorProducer")))
     }
 }
 
@@ -68,7 +68,7 @@ impl BeforeMiddleware for ErrorRecover {
         // passes the Request forward to the next middleware piece in the chain (here the HelloWorldHandler).
         println!("{} caught in ErrorRecover BeforeMiddleware.", err.error);
         match err.response.status {
-            Some(status::BadRequest) => Ok(()),
+            Some(StatusCode::BAD_REQUEST) => Ok(()),
             _ => Err(err)
         }
     }
@@ -81,7 +81,7 @@ impl AfterMiddleware for ErrorRecover {
         // and the Response created in the ErrorProducer is modified and sent back to the client.
         println!("{} caught in ErrorRecover AfterMiddleware.", err.error);
         match err.response.status {
-            Some(status::BadRequest) => Ok(err.response.set(status::Ok)),
+            Some(StatusCode::BAD_REQUEST) => Ok(err.response.set(StatusCode::OK)),
             _ => Err(err)
         }
     }

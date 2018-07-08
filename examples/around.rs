@@ -3,7 +3,7 @@ extern crate time;
 
 use iron::prelude::*;
 use iron::{Handler, AroundMiddleware};
-use iron::status;
+use iron::StatusCode;
 
 enum LoggerMode {
     Silent,

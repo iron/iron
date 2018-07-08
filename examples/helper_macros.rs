@@ -6,7 +6,7 @@ use std::io;
 use std::fs;
 
 use iron::prelude::*;
-use iron::status;
+use iron::StatusCode;
 use iron::method;
 
 fn main() {
@@ -15,17 +15,17 @@ fn main() {
             method::Get => {
                 // It's not a server error if the file doesn't exist yet. Therefore we use
                 // `iexpect`, to return Ok(...) instead of Err(...) if the file doesn't exist.
-                let f = iexpect!(fs::File::open("foo.txt").ok(), (status::Ok, ""));
-                Response::with((status::Ok, f))
+                let f = iexpect!(fs::File::open("foo.txt").ok(), (StatusCode::OK, ""));
+                Response::with((StatusCode::OK, f))
             },
             method::Put => {
                 // If creating the file fails, something is messed up on our side. We probably want
                 // to log the error, so we use `itry` instead of `iexpect`.
                 let mut f = itry!(fs::File::create("foo.txt"));
                 itry!(io::copy(&mut Cursor::new(itry!(req.get_body_contents())), &mut f));
-                Response::with(status::Created)
+                Response::with(StatusCode::CREATED)
             },
-            _ => Response::with(status::BadRequest)
+            _ => Response::with(StatusCode::BAD_REQUEST)
         })
     }).http("localhost:3000");
 }

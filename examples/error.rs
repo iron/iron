@@ -2,7 +2,7 @@ extern crate iron;
 
 use iron::prelude::*;
 use iron::{Handler, BeforeMiddleware};
-use iron::status;
+use iron::StatusCode;
 
 use std::error::Error;
 use std::fmt::{self, Debug};
@@ -36,7 +36,7 @@ impl Handler for ErrorHandler {
 
 impl BeforeMiddleware for ErrorProducer {
     fn before(&self, _: &mut Request) -> IronResult<()> {
-        Err(IronError::new(StringError("Error".to_string()), status::BadRequest))
+        Err(IronError::new(StringError("Error".to_string()), StatusCode::BAD_REQUEST))
     }
 }
 

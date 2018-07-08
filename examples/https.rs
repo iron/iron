@@ -21,7 +21,7 @@ fn main() {
     // Avoid unused errors due to conditional compilation ('native-tls-example' feature is not default)
     use native_tls::{Pkcs12, TlsAcceptor};
     use iron::{Iron, Request, Response};
-    use iron::status;
+    use iron::StatusCode;
     use std::io::prelude::*;
     use std::fs::File;
 
@@ -33,7 +33,7 @@ fn main() {
     let ssl = TlsAcceptor::builder(pkcs12).unwrap().build().unwrap();
 
     Iron::new(|_: &mut Request| {
-        Ok(Response::with((status::Ok, "Hello world!")))
+        Ok(Response::with((StatusCode::OK, "Hello world!")))
     }).https("127.0.0.1:3000", ssl);
     // curl -vvvv https://127.0.0.1:3000/ -k
 }
