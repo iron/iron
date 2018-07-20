@@ -8,7 +8,7 @@ impl AfterMiddleware for DefaultContentType {
     fn after(&self, _req: &mut Request, mut resp: Response) -> IronResult<Response> {
         if resp.headers.get(iron::headers::CONTENT_TYPE) == None {
             // Set a standard header
-            resp.headers.insert(iron::headers::CONTENT_TYPE, iron::headers::HeaderValue::from_static(iron::mime::TEXT_PLAIN.as_ref()));
+            resp.headers.insert(iron::headers::CONTENT_TYPE, iron::mime::TEXT_PLAIN.as_ref().parse().unwrap());
         }
         Ok(resp)
     }

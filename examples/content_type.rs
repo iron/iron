@@ -12,7 +12,7 @@ fn variant1(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((
         iron::modifiers::Header(
             headers::CONTENT_TYPE,
-            headers::HeaderValue::from_static(iron::mime::APPLICATION_JSON.as_ref()),
+            iron::mime::APPLICATION_JSON.as_ref().parse().unwrap(),
         ),
         StatusCode::OK,
         "{}",

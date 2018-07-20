@@ -1,6 +1,4 @@
 //! Iron's HTTP Request representation and associated methods.
-
-use std::u16;
 use std::fmt::{self, Debug};
 use std::net::SocketAddr;
 
@@ -206,7 +204,7 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host"));
+        hyper_request.headers_mut().insert(headers::HOST, "my-host".parse().unwrap());
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 
@@ -218,7 +216,7 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host-header"));
+        hyper_request.headers_mut().insert(headers::HOST, "my-host-header".parse().unwrap());
 
         let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
 
@@ -256,7 +254,7 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, HeaderValue::from_static("my-host-header"));
+        hyper_request.headers_mut().insert(headers::HOST, "my-host-header".parse().unwrap());
 
         let socket_addr = Some("1.2.3.4:80".parse().unwrap());
         let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");

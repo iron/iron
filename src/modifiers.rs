@@ -64,7 +64,7 @@ use response::{WriteBody, BodyReader};
 impl Modifier<Response> for Mime {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.insert(headers::CONTENT_TYPE, HeaderValue::from_str(self.as_ref()).unwrap()); // TODO: error handling?
+        res.headers.insert(headers::CONTENT_TYPE, self.as_ref().parse().unwrap()); // TODO: error handling?
     }
 }
 
@@ -92,7 +92,7 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.insert(headers::CONTENT_LENGTH, HeaderValue::from_str(&(self.len() as u64).to_string()).unwrap()); // TODO: error handling?
+        res.headers.insert(headers::CONTENT_LENGTH, (self.len() as u64).to_string().parse().unwrap()); // TODO: error handling?
         res.body = Some(Box::new(self));
     }
 }
@@ -115,7 +115,7 @@ impl Modifier<Response> for File {
     fn modify(self, res: &mut Response) {
         // Set the content type based on the file extension if a path is available.
         if let Ok(metadata) = self.metadata() {
-            res.headers.insert(headers::CONTENT_LENGTH, HeaderValue::from_str(&metadata.len().to_string()).unwrap()); // TODO: error handling?
+            res.headers.insert(headers::CONTENT_LENGTH, (&metadata.len().to_string()).parse().unwrap()); // TODO: error handling?
         }
 
         res.body = Some(Box::new(self));
@@ -180,7 +180,7 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.insert(headers::LOCATION, HeaderValue::from_str(&url.to_string()).unwrap()); // TODO: error handling?
+        res.headers.insert(headers::LOCATION, url.to_string().parse().unwrap()); // TODO: error handling?
     }
 }
 
@@ -190,7 +190,7 @@ pub struct RedirectRaw(pub String);
 impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
         let RedirectRaw(path) = self;
-        res.headers.insert(headers::LOCATION, HeaderValue::from_str(&path).unwrap()); // TODO: error handling?
+        res.headers.insert(headers::LOCATION, path.parse().unwrap()); // TODO: error handling?
     }
 }
 

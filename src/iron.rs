@@ -8,7 +8,6 @@ use std::time::Duration;
 use futures::{future, Future};
 use futures_cpupool::CpuPool;
 
-
 use hyper;
 use hyper::Server;
 use hyper::service::{NewService, Service};
@@ -173,7 +172,7 @@ impl<H: Handler> Service for IronHandler<H> {
 
         Box::new(self.pool.spawn_fn(move || {
             let mut http_res = HttpResponse::<Body>::new(Body::empty());
-            *http_res.status_mut() = status::StatusCode::INTERNAL_SERVER_ERROR;
+            *http_res.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
 
             match Request::from_http(req, addr, &proto) {
                 Ok(mut req) => {
@@ -197,5 +196,5 @@ impl<H: Handler> Service for IronHandler<H> {
 }
 
 fn bad_request(http_res: &mut HttpResponse<Body>) {
-    *http_res.status_mut() = status::StatusCode::BAD_REQUEST;
+    *http_res.status_mut() = StatusCode::BAD_REQUEST;
 }
