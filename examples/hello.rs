@@ -1,7 +1,7 @@
 extern crate iron;
 
 use iron::prelude::*;
-use iron::status::StatusCode;
+use iron::StatusCode;
 
 fn main() {
     Iron::new(|_: &mut Request| {

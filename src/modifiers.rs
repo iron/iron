@@ -55,8 +55,7 @@ use modifier::Modifier;
 
 use mime::{self, Mime};
 
-use {status, Request, Response, Set, Url};
-use headers::{self, HeaderValue};
+use {headers, StatusCode, Request, Response, Set, Url};
 
 use mime_guess::guess_mime_type_opt;
 use response::{WriteBody, BodyReader};
@@ -151,7 +150,7 @@ impl Modifier<Response> for PathBuf {
     }
 }
 
-impl Modifier<Response> for status::StatusCode {
+impl Modifier<Response> for StatusCode {
     fn modify(self, res: &mut Response) {
         res.status = Some(self);
     }

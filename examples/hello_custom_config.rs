@@ -7,7 +7,7 @@ use std::time::Duration;
 use futures_cpupool::CpuPool;
 
 use iron::prelude::*;
-use iron::status::StatusCode;
+use iron::StatusCode;
 use iron::Timeouts;
 
 fn main() {

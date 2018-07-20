@@ -17,8 +17,7 @@ use hyper::{Body, Error};
 use request::HttpRequest;
 use response::HttpResponse;
 
-use status;
-use {Handler, Request};
+use {StatusCode, Handler, Request};
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///

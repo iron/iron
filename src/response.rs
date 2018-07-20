@@ -8,8 +8,7 @@ use typemap::TypeMap;
 use plugin::Extensible;
 use modifier::{Set, Modifier};
 
-use status::{StatusCode};
-use {Plugin, headers};
+use {StatusCode, Plugin, headers};
 
 pub use hyper::Response as HttpResponse;
 use hyper::Body;

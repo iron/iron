@@ -186,7 +186,7 @@ impl Set for Request {}
 mod test {
     use super::*;
 
-    use headers::{self, HeaderValue};
+    use headers;
 
     use url_ext::Host::*;
 
