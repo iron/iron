@@ -181,7 +181,8 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.insert(headers::LOCATION, url.to_string().parse().unwrap()); // TODO: error handling?
+        // Url should always be parsable to a valid HeaderValue, so unwrap should be safe here.
+        res.headers.insert(headers::LOCATION, url.to_string().parse().unwrap());
     }
 }
 
@@ -191,7 +192,7 @@ pub struct RedirectRaw(pub String);
 impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
         let RedirectRaw(path) = self;
-        res.headers.insert(headers::LOCATION, path.parse().unwrap()); // TODO: error handling?
+        res.headers.insert(headers::LOCATION, path.parse().unwrap());
     }
 }
 
