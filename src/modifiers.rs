@@ -64,7 +64,8 @@ use response::{WriteBody, BodyReader};
 impl Modifier<Response> for Mime {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.insert(headers::CONTENT_TYPE, self.as_ref().parse().unwrap()); // TODO: error handling?
+        // Mime should always be parsable to a valid HeaderValue, so unwrap should be safe here.
+        res.headers.insert(headers::CONTENT_TYPE, self.as_ref().parse().unwrap());
     }
 }
 
@@ -92,7 +93,7 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.insert(headers::CONTENT_LENGTH, (self.len() as u64).to_string().parse().unwrap()); // TODO: error handling?
+        res.headers.insert(headers::CONTENT_LENGTH, (self.len() as u64).into());
         res.body = Some(Box::new(self));
     }
 }
@@ -115,7 +116,7 @@ impl Modifier<Response> for File {
     fn modify(self, res: &mut Response) {
         // Set the content type based on the file extension if a path is available.
         if let Ok(metadata) = self.metadata() {
-            res.headers.insert(headers::CONTENT_LENGTH, (&metadata.len().to_string()).parse().unwrap()); // TODO: error handling?
+            res.headers.insert(headers::CONTENT_LENGTH, metadata.len().into());
         }
 
         res.body = Some(Box::new(self));
