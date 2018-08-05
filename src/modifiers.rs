@@ -12,10 +12,11 @@
 //! return status code:
 //!
 //! ```
+//! # use std::convert::Into;
 //! # use iron::prelude::*;
-//! # use iron::status;
-//! let r = Response::with(status::NotFound);
-//! assert_eq!(r.status.unwrap().to_u16(), 404);
+//! # use iron::StatusCode;
+//! let r = Response::with(StatusCode::NOT_FOUND);
+//! assert_eq!(404 as u16, r.status.unwrap().as_u16());
 //! ```
 //!
 //! You can also pass in a tuple of modifiers, they will all be applied. Here's
@@ -24,19 +25,19 @@
 //!
 //! ```
 //! # use iron::prelude::*;
-//! # use iron::status;
-//! Response::with((status::ImATeapot, "I am a tea pot!"));
+//! # use iron::StatusCode;
+//! Response::with((StatusCode::IM_A_TEAPOT, "I am a tea pot!"));
 //! ```
 //!
 //! There is also a `Redirect` modifier:
 //!
 //! ```
 //! # use iron::prelude::*;
-//! # use iron::status;
+//! # use iron::StatusCode;
 //! # use iron::modifiers;
 //! # use iron::Url;
 //! let url = Url::parse("http://doc.rust-lang.org").unwrap();
-//! Response::with((status::Found, modifiers::Redirect(url)));
+//! Response::with((StatusCode::FOUND, modifiers::Redirect(url)));
 //! ```
 //!
 //! The modifiers are applied depending on their type. Currently the easiest
@@ -52,9 +53,9 @@ use std::path::{Path, PathBuf};
 
 use modifier::Modifier;
 
-use hyper::mime::{Mime, SubLevel, TopLevel};
+use mime::{self, Mime};
 
-use {status, headers, Request, Response, Set, Url};
+use {headers, StatusCode, Request, Response, Set, Url};
 
 use mime_guess::guess_mime_type_opt;
 use response::{WriteBody, BodyReader};
@@ -63,7 +64,8 @@ use response::{WriteBody, BodyReader};
 impl Modifier<Response> for Mime {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.set(headers::ContentType(self))
+        // Mime should always be parsable to a valid HeaderValue, so unwrap should be safe here.
+        res.headers.insert(headers::CONTENT_TYPE, self.as_ref().parse().unwrap());
     }
 }
 
@@ -91,7 +93,7 @@ impl Modifier<Response> for String {
 impl Modifier<Response> for Vec<u8> {
     #[inline]
     fn modify(self, res: &mut Response) {
-        res.headers.set(headers::ContentLength(self.len() as u64));
+        res.headers.insert(headers::CONTENT_LENGTH, (self.len() as u64).into());
         res.body = Some(Box::new(self));
     }
 }
@@ -114,7 +116,7 @@ impl Modifier<Response> for File {
     fn modify(self, res: &mut Response) {
         // Set the content type based on the file extension if a path is available.
         if let Ok(metadata) = self.metadata() {
-            res.headers.set(headers::ContentLength(metadata.len()));
+            res.headers.insert(headers::CONTENT_LENGTH, metadata.len().into());
         }
 
         res.body = Some(Box::new(self));
@@ -129,7 +131,7 @@ impl<'a> Modifier<Response> for &'a Path {
     /// Panics if there is no file at the passed-in Path.
     fn modify(self, res: &mut Response) {
         File::open(self)
-            .expect(&format!("No such file: {}", self.display()))
+            .unwrap_or_else(|_| panic!("No such file: {}", self.display()))
             .modify(res);
 
         let mime = mime_for_path(self);
@@ -149,7 +151,7 @@ impl Modifier<Response> for PathBuf {
     }
 }
 
-impl Modifier<Response> for status::Status {
+impl Modifier<Response> for StatusCode {
     fn modify(self, res: &mut Response) {
         res.status = Some(self);
     }
@@ -157,19 +159,19 @@ impl Modifier<Response> for status::Status {
 
 /// A modifier for changing headers on requests and responses.
 #[derive(Clone)]
-pub struct Header<H: headers::Header + headers::HeaderFormat>(pub H);
+pub struct Header<H>(pub H, pub headers::HeaderValue);
 
 impl<H> Modifier<Response> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+where H: headers::IntoHeaderName {
     fn modify(self, res: &mut Response) {
-        res.headers.set(self.0);
+        res.headers.insert(self.0, self.1);
     }
 }
 
-impl<'a, 'b, H> Modifier<Request<'a, 'b>> for Header<H>
-where H: headers::Header + headers::HeaderFormat {
+impl<H> Modifier<Request> for Header<H>
+where H: headers::IntoHeaderName {
     fn modify(self, res: &mut Request) {
-        res.headers.set(self.0);
+        res.headers.insert(self.0, self.1);
     }
 }
 
@@ -179,7 +181,8 @@ pub struct Redirect(pub Url);
 impl Modifier<Response> for Redirect {
     fn modify(self, res: &mut Response) {
         let Redirect(url) = self;
-        res.headers.set(headers::Location(url.to_string()));
+        // Url should always be parsable to a valid HeaderValue, so unwrap should be safe here.
+        res.headers.insert(headers::LOCATION, url.to_string().parse().unwrap());
     }
 }
 
@@ -189,13 +192,13 @@ pub struct RedirectRaw(pub String);
 impl Modifier<Response> for RedirectRaw {
     fn modify(self, res: &mut Response) {
         let RedirectRaw(path) = self;
-        res.headers.set(headers::Location(path));
+        res.headers.insert(headers::LOCATION, path.parse().unwrap());
     }
 }
 
 fn mime_for_path(path: &Path) -> Mime {
     guess_mime_type_opt(path)
-        .unwrap_or_else(|| Mime(TopLevel::Text, SubLevel::Plain, vec![]))
+        .unwrap_or(mime::TEXT_PLAIN)
 }
 
 
@@ -206,12 +209,12 @@ mod test {
     #[test]
     fn test_mime_for_path() {
         assert_eq!(mime_for_path(Path::new("foo.txt")),
-                   "text/plain".parse().unwrap());
+                   mime::TEXT_PLAIN);
         assert_eq!(mime_for_path(Path::new("foo.jpg")),
-                   "image/jpeg".parse().unwrap());
+                   mime::IMAGE_JPEG);
         assert_eq!(mime_for_path(Path::new("foo.zip")),
-                   "application/zip".parse().unwrap());
+                   "application/zip".parse::<Mime>().unwrap());
         assert_eq!(mime_for_path(Path::new("foo")),
-                   "text/plain".parse().unwrap());
+                   mime::TEXT_PLAIN);
     }
 }

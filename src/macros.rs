@@ -8,18 +8,18 @@
 /// request handlers.
 ///
 /// The second (optional) parameter is any [modifier](modifiers/index.html).
-/// The default modifier is `status::InternalServerError`.
+/// The default modifier is `StatusCode::INTERNAL_SERVER_ERROR`.
 ///
 ///
 /// ```ignore
-/// let f = itry!(fs::File::create("foo.txt"), status::BadRequest);
-/// let f = itry!(fs::File::create("foo.txt"), (status::NotFound, "Not Found"));
+/// let f = itry!(fs::File::create("foo.txt"), StatusCode::BAD_REQUEST);
+/// let f = itry!(fs::File::create("foo.txt"), (StatusCode::NOT_FOUND, "Not Found"));
 /// let f = itry!(fs::File::create("foo.txt"));  // HTTP 500
 /// ```
 ///
 #[macro_export]
 macro_rules! itry {
-    ($result:expr) => (itry!($result, $crate::status::InternalServerError));
+    ($result:expr) => (itry!($result, $crate::StatusCode::INTERNAL_SERVER_ERROR));
 
     ($result:expr, $modifier:expr) => (match $result {
         ::std::result::Result::Ok(val) => val,
@@ -29,10 +29,10 @@ macro_rules! itry {
 }
 
 /// Unwrap the given `Option` or return a `Ok(Response::new())` with the given
-/// modifier. The default modifier is `status::BadRequest`.
+/// modifier. The default modifier is `StatusCode::BAD_REQUEST`.
 #[macro_export]
 macro_rules! iexpect {
-    ($option:expr) => (iexpect!($option, $crate::status::BadRequest));
+    ($option:expr) => (iexpect!($option, $crate::StatusCode::BAD_REQUEST));
     ($option:expr, $modifier:expr) => (match $option {
         ::std::option::Option::Some(x) => x,
         ::std::option::Option::None => return ::std::result::Result::Ok(

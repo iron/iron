@@ -1,11 +1,11 @@
 extern crate iron;
 
 use iron::prelude::*;
-use iron::status;
+use iron::StatusCode;
 
 fn main() {
     Iron::new(|_: &mut Request| {
-        Ok(Response::with((status::Ok, "Hello world!")))
-    }).http("localhost:3000").unwrap();
+        Ok(Response::with((StatusCode::OK, "Hello world!")))
+    }).http("localhost:3000");
 }
 

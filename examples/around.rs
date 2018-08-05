@@ -3,7 +3,7 @@ extern crate time;
 
 use iron::prelude::*;
 use iron::{Handler, AroundMiddleware};
-use iron::status;
+use iron::StatusCode;
 
 enum LoggerMode {
     Silent,
@@ -50,7 +50,7 @@ impl AroundMiddleware for Logger {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Hello World!")))
+    Ok(Response::with((StatusCode::OK, "Hello World!")))
 }
 
 fn main() {
@@ -58,10 +58,9 @@ fn main() {
     let silent = Iron::new(Logger::new(LoggerMode::Silent).around(Box::new(hello_world)));
     let large = Iron::new(Logger::new(LoggerMode::Large).around(Box::new(hello_world)));
 
-    let _tiny_listening = tiny.http("localhost:2000").unwrap();
-    let _silent_listening = silent.http("localhost:3000").unwrap();
-    let _large_listening = large.http("localhost:4000").unwrap();
+    let _tiny_listening = tiny.http("localhost:2000");
+    let _silent_listening = silent.http("localhost:3000");
+    let _large_listening = large.http("localhost:4000");
 
     println!("Servers listening on 2000, 3000, and 4000");
 }
-

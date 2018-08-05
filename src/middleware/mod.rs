@@ -14,10 +14,10 @@
 //! ```rust
 //! use iron::prelude::*;
 //! use iron::Handler;
-//! use iron::status;
+//! use iron::StatusCode;
 //!
 //! fn hello_handler(req: &mut Request) -> IronResult<Response> {
-//!     Ok(Response::with((status::Ok, "Hello world!")))
+//!     Ok(Response::with((StatusCode::OK, "Hello world!")))
 //! };
 //! ```
 //!
@@ -53,9 +53,9 @@
 //! use iron::prelude::*;
 //! use iron::middleware::*;
 //!
-//! # use iron::status;
+//! # use iron::StatusCode;
 //! # fn hello_handler(req: &mut Request) -> IronResult<Response> {
-//! #     Ok(Response::with((status::Ok, "Hello world!")))
+//! #     Ok(Response::with((StatusCode::OK, "Hello world!")))
 //! # };
 //!
 //! struct RequestLoggingMiddleware;

@@ -22,12 +22,12 @@
 //! extern crate iron;
 //!
 //! use iron::prelude::*;
-//! use iron::status;
+//! use iron::StatusCode;
 //!
 //! fn main() {
 //!     Iron::new(|_: &mut Request| {
-//!         Ok(Response::with((status::Ok, "Hello World!")))
-//!     }).http("localhost:3000").unwrap();
+//!         Ok(Response::with((StatusCode::OK, "Hello World!")))
+//!     }).http("localhost:3000");
 //! }
 //! ```
 //!
@@ -67,8 +67,11 @@ extern crate hyper;
 extern crate typemap as tmap;
 extern crate plugin;
 extern crate url as url_ext;
-extern crate num_cpus;
+pub extern crate mime;
 extern crate mime_guess;
+extern crate futures;
+extern crate futures_cpupool;
+extern crate http;
 
 // Request + Response
 pub use request::{Request, Url};
@@ -86,7 +89,6 @@ pub use typemap::TypeMap;
 
 // Headers
 pub use hyper::header as headers;
-pub use hyper::header::Headers;
 
 // Expose `Pluggable` as `Plugin` so users can do `use iron::Plugin`.
 pub use plugin::Pluggable as Plugin;
@@ -97,9 +99,6 @@ pub use modifier::Set;
 // Errors
 pub use error::Error;
 pub use error::IronError;
-
-// Mime types
-pub use hyper::mime;
 
 /// Iron's error type and associated utilities.
 pub mod error;
@@ -141,17 +140,11 @@ pub mod url {
 }
 
 /// Status Codes
-pub mod status {
-    pub use hyper::status::StatusCode as Status;
-    pub use hyper::status::StatusCode::*;
-    pub use hyper::status::StatusClass;
-}
+pub use http::StatusCode;
 
 /// HTTP Methods
-pub mod method {
-    pub use hyper::method::Method;
-    pub use hyper::method::Method::*;
-}
+pub use http::method;
+pub use http::Method;
 
 // Publicized to show the documentation
 pub mod middleware;
