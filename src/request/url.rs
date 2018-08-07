@@ -1,8 +1,8 @@
 //! HTTP/HTTPS URL type for Iron.
 
-use url::{self, Host};
-use std::str::FromStr;
 use std::fmt;
+use std::str::FromStr;
+use url::{self, Host};
 
 /// HTTP/HTTPS URL type for Iron.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -23,7 +23,7 @@ impl Url {
         // Parse the string using rust-url, then convert.
         match url::Url::parse(input) {
             Ok(raw_url) => Url::from_generic_url(raw_url),
-            Err(e) => Err(format!("{}", e))
+            Err(e) => Err(format!("{}", e)),
         }
     }
 
@@ -43,7 +43,10 @@ impl Url {
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
-    #[deprecated(since="0.4.1", note="use `into` from the `Into` trait instead")]
+    #[deprecated(
+        since = "0.4.1",
+        note = "use `into` from the `Into` trait instead"
+    )]
     pub fn into_generic_url(self) -> url::Url {
         self.generic_url
     }
@@ -84,7 +87,7 @@ impl Url {
         // Map empty usernames to None.
         match self.generic_url.username() {
             "" => None,
-            username => Some(username)
+            username => Some(username),
         }
     }
 
@@ -98,7 +101,7 @@ impl Url {
         match self.generic_url.password() {
             None => None,
             Some(x) if x.is_empty() => None,
-            Some(password) => Some(password)
+            Some(password) => Some(password),
         }
     }
 
@@ -127,15 +130,21 @@ impl fmt::Display for Url {
 }
 
 impl Into<url::Url> for Url {
-    fn into(self) -> url::Url { self.generic_url }
+    fn into(self) -> url::Url {
+        self.generic_url
+    }
 }
 
 impl AsRef<url::Url> for Url {
-    fn as_ref(&self) -> &url::Url { &self.generic_url }
+    fn as_ref(&self) -> &url::Url {
+        &self.generic_url
+    }
 }
 
 impl AsMut<url::Url> for Url {
-    fn as_mut(&mut self) -> &mut url::Url { &mut self.generic_url }
+    fn as_mut(&mut self) -> &mut url::Url {
+        &mut self.generic_url
+    }
 }
 
 impl FromStr for Url {
@@ -153,7 +162,10 @@ mod test {
     #[test]
     fn test_default_port() {
         assert_eq!(Url::parse("http://example.com/wow").unwrap().port(), 80u16);
-        assert_eq!(Url::parse("https://example.com/wow").unwrap().port(), 443u16);
+        assert_eq!(
+            Url::parse("https://example.com/wow").unwrap().port(),
+            443u16
+        );
     }
 
     #[test]
@@ -163,8 +175,18 @@ mod test {
 
     #[test]
     fn test_empty_username() {
-        assert!(Url::parse("http://@example.com").unwrap().username().is_none());
-        assert!(Url::parse("http://:password@example.com").unwrap().username().is_none());
+        assert!(
+            Url::parse("http://@example.com")
+                .unwrap()
+                .username()
+                .is_none()
+        );
+        assert!(
+            Url::parse("http://:password@example.com")
+                .unwrap()
+                .username()
+                .is_none()
+        );
     }
 
     #[test]
@@ -178,8 +200,18 @@ mod test {
 
     #[test]
     fn test_empty_password() {
-        assert!(Url::parse("http://michael@example.com").unwrap().password().is_none());
-        assert!(Url::parse("http://:@example.com").unwrap().password().is_none());
+        assert!(
+            Url::parse("http://michael@example.com")
+                .unwrap()
+                .password()
+                .is_none()
+        );
+        assert!(
+            Url::parse("http://:@example.com")
+                .unwrap()
+                .password()
+                .is_none()
+        );
     }
 
     #[test]
@@ -193,8 +225,12 @@ mod test {
 
     #[test]
     fn test_formatting() {
-        assert_eq!(Url::parse("http://michael@example.com/path/?q=wow").unwrap().to_string(),
-                    "http://michael@example.com/path/?q=wow".to_string());
+        assert_eq!(
+            Url::parse("http://michael@example.com/path/?q=wow")
+                .unwrap()
+                .to_string(),
+            "http://michael@example.com/path/?q=wow".to_string()
+        );
     }
 
     #[test]

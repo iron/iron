@@ -9,14 +9,14 @@ use futures::{future, Future};
 use futures_cpupool::CpuPool;
 
 use hyper;
-use hyper::Server;
 use hyper::service::{NewService, Service};
+use hyper::Server;
 use hyper::{Body, Error};
 
 use request::HttpRequest;
 use response::HttpResponse;
 
-use {StatusCode, Handler, Request};
+use {Handler, Request, StatusCode};
 
 /// The primary entrance point to `Iron`, a `struct` to instantiate a new server.
 ///
@@ -182,8 +182,7 @@ impl<H: Handler> Service for IronHandler<H> {
                         .unwrap_or_else(|e| {
                             error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
                             e.response
-                        })
-                        .write_back(&mut http_res)
+                        }).write_back(&mut http_res)
                 }
                 Err(e) => {
                     error!("Error creating request:\n    {}", e);

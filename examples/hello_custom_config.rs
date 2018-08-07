@@ -11,9 +11,8 @@ use iron::StatusCode;
 use iron::Timeouts;
 
 fn main() {
-    let mut iron = Iron::new(|_: &mut Request| {
-        Ok(Response::with((StatusCode::OK, "Hello world!")))
-    });
+    let mut iron =
+        Iron::new(|_: &mut Request| Ok(Response::with((StatusCode::OK, "Hello world!"))));
     iron.pool = CpuPool::new(8);
     iron.timeouts = Timeouts {
         keep_alive: Some(Duration::from_secs(10)),

@@ -9,9 +9,12 @@ use iron::prelude::*;
 use iron::StatusCode;
 
 fn echo(request: &mut Request) -> IronResult<Response> {
-    let body = request
-                .get_body_contents()
-                .map_err(|e| IronError::new(e, (StatusCode::INTERNAL_SERVER_ERROR, "Error reading request")))?;
+    let body = request.get_body_contents().map_err(|e| {
+        IronError::new(
+            e,
+            (StatusCode::INTERNAL_SERVER_ERROR, "Error reading request"),
+        )
+    })?;
     Ok(Response::with((StatusCode::OK, body.clone())))
 }
 

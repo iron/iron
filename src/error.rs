@@ -1,11 +1,11 @@
 use std::fmt;
 
 use modifier::Modifier;
-use {Response};
+use Response;
 
-pub use std::error::Error;
-pub use hyper::Error as HttpError;
 pub use hyper::error::Result as HttpResult;
+pub use hyper::Error as HttpError;
+pub use std::error::Error;
 
 /// The type of Errors inside and when using Iron.
 ///
@@ -31,7 +31,7 @@ pub struct IronError {
     /// What to do about this error.
     ///
     /// This Response will be used when the error-handling flow finishes.
-    pub response: Response
+    pub response: Response,
 }
 
 impl IronError {
@@ -39,7 +39,7 @@ impl IronError {
     pub fn new<E: 'static + Error + Send, M: Modifier<Response>>(e: E, m: M) -> IronError {
         IronError {
             error: Box::new(e),
-            response: Response::with(m)
+            response: Response::with(m),
         }
     }
 }
@@ -59,4 +59,3 @@ impl Error for IronError {
         self.error.cause()
     }
 }
-
