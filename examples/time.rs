@@ -2,12 +2,14 @@ extern crate iron;
 extern crate time;
 
 use iron::prelude::*;
-use iron::{BeforeMiddleware, AfterMiddleware, typemap};
+use iron::{typemap, AfterMiddleware, BeforeMiddleware};
 use time::precise_time_ns;
 
 struct ResponseTime;
 
-impl typemap::Key for ResponseTime { type Value = u64; }
+impl typemap::Key for ResponseTime {
+    type Value = u64;
+}
 
 impl BeforeMiddleware for ResponseTime {
     fn before(&self, req: &mut Request) -> IronResult<()> {

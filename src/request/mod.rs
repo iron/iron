@@ -7,9 +7,9 @@ use futures::Stream;
 use http;
 use http::version::Version as HttpVersion;
 
-use typemap::{Key, TypeMap};
-use plugin::Extensible;
 use method::Method;
+use plugin::Extensible;
+use typemap::{Key, TypeMap};
 
 pub use hyper::Body;
 pub use hyper::Request as HttpRequest;
@@ -19,9 +19,9 @@ use std::net::ToSocketAddrs;
 
 pub use self::url::Url;
 
-use {Protocol, Plugin, Set};
-use headers::{self, HeaderMap};
 use error::HttpError;
+use headers::{self, HeaderMap};
+use {Plugin, Protocol, Set};
 
 mod url;
 
@@ -71,9 +71,21 @@ impl Request {
     /// Create a request from an HttpRequest.
     ///
     /// This constructor consumes the HttpRequest.
-    pub fn from_http(req: HttpRequest<Body>, local_addr: Option<SocketAddr>, protocol: &Protocol)
-                     -> Result<Request, String> {
-        let (http::request::Parts { method, uri, version, headers, ..}, body) = req.into_parts();
+    pub fn from_http(
+        req: HttpRequest<Body>,
+        local_addr: Option<SocketAddr>,
+        protocol: &Protocol,
+    ) -> Result<Request, String> {
+        let (
+            http::request::Parts {
+                method,
+                uri,
+                version,
+                headers,
+                ..
+            },
+            body,
+        ) = req.into_parts();
 
         let url = {
             let path = uri.path();
@@ -88,17 +100,17 @@ impl Request {
                 (hostname, port)
             } else if version < HttpVersion::HTTP_11 {
                 if let Some(local_addr) = local_addr {
-                     match local_addr {
+                    match local_addr {
                         SocketAddr::V4(addr4) => socket_ip.push_str(&format!("{}", addr4.ip())),
                         SocketAddr::V6(addr6) => socket_ip.push_str(&format!("[{}]", addr6.ip())),
                     }
                     (socket_ip.as_ref(), Some(local_addr.port()))
                 } else {
-                    return Err("No fallback host specified".into())
+                    return Err("No fallback host specified".into());
                 }
             } else {
-                return Err("No host specified in request".into())
-           };
+                return Err("No host specified in request".into());
+            };
 
             let url_string = if let Some(port) = port {
                 format!("{}://{}:{}{}", protocol.name(), host, port, path)
@@ -108,7 +120,7 @@ impl Request {
 
             match Url::parse(&url_string) {
                 Ok(url) => url,
-                Err(e) => return Err(format!("Couldn't parse requested URL: {}", e))
+                Err(e) => return Err(format!("Couldn't parse requested URL: {}", e)),
             }
         };
 
@@ -132,7 +144,10 @@ impl Request {
         if let Some(reader) = self.body.take() {
             let body = reader.wait().fold(Ok(Vec::new()), |r, input| {
                 if let Ok(mut v) = r {
-                    input.map(move |next_body_chunk| { v.extend_from_slice(&next_body_chunk); v })
+                    input.map(move |next_body_chunk| {
+                        v.extend_from_slice(&next_body_chunk);
+                        v
+                    })
                 } else {
                     r
                 }
@@ -194,7 +209,8 @@ mod test {
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "http://my-host/path".parse().unwrap();
 
-        let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, None, &Protocol::http())
+            .expect("A valid Iron request");
 
         assert_eq!(iron_request.url.host(), Domain("my-host"));
     }
@@ -204,9 +220,12 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, "my-host".parse().unwrap());
+        hyper_request
+            .headers_mut()
+            .insert(headers::HOST, "my-host".parse().unwrap());
 
-        let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, None, &Protocol::http())
+            .expect("A valid Iron request");
 
         assert_eq!(iron_request.url.host(), Domain("my-host"));
     }
@@ -216,9 +235,12 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, "my-host-header".parse().unwrap());
+        hyper_request
+            .headers_mut()
+            .insert(headers::HOST, "my-host-header".parse().unwrap());
 
-        let iron_request = Request::from_http(hyper_request, None, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, None, &Protocol::http())
+            .expect("A valid Iron request");
 
         assert_eq!(iron_request.url.host(), Domain("my-host-uri"));
     }
@@ -231,9 +253,10 @@ mod test {
         *hyper_request.version_mut() = HttpVersion::HTTP_10;
 
         let socket_addr = Some("1.2.3.4:80".parse().unwrap());
-        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http())
+            .expect("A valid Iron request");
 
-        assert_eq!(iron_request.url.host(), Ipv4([1,2,3,4].into()));
+        assert_eq!(iron_request.url.host(), Ipv4([1, 2, 3, 4].into()));
     }
 
     #[test]
@@ -244,9 +267,13 @@ mod test {
         *hyper_request.version_mut() = HttpVersion::HTTP_10;
 
         let socket_addr = Some("[1:2:3:4:5:6:7:8]:80".parse().unwrap());
-        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http())
+            .expect("A valid Iron request");
 
-        assert_eq!(iron_request.url.host(), Ipv6([1,2,3,4,5,6,7,8].into()));
+        assert_eq!(
+            iron_request.url.host(),
+            Ipv6([1, 2, 3, 4, 5, 6, 7, 8].into())
+        );
     }
 
     #[test]
@@ -254,10 +281,13 @@ mod test {
         let mut hyper_request = HttpRequest::new(Body::empty());
         *hyper_request.method_mut() = Method::GET;
         *hyper_request.uri_mut() = "http://my-host-uri/path".parse().unwrap();
-        hyper_request.headers_mut().insert(headers::HOST, "my-host-header".parse().unwrap());
+        hyper_request
+            .headers_mut()
+            .insert(headers::HOST, "my-host-header".parse().unwrap());
 
         let socket_addr = Some("1.2.3.4:80".parse().unwrap());
-        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http()).expect("A valid Iron request");
+        let iron_request = Request::from_http(hyper_request, socket_addr, &Protocol::http())
+            .expect("A valid Iron request");
 
         assert_eq!(iron_request.url.host(), Domain("my-host-uri"));
     }

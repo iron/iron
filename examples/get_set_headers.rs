@@ -1,6 +1,6 @@
 extern crate iron;
 
-use iron::{Iron, Request, Response, IronResult, AfterMiddleware, Chain};
+use iron::{AfterMiddleware, Chain, Iron, IronResult, Request, Response};
 
 struct DefaultContentType;
 impl AfterMiddleware for DefaultContentType {
@@ -8,13 +8,14 @@ impl AfterMiddleware for DefaultContentType {
     fn after(&self, _req: &mut Request, mut resp: Response) -> IronResult<Response> {
         if resp.headers.get(iron::headers::CONTENT_TYPE) == None {
             // Set a standard header
-            resp.headers.insert(iron::headers::CONTENT_TYPE, iron::mime::TEXT_PLAIN.as_ref().parse().unwrap());
+            resp.headers.insert(
+                iron::headers::CONTENT_TYPE,
+                iron::mime::TEXT_PLAIN.as_ref().parse().unwrap(),
+            );
         }
         Ok(resp)
     }
 }
-
-
 
 fn info(req: &mut Request) -> IronResult<Response> {
     // Get a header using a standard iron::headers
@@ -35,6 +36,5 @@ fn info(req: &mut Request) -> IronResult<Response> {
 fn main() {
     let mut chain = Chain::new(info);
     chain.link_after(DefaultContentType);
-    Iron::new(chain)
-        .http(format!("localhost:{}", 3000));
+    Iron::new(chain).http(format!("localhost:{}", 3000));
 }
