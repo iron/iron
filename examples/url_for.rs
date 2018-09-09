@@ -8,7 +8,7 @@ extern crate iron;
 // Go to http://localhost:3000/foo to see "foo".
 
 use iron::prelude::*;
-use iron::status;
+use iron::StatusCode;
 use router::Router;
 
 fn main() {
@@ -17,11 +17,11 @@ fn main() {
         id_2: get "/:query" => query_handler
     };
 
-    Iron::new(router).http("localhost:3000").unwrap();
+    Iron::new(router).http("localhost:3000");
 
     fn handler(r: &mut Request) -> IronResult<Response> {
         Ok(Response::with((
-            status::Ok,
+            StatusCode::OK,
             format!("Please go to: {}",
                     url_for!(r, "id_2",
                              "query" => "test",
@@ -32,7 +32,7 @@ fn main() {
     fn query_handler(req: &mut Request) -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>()
             .unwrap().find("query").unwrap_or("/");
-        Ok(Response::with((status::Ok, *query)))
+        Ok(Response::with((StatusCode::OK, *query)))
     }
 
 
