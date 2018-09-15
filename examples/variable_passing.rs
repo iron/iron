@@ -7,7 +7,7 @@ use iron::prelude::*;
 
 use persistent::Read;
 use iron::typemap::Key;
-use iron::{status};
+use iron::StatusCode;
 
 #[derive(Copy, Clone)]
 pub struct Log;
@@ -18,7 +18,7 @@ fn serve_hits(req: &mut Request) -> IronResult<Response> {
     let arc = req.get::<Read<Log>>().unwrap();
     let log_path = arc.as_ref();
 
-    Ok(Response::with((status::Ok, format!("Hits: {}", log_path))))
+    Ok(Response::with((StatusCode::OK, format!("Hits: {}", log_path))))
 }
 
 fn main() {
@@ -26,6 +26,6 @@ fn main() {
     let log_path = String::from("/path/to/a/log/file.log");
     let mut chain = Chain::new(serve_hits);
     chain.link(Read::<Log>::both(log_path));
-    Iron::new(chain).http("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000");
 }
 
