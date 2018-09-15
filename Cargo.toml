@@ -10,5 +10,5 @@ license = "MIT"
 keywords = ["iron", "web", "handler", "routing"]
 
 [dependencies]
-iron = "0.6"
+iron = { git = "https://github.com/iron/iron", branch = "master" }
 sequence_trie = "0.3"

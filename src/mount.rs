@@ -2,8 +2,7 @@ use std::error::Error;
 use std::path::{Path, Component};
 use iron::prelude::*;
 use iron::middleware::Handler;
-use iron::{status, Url};
-use iron::typemap;
+use iron::{StatusCode, Url, typemap};
 use sequence_trie::SequenceTrie;
 use std::fmt;
 
@@ -100,7 +99,7 @@ impl Handler for Mount {
             // Search the Trie for the nearest most specific match.
             match self.inner.get_ancestor(&key) {
                 Some(matched) => matched,
-                None => return Err(IronError::new(NoMatch, status::NotFound))
+                None => return Err(IronError::new(NoMatch, StatusCode::NOT_FOUND))
             }
         };
 
