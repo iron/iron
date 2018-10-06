@@ -2,33 +2,36 @@ extern crate iron;
 
 use std::env;
 
-use iron::headers;
+use iron::status;
+use iron::mime::*;
+use iron::headers::*;
 use iron::prelude::*;
-use iron::StatusCode;
 
 // All these variants do the same thing, with more or less options for customization.
 
 fn variant1(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((
-        iron::modifiers::Header(
-            headers::CONTENT_TYPE,
-            iron::mime::APPLICATION_JSON.as_ref().parse().unwrap(),
-        ),
-        StatusCode::OK,
-        "{}",
-    )))
+    let mut resp = Response::with((status::Ok, "{}"));
+    let content_type = ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![]));
+
+    resp.headers.set(content_type);
+
+    Ok(resp)
 }
 
 fn variant2(_: &mut Request) -> IronResult<Response> {
-    use iron::mime;
-    let content_type = mime::APPLICATION_JSON;
-    Ok(Response::with((content_type, StatusCode::OK, "{}")))
+    let mut resp = Response::with((status::Ok, "{}"));
+    let content_type = ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![]));
+    resp.headers.set(content_type);
+
+    Ok(resp)
 }
 
 fn variant3(_: &mut Request) -> IronResult<Response> {
-    use iron::mime;
-    let content_type = "application/json".parse::<mime::Mime>().unwrap();
-    Ok(Response::with((content_type, StatusCode::OK, "{}")))
+    let mut resp = Response::with((status::Ok, "{}"));
+    let content_type = ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![]));
+    resp.headers.set(content_type);
+
+    Ok(resp)
 }
 
 fn main() {
