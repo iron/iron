@@ -10,5 +10,5 @@ license = "MIT"
 keywords = ["iron", "web", "handler", "routing"]
 
 [dependencies]
-iron = { git = "https://github.com/iron/iron", branch = "master" }
+iron = { path = "../core", version = "0.6" }
 sequence_trie = "0.3"

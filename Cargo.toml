@@ -3,4 +3,6 @@
 members = [
     "core",
     "examples",
+    "mount",
+    "persistent",
 ]

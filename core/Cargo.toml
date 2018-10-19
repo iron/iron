@@ -9,9 +9,9 @@ description = "Extensible, Concurrency Focused Web Development in Rust."
 documentation = "http://ironframework.io/doc/iron/"
 license = "MIT"
 name = "iron"
-readme = "README.md"
+readme = "../README.md"
 repository = "https://github.com/iron/iron"
-version = "0.7.0-pre1"
+version = "0.6.0"
 workspace = ".."
 
 [dependencies]

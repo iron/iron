@@ -10,5 +10,5 @@ license = "MIT"
 keywords = ["iron", "web", "persistence", "sharing", "global"]
 
 [dependencies]
-iron = { git = "https://github.com/iron/iron", branch = "master" }
+iron = { path = "../core", version = "0.6" }
 plugin = "0.2"
