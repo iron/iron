@@ -1,12 +1,7 @@
 extern crate iron;
 extern crate router;
 
-use iron::Handler;
-use iron::status;
-use iron::IronResult;
-use iron::Response;
-use iron::Request;
-use iron::Iron;
+use iron::{Handler, StatusCode, IronResult, Response, Request, Iron};
 use router::Router;
 
 struct MessageHandler {
@@ -15,7 +10,7 @@ struct MessageHandler {
 
 impl Handler for MessageHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        Ok(Response::with((status::Ok, self.message.clone())))
+        Ok(Response::with((StatusCode::OK, self.message.clone())))
     }
 }
 
@@ -27,5 +22,5 @@ fn main() {
     let mut router = Router::new();
     router.get("/", handler, "index");
 
-    Iron::new(router).http("localhost:3000").unwrap();
+    Iron::new(router).http("localhost:3000");
 }

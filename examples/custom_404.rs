@@ -5,9 +5,8 @@ extern crate router;
 // To use, go to http://localhost:3000/foobar to see the custom 404
 // Or, go to http://localhost:3000 for a standard 200 OK
 
-use iron::{Iron, Request, Response, IronResult, AfterMiddleware, Chain};
+use iron::{Iron, Request, Response, IronResult, AfterMiddleware, Chain, StatusCode};
 use iron::error::{IronError};
-use iron::status;
 use router::{Router, NoRoute};
 
 struct Custom404;
@@ -17,7 +16,7 @@ impl AfterMiddleware for Custom404 {
         println!("Hitting custom 404 middleware");
 
         if err.error.is::<NoRoute>() {
-            Ok(Response::with((status::NotFound, "Custom 404 response")))
+            Ok(Response::with((StatusCode::NOT_FOUND, "Custom 404 response")))
         } else {
             Err(err)
         }
@@ -31,9 +30,9 @@ fn main() {
     let mut chain = Chain::new(router);
     chain.link_after(Custom404);
 
-    Iron::new(chain).http("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000");
 }
 
 fn handler(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, "Handling response")))
+    Ok(Response::with((StatusCode::OK, "Handling response")))
 }

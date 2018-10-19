@@ -3,7 +3,7 @@
 name = "router"
 authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 license = "MIT"
-version = "0.6.0"
+version = "0.7.0-pre1"
 description = "A router for the Iron framework."
 repository = "https://github.com/iron/router"
 documentation = "http://ironframework.io/doc/router/index.html"
@@ -11,5 +11,5 @@ keywords = ["iron", "web", "http", "routing", "router"]
 
 [dependencies]
 route-recognizer = "0.1"
-iron = "0.6"
+iron = { git = "https://github.com/iron/iron", branch = "master" }
 url = "1.1"
