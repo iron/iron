@@ -1,5 +1,4 @@
-Iron
-====
+# Iron
 
 [![Build Status](https://secure.travis-ci.org/iron/iron.svg?branch=master)](https://travis-ci.org/iron/iron)
 [![Crates.io Status](http://meritbadge.herokuapp.com/iron)](https://crates.io/crates/iron)
@@ -100,27 +99,30 @@ Iron averages [72,000+ requests per second for hello world](https://github.com/i
 and is mostly IO-bound, spending over 70% of its time in the kernel send-ing or
 recv-ing data.\*
 
-\* *Numbers from profiling on my OS X machine, your mileage may vary.*
+\* _Numbers from profiling on my OS X machine, your mileage may vary._
 
 ## Core Extensions
 
 Iron aims to fill a void in the Rust web stack - a high level framework that is
-*extensible* and makes organizing complex server code easy.
+_extensible_ and makes organizing complex server code easy.
 
 Extensions are painless to build. Some important ones are:
 
 Middleware:
+
 - [Routing](https://github.com/iron/router)
 - [Mounting](https://github.com/iron/mount)
 - [Static File Serving](https://github.com/iron/staticfile)
 - [Logging](https://github.com/iron/logger)
 
 Plugins:
+
 - [JSON Body Parsing](https://github.com/iron/body-parser)
 - [URL Encoded Data Parsing](https://github.com/iron/urlencoded)
 - [All-In-One (JSON, URL, & Form Data) Parameter Parsing](https://github.com/iron/params)
 
 Both:
+
 - [Shared Memory (also used for Plugin configuration)](https://github.com/iron/persistent)
 - [Sessions](https://github.com/iron/iron-sessionstorage)
 
@@ -165,10 +167,10 @@ build a local copy.
 
 Check out the [examples](/examples) directory!
 
-You can run an individual example using `cargo run --example example-name`.
-Note that for benchmarking you should make sure to use the `--release` flag,
-which will cause cargo to compile the entire toolchain with optimizations.
-Without `--release` you will get truly sad numbers.
+You can run an individual example using `cargo run --bin example-name` inside
+the [examples](/examples) directory. Note that for benchmarking you should make
+sure to use the `--release` flag, which will cause cargo to compile the entire
+toolchain with optimizations. Without `--release` you will get truly sad numbers.
 
 ## Getting Help
 
@@ -216,4 +218,3 @@ SuprDewd (1)
 ## License
 
 MIT
-
