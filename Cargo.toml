@@ -10,5 +10,5 @@ license = "MIT"
 keywords = ["iron", "web", "persistence", "sharing", "global"]
 
 [dependencies]
-iron = ">= 0.5, < 0.7"
+iron = { git = "https://github.com/iron/iron", branch = "master" }
 plugin = "0.2"
