@@ -11,6 +11,7 @@ use typemap::TypeMap;
 use {headers, Plugin, StatusCode};
 
 use hyper::Body;
+use hyper::Method;
 pub use hyper::Response as HttpResponse;
 
 /// Wrapper type to set `Read`ers as response bodies
@@ -116,15 +117,16 @@ impl Response {
     //
     // `write_back` consumes the `Response`.
     #[doc(hidden)]
-    pub fn write_back(self, http_res: &mut HttpResponse<Body>) {
+    pub fn write_back(self, http_res: &mut HttpResponse<Body>, req_method: Method) {
         *http_res.headers_mut() = self.headers;
 
         // Default to a 404 if no response code was set
         *http_res.status_mut() = self.status.unwrap_or(StatusCode::NOT_FOUND);
 
-        let out = match self.body {
-            Some(body) => write_with_body(http_res, body),
-            None => {
+        let out = match (self.body, req_method) {
+            (Some(body), _) => write_with_body(http_res, body),
+            (None, Method::HEAD) => Ok( () ),
+            (None, _) => {
                 http_res.headers_mut().insert(
                     headers::CONTENT_LENGTH,
                     headers::HeaderValue::from_static("0"),
