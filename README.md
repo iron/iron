@@ -16,6 +16,7 @@ extern crate time;
 use iron::prelude::*;
 use iron::{typemap, AfterMiddleware, BeforeMiddleware};
 use time::precise_time_ns;
+use iron::status;
 
 struct ResponseTime;
 
@@ -37,7 +38,7 @@ impl AfterMiddleware for ResponseTime {
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((iron::StatusCode::OK, "Hello World")))
+    Ok(Response::with((status::Ok, "Hello World")))
 }
 
 fn main() {
