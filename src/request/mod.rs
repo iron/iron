@@ -92,7 +92,7 @@ impl Request {
 
             let mut socket_ip = String::new();
             let (host, port) = if let Some(host) = uri.host() {
-                (host, uri.port())
+                (host, uri.port_part().map(|p| p.as_u16()))
             } else if let Some(host) = headers.get(headers::HOST).and_then(|h| h.to_str().ok()) {
                 let mut parts = host.split(':');
                 let hostname = parts.next().unwrap();
