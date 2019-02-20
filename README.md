@@ -9,6 +9,8 @@ Iron
 
 ## Response Timer Example
 
+Note: This example works with the current `iron` code in this repository (master branch). If you are using `iron` 0.6 from crates.io, please refer to the [corresponding example](https://github.com/iron/iron/blob/0.6-maintenance/README.md) in the branch [0.6-maintenance](https://github.com/iron/iron/tree/0.6-maintenance).
+
 ```rust
 extern crate iron;
 extern crate time;
