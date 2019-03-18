@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use iron::prelude::*;
 use iron::Handler;
-use iron::StatusCode;
+use iron::status::Status;
 
 struct Router {
     // Routes here are simply matched with the url path.
@@ -34,7 +34,7 @@ impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         match self.routes.get(&req.url.path().join("/")) {
             Some(handler) => handler.handle(req),
-            None => Ok(Response::with(StatusCode::NOT_FOUND)),
+            None => Ok(Response::with(Status::NotFound)),
         }
     }
 }
@@ -43,15 +43,15 @@ fn main() {
     let mut router = Router::new();
 
     router.add_route("hello".to_string(), |_: &mut Request| {
-        Ok(Response::with((StatusCode::OK, "Hello world !")))
+        Ok(Response::with((Status::Ok, "Hello world !")))
     });
 
     router.add_route("hello/again".to_string(), |_: &mut Request| {
-        Ok(Response::with((StatusCode::OK, "Hello again !")))
+        Ok(Response::with((Status::Ok, "Hello again !")))
     });
 
     router.add_route("error".to_string(), |_: &mut Request| {
-        Ok(Response::with(StatusCode::BAD_REQUEST))
+        Ok(Response::with(Status::BadRequest))
     });
 
     Iron::new(router).http("localhost:3000");
