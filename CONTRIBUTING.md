@@ -21,4 +21,9 @@
 * Wait for one of the reviewers to look at your code and either merge it or
   give feedback which you should adapt to.
 
+### Issue triage [![Open Source Helpers](https://www.codetriage.com/iron/iron/badges/users.svg)](https://www.codetriage.com/iron/iron)
+
+You can contribute by triaging issues which may include reproducing bug reports or asking for vital information, such as version numbers or reproduction instructions. If you would like to start triaging issues, one easy way to get started is to [subscribe to iron on CodeTriage](https://www.codetriage.com/iron/iron).
+
 #### Thank you for contributing!
+
