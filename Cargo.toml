@@ -31,7 +31,7 @@ modifier = "0.1"
 log = "0.3"
 num_cpus = "1.0"
 hyper = "0.10"
-hyper-native-tls = { version = "0.2", optional = true }
+hyper-native-tls = { version = "0.3", optional = true }
 
 [dev-dependencies]
 time = "0.1"
