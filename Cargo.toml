@@ -1,8 +1,9 @@
 [workspace]
 
 members = [
-    "iron",
     "examples",
+    "iron",
     "mount",
     "persistent",
+    "router",
 ]
