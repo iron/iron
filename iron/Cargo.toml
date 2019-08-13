@@ -1,0 +1,35 @@
+[package]
+authors = [
+    "Jonathan Reem <jonathan.reem@gmail.com>",
+    "Zach Pomerantz <zmp@umich.edu>",
+    "Michael Sproul <micsproul@gmail.com>",
+    "Patrick Tran <patrick.tran06@gmail.com>",
+]
+description = "Extensible, Concurrency Focused Web Development in Rust."
+documentation = "http://ironframework.io/doc/iron/"
+license = "MIT"
+name = "iron"
+readme = "../README.md"
+repository = "https://github.com/iron/iron"
+version = "0.6.0"
+workspace = ".."
+
+[dependencies]
+futures = "0.1"
+futures-cpupool = "0.1"
+http = "0.1"
+hyper = "0.12"
+log = "0.4"
+mime = "0.3"
+mime_guess = "2.0.0-alpha.5"
+modifier = "0.1"
+plugin = "0.2"
+typemap = "0.3"
+url = "1.7"
+
+[dev-dependencies]
+time = "0.1"
+
+[lib]
+name = "iron"
+path = "src/lib.rs"
