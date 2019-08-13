@@ -27,7 +27,7 @@ pub struct Mount {
 }
 
 struct Match {
-    handler: Box<Handler>,
+    handler: Box<dyn Handler>,
     length: usize
 }
 
@@ -71,7 +71,7 @@ impl Mount {
         // Insert a match struct into the trie.
         let match_length = key.len();
         self.inner.insert(key, Match {
-            handler: Box::new(handler) as Box<Handler>,
+            handler: Box::new(handler) as Box<dyn Handler>,
             length: match_length,
         });
         self

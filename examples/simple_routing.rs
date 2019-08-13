@@ -12,7 +12,7 @@ use iron::StatusCode;
 
 struct Router {
     // Routes here are simply matched with the url path.
-    routes: HashMap<String, Box<Handler>>,
+    routes: HashMap<String, Box<dyn Handler>>,
 }
 
 impl Router {

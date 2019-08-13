@@ -201,7 +201,7 @@ pub trait AroundMiddleware {
     ///
     /// This is called only once, when an `AroundMiddleware` is added to a `Chain`
     /// using `Chain::around`, it is passed the `Chain`'s current `Handler`.
-    fn around(self, handler: Box<Handler>) -> Box<Handler>;
+    fn around(self, handler: Box<dyn Handler>) -> Box<dyn Handler>;
 }
 
 /// The middleware chain used in Iron.
@@ -210,11 +210,11 @@ pub trait AroundMiddleware {
 /// but Iron's infrastructure is flexible enough to allow alternate
 /// systems.
 pub struct Chain {
-    befores: Vec<Box<BeforeMiddleware>>,
-    afters: Vec<Box<AfterMiddleware>>,
+    befores: Vec<Box<dyn BeforeMiddleware>>,
+    afters: Vec<Box<dyn AfterMiddleware>>,
 
     // Internal invariant: this is always Some
-    handler: Option<Box<Handler>>,
+    handler: Option<Box<dyn Handler>>,
 }
 
 impl Chain {
@@ -223,7 +223,7 @@ impl Chain {
         Chain {
             befores: vec![],
             afters: vec![],
-            handler: Some(Box::new(handler) as Box<Handler>),
+            handler: Some(Box::new(handler) as Box<dyn Handler>),
         }
     }
 
@@ -237,8 +237,8 @@ impl Chain {
         B: BeforeMiddleware,
     {
         let (before, after) = link;
-        self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
-        self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self.befores.push(Box::new(before) as Box<dyn BeforeMiddleware>);
+        self.afters.push(Box::new(after) as Box<dyn AfterMiddleware>);
         self
     }
 
@@ -248,7 +248,7 @@ impl Chain {
     where
         B: BeforeMiddleware,
     {
-        self.befores.push(Box::new(before) as Box<BeforeMiddleware>);
+        self.befores.push(Box::new(before) as Box<dyn BeforeMiddleware>);
         self
     }
 
@@ -258,7 +258,7 @@ impl Chain {
     where
         A: AfterMiddleware,
     {
-        self.afters.push(Box::new(after) as Box<AfterMiddleware>);
+        self.afters.push(Box::new(after) as Box<dyn AfterMiddleware>);
         self
     }
 
@@ -419,7 +419,7 @@ where
     }
 }
 
-impl Handler for Box<Handler> {
+impl Handler for Box<dyn Handler> {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         (**self).handle(req)
     }
@@ -434,7 +434,7 @@ where
     }
 }
 
-impl BeforeMiddleware for Box<BeforeMiddleware> {
+impl BeforeMiddleware for Box<dyn BeforeMiddleware> {
     fn before(&self, req: &mut Request) -> IronResult<()> {
         (**self).before(req)
     }
@@ -466,7 +466,7 @@ where
     }
 }
 
-impl AfterMiddleware for Box<AfterMiddleware> {
+impl AfterMiddleware for Box<dyn AfterMiddleware> {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
         (**self).after(req, res)
     }
@@ -491,9 +491,9 @@ where
 
 impl<F> AroundMiddleware for F
 where
-    F: FnOnce(Box<Handler>) -> Box<Handler>,
+    F: FnOnce(Box<dyn Handler>) -> Box<dyn Handler>,
 {
-    fn around(self, handler: Box<Handler>) -> Box<Handler> {
+    fn around(self, handler: Box<dyn Handler>) -> Box<dyn Handler> {
         self(handler)
     }
 }

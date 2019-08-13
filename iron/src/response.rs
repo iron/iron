@@ -20,47 +20,47 @@ pub struct BodyReader<R: Send>(pub R);
 /// A trait which writes the body of an HTTP response.
 pub trait WriteBody: Send {
     /// Writes the body to the provided `Write`.
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()>;
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()>;
 }
 
 impl WriteBody for String {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         self.as_bytes().write_body(res)
     }
 }
 
 impl<'a> WriteBody for &'a str {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         self.as_bytes().write_body(res)
     }
 }
 
 impl WriteBody for Vec<u8> {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         res.write_all(self)
     }
 }
 
 impl<'a> WriteBody for &'a [u8] {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         res.write_all(self)
     }
 }
 
 impl WriteBody for File {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         io::copy(self, res).map(|_| ())
     }
 }
 
-impl WriteBody for Box<io::Read + Send> {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+impl WriteBody for Box<dyn io::Read + Send> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         io::copy(self, res).map(|_| ())
     }
 }
 
 impl<R: io::Read + Send> WriteBody for BodyReader<R> {
-    fn write_body(&mut self, res: &mut Write) -> io::Result<()> {
+    fn write_body(&mut self, res: &mut dyn Write) -> io::Result<()> {
         io::copy(&mut self.0, res).map(|_| ())
     }
 }
@@ -86,7 +86,7 @@ pub struct Response {
     pub extensions: TypeMap,
 
     /// The body of the response.
-    pub body: Option<Box<WriteBody>>,
+    pub body: Option<Box<dyn WriteBody>>,
 }
 
 impl Default for Response {
@@ -141,7 +141,7 @@ impl Response {
     }
 }
 
-fn write_with_body(res: &mut HttpResponse<Body>, mut body: Box<WriteBody>) -> io::Result<()> {
+fn write_with_body(res: &mut HttpResponse<Body>, mut body: Box<dyn WriteBody>) -> io::Result<()> {
     let content_type = res.headers().get(headers::CONTENT_TYPE).map_or_else(
         || headers::HeaderValue::from_static("text/plain"),
         |cx| cx.clone(),

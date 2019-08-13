@@ -163,7 +163,7 @@ impl<H: Handler> Service for IronHandler<H> {
     type ReqBody = hyper::body::Body;
     type ResBody = hyper::body::Body;
     type Error = Error;
-    type Future = Box<Future<Item = HttpResponse<Self::ResBody>, Error = Self::Error> + Send>;
+    type Future = Box<dyn Future<Item = HttpResponse<Self::ResBody>, Error = Self::Error> + Send>;
 
     fn call(&mut self, req: HttpRequest<Self::ReqBody>) -> Self::Future {
         let addr = self.addr;

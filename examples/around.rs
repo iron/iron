@@ -48,11 +48,11 @@ impl<H: Handler> Handler for LoggerHandler<H> {
 }
 
 impl AroundMiddleware for Logger {
-    fn around(self, handler: Box<Handler>) -> Box<Handler> {
+    fn around(self, handler: Box<dyn Handler>) -> Box<dyn Handler> {
         Box::new(LoggerHandler {
             logger: self,
             handler,
-        }) as Box<Handler>
+        }) as Box<dyn Handler>
     }
 }
 

@@ -205,7 +205,7 @@ fn to_chain(counters: &ChainLike<Twice<Arc<AtomicBool>>>, chain: ChainLike<Kind>
         .into_iter()
         .zip(beforec.iter())
         .map(into_middleware)
-        .map(|m| Box::new(m) as Box<BeforeMiddleware>)
+        .map(|m| Box::new(m) as Box<dyn BeforeMiddleware>)
         .collect::<Vec<_>>();
 
     let handler = into_middleware((handler, handlerc));
@@ -214,12 +214,12 @@ fn to_chain(counters: &ChainLike<Twice<Arc<AtomicBool>>>, chain: ChainLike<Kind>
         .into_iter()
         .zip(afterc.iter())
         .map(into_middleware)
-        .map(|m| Box::new(m) as Box<AfterMiddleware>)
+        .map(|m| Box::new(m) as Box<dyn AfterMiddleware>)
         .collect::<Vec<_>>();
 
     Chain {
         befores: befores,
-        handler: Some(Box::new(handler) as Box<Handler>),
+        handler: Some(Box::new(handler) as Box<dyn Handler>),
         afters: afters,
     }
 }
