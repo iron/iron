@@ -55,7 +55,7 @@ impl Error for IronError {
         self.error.description()
     }
 
-    fn cause(&self) -> Option<&Error> {
-        self.error.cause()
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        self.error.source()
     }
 }
