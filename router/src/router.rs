@@ -14,9 +14,9 @@ use recognizer::{Match, Params};
 
 pub struct RouterInner {
     // The routers, specialized by method.
-    pub routers: HashMap<method::Method, Recognizer<Box<Handler>>>,
+    pub routers: HashMap<method::Method, Recognizer<Box<dyn Handler>>>,
     // Routes that accept any method.
-    pub wildcard: Recognizer<Box<Handler>>,
+    pub wildcard: Recognizer<Box<dyn Handler>>,
     // Used in URL generation.
     pub route_ids: HashMap<String, String>
 }
@@ -136,7 +136,7 @@ impl Router {
     }
 
     fn recognize(&self, method: &method::Method, path: &str)
-                     -> Option<Match<&Box<Handler>>> {
+                     -> Option<Match<&Box<dyn Handler>>> {
         self.inner.routers.get(method).and_then(|router| router.recognize(path).ok())
             .or(self.inner.wildcard.recognize(path).ok())
     }
