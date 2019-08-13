@@ -57,7 +57,7 @@ use mime::{self, Mime};
 
 use {headers, Request, Response, Set, StatusCode, Url};
 
-use mime_guess::guess_mime_type_opt;
+use mime_guess;
 use response::{BodyReader, WriteBody};
 
 impl Modifier<Response> for Mime {
@@ -204,7 +204,7 @@ impl Modifier<Response> for RedirectRaw {
 }
 
 fn mime_for_path(path: &Path) -> Mime {
-    guess_mime_type_opt(path).unwrap_or(mime::TEXT_PLAIN)
+    mime_guess::from_path(path).first().unwrap_or(mime::TEXT_PLAIN)
 }
 
 #[cfg(test)]
