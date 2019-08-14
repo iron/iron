@@ -55,6 +55,7 @@ impl Error for IronError {
         self.error.description()
     }
 
+    #[allow(deprecated)]
     fn cause(&self) -> Option<&Error> {
         self.error.cause()
     }
