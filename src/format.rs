@@ -51,7 +51,7 @@ pub trait ContextDisplay<'a> {
     type Item;
     type Display: fmt::Display;
     fn display_with(&'a self,
-                    render: &'a Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>)
+                    render: &'a dyn Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>)
                     -> Self::Display;
 }
 
@@ -60,7 +60,7 @@ impl<'a> ContextDisplay<'a> for Format {
     type Item = FormatText;
     type Display = FormatDisplay<'a>;
     fn display_with(&'a self,
-                    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
+                    render: &'a dyn Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
                     -> FormatDisplay<'a> {
         FormatDisplay {
             format: self,
@@ -182,7 +182,7 @@ pub enum FormatText {
 
 pub struct FormatDisplay<'a> {
     format: &'a Format,
-    render: &'a Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
+    render: &'a dyn Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
 }
 
 use std::fmt;
