@@ -57,7 +57,7 @@ impl Logger {
         let entry_time = *req.extensions.get::<StartTime>().unwrap();
 
         let response_time = time::now() - entry_time;
-        let response_time_ms = (response_time.num_seconds() * 1000) as f64 + (response_time.num_nanoseconds().unwrap_or(0) as f64) / 1000000.0;
+        let response_time_ms = (response_time.num_nanoseconds().unwrap_or(0) as f64) / 1000000.0;
 
         {
             let render = |fmt: &mut Formatter, text: &FormatText| {
