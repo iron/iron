@@ -9,7 +9,7 @@ use logger::Logger;
 // Logger has a default formatting of the strings printed
 // to console.
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let (logger_before, logger_after) = Logger::new(None);
 

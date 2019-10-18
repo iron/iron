@@ -14,7 +14,7 @@ static FORMAT: &'static str =
 // This is an example of using a format string that can specify colors and attributes
 // to specific words that are printed out to the console.
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let mut chain = Chain::new(no_op_handler);
     let format = Format::new(FORMAT);
