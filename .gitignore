@@ -11,5 +11,5 @@
 *.dummy
 *.exe
 *-test
-/target/
+target/
 Cargo.lock
