@@ -3,6 +3,7 @@
 members = [
     "examples",
     "iron",
+    "logger",
     "mount",
     "persistent",
     "router",

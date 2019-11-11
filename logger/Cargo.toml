@@ -1,0 +1,16 @@
+[package]
+name = "logger"
+version = "0.4.0"
+authors = ["Alexander Irbis <irbis.labs@gmail.com>", "Jonathan Reem <jonathan.reem@gmail.com>", "Michael Reinhard <mcreinhard@gmail.com>"]
+description = "Logging middleware for the Iron framework."
+repository = "https://github.com/iron/logger"
+keywords = ["iron", "web", "logger", "log", "timer"]
+license = "MIT"
+
+[dependencies]
+iron = { version = ">=0.4,<0.8.0", default-features = false }
+log = "0.4.8"
+time = "0.1.42"
+
+[dev-dependencies]
+env_logger = "0.7.1"
