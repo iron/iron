@@ -35,7 +35,7 @@ fn no_op_handler(_: &mut Request) -> IronResult<Response> {
 
 Logger is a part of Iron's [core bundle](https://github.com/iron/core).
 
-Logger emits request and response information using standard rust [log facade](https://doc.rust-lang.org/log/log/index.html), formatted with default format or a custom format string.
+Logger emits request and response information using standard rust [log facade](https://docs.rs/log/0.4.8/log/), formatted with default format or a custom format string.
 
 Format strings can specify fields to be logged (ANSI terminal colors and attributes is no longer supported since [#82](https://github.com/iron/logger/issues/82)).
 
