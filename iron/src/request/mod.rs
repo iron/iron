@@ -56,13 +56,13 @@ pub struct Request {
 
 impl Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(f, "Request {{"));
+        writeln!(f, "Request {{")?;
 
-        try!(writeln!(f, "    url: {:?}", self.url));
-        try!(writeln!(f, "    method: {:?}", self.method));
-        try!(writeln!(f, "    local_addr: {:?}", self.local_addr));
+        writeln!(f, "    url: {:?}", self.url)?;
+        writeln!(f, "    method: {:?}", self.method)?;
+        writeln!(f, "    local_addr: {:?}", self.local_addr)?;
 
-        try!(write!(f, "}}"));
+        write!(f, "}}")?;
         Ok(())
     }
 }

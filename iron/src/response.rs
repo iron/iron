@@ -150,7 +150,7 @@ fn write_with_body(res: &mut HttpResponse<Body>, mut body: Box<dyn WriteBody>) -
         .insert(headers::CONTENT_TYPE, content_type);
 
     let mut body_contents: Vec<u8> = vec![];
-    try!(body.write_body(&mut body_contents));
+    body.write_body(&mut body_contents)?;
     *res.body_mut() = Body::from(body_contents);
     Ok(())
 }
