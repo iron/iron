@@ -42,7 +42,7 @@
 //!
 //! The modifiers are applied depending on their type. Currently the easiest
 //! way to see how different types are used as modifiers, take a look at [the
-//! source code](https://github.com/iron/iron/blob/master/src/modifiers.rs).
+//! source code](https://github.com/iron/iron/blob/master/iron/src/modifiers.rs).
 //!
 //! For more information about the modifier system, see
 //! [rust-modifier](https://github.com/reem/rust-modifier).
