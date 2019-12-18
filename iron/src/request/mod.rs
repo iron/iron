@@ -90,6 +90,8 @@ impl Request {
         let url = {
             let path = uri.path();
 
+            let query = uri.query();
+
             let mut socket_ip = String::new();
             let (host, port) = if let Some(host) = uri.host() {
                 (host, uri.port_part().map(|p| p.as_u16()))
@@ -113,9 +115,17 @@ impl Request {
             };
 
             let url_string = if let Some(port) = port {
-                format!("{}://{}:{}{}", protocol.name(), host, port, path)
+                if let Some(query) = query {
+                    format!("{}://{}:{}{}?{}", protocol.name(), host, port, path, query)
+                } else {
+                    format!("{}://{}:{}{}", protocol.name(), host, port, path)
+                }
             } else {
-                format!("{}://{}{}", protocol.name(), host, path)
+                if let Some(query) = query {
+                    format!("{}://{}{}?{}", protocol.name(), host, path, query)
+                } else {
+                    format!("{}://{}{}", protocol.name(), host, path)  
+                }
             };
 
             match Url::parse(&url_string) {
