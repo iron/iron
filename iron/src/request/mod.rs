@@ -56,13 +56,13 @@ pub struct Request {
 
 impl Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(f, "Request {{"));
+        writeln!(f, "Request {{")?;
 
-        try!(writeln!(f, "    url: {:?}", self.url));
-        try!(writeln!(f, "    method: {:?}", self.method));
-        try!(writeln!(f, "    local_addr: {:?}", self.local_addr));
+        writeln!(f, "    url: {:?}", self.url)?;
+        writeln!(f, "    method: {:?}", self.method)?;
+        writeln!(f, "    local_addr: {:?}", self.local_addr)?;
 
-        try!(write!(f, "}}"));
+        write!(f, "}}")?;
         Ok(())
     }
 }
@@ -88,7 +88,7 @@ impl Request {
         ) = req.into_parts();
 
         let url = {
-            let path = uri.path();
+            let path = uri.path_and_query().expect("expected path and query but found None").as_str();
 
             let query = uri.query();
 
@@ -223,6 +223,17 @@ mod test {
             .expect("A valid Iron request");
 
         assert_eq!(iron_request.url.host(), Domain("my-host"));
+    }
+
+    #[test]
+    fn test_request_with_query_string() {
+        let mut hyper_request = HttpRequest::new(Body::empty());
+        *hyper_request.uri_mut() = "http://my-host/path?param=value".parse().unwrap();
+
+        let iron_request = Request::from_http(hyper_request, None, &Protocol::http())
+            .expect("A valid Iron request");
+
+        assert_eq!(iron_request.url.query(), Some("param=value"));
     }
 
     #[test]

@@ -124,7 +124,7 @@ impl Url {
 
 impl fmt::Display for Url {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        try!(self.generic_url.fmt(formatter));
+        self.generic_url.fmt(formatter)?;
         Ok(())
     }
 }
