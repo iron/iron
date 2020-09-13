@@ -256,8 +256,7 @@ impl Router {
             req.extensions.insert::<RouterInner>(self.inner.clone());
             Some(matched.handler.handle(req))
         } else {
-            self.redirect_slash(req)
-                .map(Err)
+            self.redirect_slash(req).map(Err)
         }
     }
 }
