@@ -51,10 +51,6 @@ impl fmt::Display for IronError {
 }
 
 impl Error for IronError {
-    fn description(&self) -> &str {
-        self.error.description()
-    }
-
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         self.error.source()
     }

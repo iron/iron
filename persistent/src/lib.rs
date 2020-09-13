@@ -21,17 +21,13 @@ pub enum PersistentError {
     NotFound
 }
 
-impl Error for PersistentError {
-    fn description(&self) -> &str {
-        match *self {
-            PersistentError::NotFound => "Value not found in extensions."
-        }
-    }
-}
+impl Error for PersistentError {}
 
 impl fmt::Display for PersistentError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
+        match *self {
+            PersistentError::NotFound => write!(f, "Value not found in extensions.")
+        }
     }
 }
 

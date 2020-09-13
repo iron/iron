@@ -35,13 +35,11 @@ struct Match {
 #[derive(Debug)]
 pub struct NoMatch;
 
-impl Error for NoMatch {
-    fn description(&self) -> &'static str { "No Match" }
-}
+impl Error for NoMatch {}
 
 impl fmt::Display for NoMatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.description())
+        f.write_str("No match")
     }
 }
 

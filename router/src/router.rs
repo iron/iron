@@ -238,9 +238,7 @@ impl fmt::Display for NoRoute {
     }
 }
 
-impl Error for NoRoute {
-    fn description(&self) -> &str { "No Route" }
-}
+impl Error for NoRoute {}
 
 /// The error thrown by router if a request was redirected
 /// by adding or removing a trailing slash.
@@ -253,9 +251,7 @@ impl fmt::Display for TrailingSlash {
     }
 }
 
-impl Error for TrailingSlash {
-    fn description(&self) -> &str { "Trailing Slash" }
-}
+impl Error for TrailingSlash {}
 
 #[cfg(test)]
 mod test {

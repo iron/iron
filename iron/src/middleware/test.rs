@@ -162,11 +162,7 @@ fn error() -> IronError {
         }
     }
 
-    impl StdError for SomeError {
-        fn description(&self) -> &str {
-            "Some Error"
-        }
-    }
+    impl StdError for SomeError {}
 
     IronError {
         error: Box::new(SomeError),
