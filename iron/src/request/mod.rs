@@ -88,7 +88,7 @@ impl Request {
         ) = req.into_parts();
 
         let url = {
-            let path = uri.path_and_query().expect("expected path and query but found None").as_str();
+            let path = uri.path();
 
             let query = uri.query();
 

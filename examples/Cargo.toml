@@ -21,12 +21,16 @@ name = "echo"
 path = "echo.rs"
 
 [[bin]]
-name = "error_recovery"
-path = "error_recovery.rs"
+name = "echo_query"
+path = "echo_query.rs"
 
 [[bin]]
 name = "error"
 path = "error.rs"
+
+[[bin]]
+name = "error_recovery"
+path = "error_recovery.rs"
 
 [[bin]]
 name = "get_set_headers"
