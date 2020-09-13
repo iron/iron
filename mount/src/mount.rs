@@ -24,6 +24,7 @@ impl typemap::Key for OriginalUrl {
 ///
 /// Mounted handlers may also access the *original* URL by requesting the `OriginalUrl` key
 /// from `Request::extensions`.
+#[derive(Default)]
 pub struct Mount {
     inner: SequenceTrie<String, Match>,
 }
@@ -98,7 +99,7 @@ impl Handler for Mount {
                 _ => &path,
             };
 
-            let key: Vec<_> = key.into_iter().map(|s| String::from(*s)).collect();
+            let key: Vec<_> = key.iter().map(|s| String::from(*s)).collect();
 
             // Search the Trie for the nearest most specific match.
             match self.inner.get_ancestor(&key) {

@@ -46,7 +46,7 @@ impl Logger {
             Logger {
                 format: format.clone(),
             },
-            Logger { format: format },
+            Logger { format },
         )
     }
 }

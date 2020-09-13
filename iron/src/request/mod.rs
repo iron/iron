@@ -29,6 +29,7 @@ mod url;
 ///
 /// Stores all the properties of the client's request plus
 /// an `TypeMap` for data communication between middleware.
+#[non_exhaustive]
 pub struct Request {
     /// The requested URL.
     pub url: Url,
@@ -50,8 +51,6 @@ pub struct Request {
 
     /// The version of the HTTP protocol used.
     pub version: HttpVersion,
-
-    _p: (),
 }
 
 impl Debug for Request {
@@ -120,12 +119,10 @@ impl Request {
                 } else {
                     format!("{}://{}:{}{}", protocol.name(), host, port, path)
                 }
+            } else if let Some(query) = query {
+                format!("{}://{}{}?{}", protocol.name(), host, path, query)
             } else {
-                if let Some(query) = query {
-                    format!("{}://{}{}?{}", protocol.name(), host, path, query)
-                } else {
-                    format!("{}://{}{}", protocol.name(), host, path)
-                }
+                format!("{}://{}{}", protocol.name(), host, path)
             };
 
             match Url::parse(&url_string) {
@@ -142,7 +139,6 @@ impl Request {
             method,
             extensions: TypeMap::new(),
             version,
-            _p: (),
         })
     }
 
@@ -180,7 +176,6 @@ impl Request {
             method: Method::GET,
             extensions: TypeMap::new(),
             version: HttpVersion::HTTP_11,
-            _p: (),
         }
     }
 }

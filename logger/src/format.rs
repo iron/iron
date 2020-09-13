@@ -64,7 +64,7 @@ impl<'a> ContextDisplay<'a> for Format {
     ) -> FormatDisplay<'a> {
         FormatDisplay {
             format: self,
-            render: render,
+            render,
         }
     }
 }
@@ -82,7 +82,7 @@ struct FormatParser<'a> {
 impl<'a> FormatParser<'a> {
     fn new(chars: Peekable<Chars>) -> FormatParser {
         FormatParser {
-            chars: chars,
+            chars,
 
             // No attributes are longer than 14 characters, so we can avoid reallocating.
             object_buffer: String::with_capacity(14),
@@ -121,7 +121,7 @@ impl<'a> Iterator for FormatParser<'a> {
                     match chr.unwrap() {
                         // Finished parsing, parse buffer.
                         '}' => break,
-                        c => self.object_buffer.push(c.clone()),
+                        c => self.object_buffer.push(c),
                     }
 
                     chr = self.chars.next();

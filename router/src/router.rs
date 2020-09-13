@@ -80,7 +80,7 @@ impl Router {
         self.mut_inner()
             .routers
             .entry(method)
-            .or_insert(Recognizer::new())
+            .or_insert_with(Recognizer::new)
             .add(glob.as_ref(), Box::new(handler));
         self.route_id(route_id.as_ref(), glob.as_ref());
         self
@@ -88,7 +88,7 @@ impl Router {
 
     fn route_id(&mut self, id: &str, glob: &str) {
         let inner = self.mut_inner();
-        let ref mut route_ids = inner.route_ids;
+        let route_ids = &mut inner.route_ids;
 
         match route_ids.get(id) {
             Some(other_glob) if glob != other_glob => panic!("Duplicate route_id: {}", id),
@@ -188,11 +188,11 @@ impl Router {
             .routers
             .get(method)
             .and_then(|router| router.recognize(path).ok())
-            .or(self.inner.wildcard.recognize(path).ok())
+            .or_else(|| self.inner.wildcard.recognize(path).ok())
     }
 
     fn handle_options(&self, path: &str) -> Response {
-        static METHODS: &'static [method::Method] = &[
+        static METHODS: &[method::Method] = &[
             Method::GET,
             Method::POST,
             Method::PUT,
@@ -205,11 +205,11 @@ impl Router {
         let mut options = vec![];
 
         for method in METHODS.iter() {
-            self.inner.routers.get(method).map(|router| {
-                if let Some(_) = router.recognize(path).ok() {
+            if let Some(router) = self.inner.routers.get(method) {
+                if router.recognize(path).is_ok() {
                     options.push(method.clone());
                 }
-            });
+            };
         }
         // If GET is there, HEAD is also there.
         if options.contains(&Method::GET) && !options.contains(&Method::HEAD) {
@@ -257,8 +257,14 @@ impl Router {
             Some(matched.handler.handle(req))
         } else {
             self.redirect_slash(req)
-                .and_then(|redirect| Some(Err(redirect)))
+                .map(Err)
         }
+    }
+}
+
+impl Default for Router {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -281,7 +287,7 @@ impl Handler for Router {
                 Method::HEAD => {
                     req.method = Method::GET;
                     self.handle_method(req, &path)
-                        .unwrap_or(Err(IronError::new(NoRoute, StatusCode::NOT_FOUND)))
+                        .unwrap_or_else(|| Err(IronError::new(NoRoute, StatusCode::NOT_FOUND)))
                 }
                 _ => Err(IronError::new(NoRoute, StatusCode::NOT_FOUND)),
             })
