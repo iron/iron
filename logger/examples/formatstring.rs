@@ -1,12 +1,12 @@
 //! Example of logger with custom formatting
+extern crate env_logger;
 extern crate iron;
 extern crate logger;
-extern crate env_logger;
 
 use iron::prelude::*;
 
-use logger::Logger;
 use logger::Format;
+use logger::Logger;
 
 static FORMAT: &'static str =
     "Uri: {uri}, Method: {method}, Status: {status}, Duration: {response-time}, Time: {request-time}";

@@ -1,11 +1,11 @@
 //! Formatting helpers for the logger middleware.
 
 use std::default::Default;
-use std::str::Chars;
-use std::iter::Peekable;
 use std::fmt::Formatter;
+use std::iter::Peekable;
+use std::str::Chars;
 
-use self::FormatText::{Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
+use self::FormatText::{Method, RemoteAddr, RequestTime, ResponseTime, Status, URI};
 
 /// A formatting style for the `Logger`, consisting of multiple
 /// `FormatText`s concatenated into one line.
@@ -31,7 +31,6 @@ impl Format {
     ///
     /// Returns `None` if the format string syntax is incorrect.
     pub fn new(s: &str) -> Option<Format> {
-
         let parser = FormatParser::new(s.chars().peekable());
 
         let mut results = Vec::new();
@@ -39,7 +38,7 @@ impl Format {
         for unit in parser {
             match unit {
                 Some(unit) => results.push(unit),
-                None => return None
+                None => return None,
             }
         }
 
@@ -50,18 +49,19 @@ impl Format {
 pub trait ContextDisplay<'a> {
     type Item;
     type Display: fmt::Display;
-    fn display_with(&'a self,
-                    render: &'a dyn Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>)
-                    -> Self::Display;
+    fn display_with(
+        &'a self,
+        render: &'a dyn Fn(&mut Formatter, &Self::Item) -> Result<(), fmt::Error>,
+    ) -> Self::Display;
 }
-
 
 impl<'a> ContextDisplay<'a> for Format {
     type Item = FormatText;
     type Display = FormatDisplay<'a>;
-    fn display_with(&'a self,
-                    render: &'a dyn Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>)
-                    -> FormatDisplay<'a> {
+    fn display_with(
+        &'a self,
+        render: &'a dyn Fn(&mut Formatter, &FormatText) -> Result<(), fmt::Error>,
+    ) -> FormatDisplay<'a> {
         FormatDisplay {
             format: self,
             render: render,
@@ -76,7 +76,7 @@ struct FormatParser<'a> {
     // A reusable buffer for parsing style attributes.
     object_buffer: String,
 
-    finished: bool
+    finished: bool,
 }
 
 impl<'a> FormatParser<'a> {
@@ -87,7 +87,7 @@ impl<'a> FormatParser<'a> {
             // No attributes are longer than 14 characters, so we can avoid reallocating.
             object_buffer: String::with_capacity(14),
 
-            finished: false
+            finished: false,
         }
     }
 }
@@ -98,7 +98,9 @@ impl<'a> Iterator for FormatParser<'a> {
 
     fn next(&mut self) -> Option<Option<FormatText>> {
         // If the parser has been cancelled or errored for some reason.
-        if self.finished { return None }
+        if self.finished {
+            return None;
+        }
 
         // Try to parse a new FormatText.
         match self.chars.next() {
@@ -119,7 +121,7 @@ impl<'a> Iterator for FormatParser<'a> {
                     match chr.unwrap() {
                         // Finished parsing, parse buffer.
                         '}' => break,
-                        c => self.object_buffer.push(c.clone())
+                        c => self.object_buffer.push(c.clone()),
                     }
 
                     chr = self.chars.next();
@@ -152,15 +154,13 @@ impl<'a> Iterator for FormatParser<'a> {
                         // Done parsing.
                         Some(&'{') | None => return Some(Some(FormatText::Str(buffer))),
 
-                        Some(_) => {
-                            buffer.push(self.chars.next().unwrap())
-                        }
+                        Some(_) => buffer.push(self.chars.next().unwrap()),
                     }
                 }
-            },
+            }
 
             // Reached end of the format string.
-            None => None
+            None => None,
         }
     }
 }
@@ -176,9 +176,8 @@ pub enum FormatText {
     Status,
     ResponseTime,
     RemoteAddr,
-    RequestTime
+    RequestTime,
 }
-
 
 pub struct FormatDisplay<'a> {
     format: &'a Format,

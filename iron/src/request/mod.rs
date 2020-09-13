@@ -124,7 +124,7 @@ impl Request {
                 if let Some(query) = query {
                     format!("{}://{}{}?{}", protocol.name(), host, path, query)
                 } else {
-                    format!("{}://{}{}", protocol.name(), host, path)  
+                    format!("{}://{}{}", protocol.name(), host, path)
                 }
             };
 

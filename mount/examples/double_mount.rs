@@ -1,13 +1,13 @@
 extern crate iron;
 extern crate mount;
 
-use iron::{Iron, Request, Response, IronResult, StatusCode};
+use iron::{Iron, IronResult, Request, Response, StatusCode};
 use mount::{Mount, OriginalUrl};
 
 fn level_two(req: &mut Request) -> IronResult<Response> {
     match req.extensions.get::<OriginalUrl>() {
         Some(url) => println!("Original URL: {}", url),
-        None => println!("Error: No original URL found.")
+        None => println!("Error: No original URL found."),
     }
     Ok(Response::with((StatusCode::OK, "Welcome to Level 2.")))
 }
@@ -20,4 +20,3 @@ fn main() {
 
     Iron::new(first).http("localhost:3000");
 }
-

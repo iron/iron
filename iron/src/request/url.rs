@@ -43,10 +43,7 @@ impl Url {
     }
 
     /// Create a `rust-url` `Url` from a `Url`.
-    #[deprecated(
-        since = "0.4.1",
-        note = "use `into` from the `Into` trait instead"
-    )]
+    #[deprecated(since = "0.4.1", note = "use `into` from the `Into` trait instead")]
     pub fn into_generic_url(self) -> url::Url {
         self.generic_url
     }
@@ -175,18 +172,14 @@ mod test {
 
     #[test]
     fn test_empty_username() {
-        assert!(
-            Url::parse("http://@example.com")
-                .unwrap()
-                .username()
-                .is_none()
-        );
-        assert!(
-            Url::parse("http://:password@example.com")
-                .unwrap()
-                .username()
-                .is_none()
-        );
+        assert!(Url::parse("http://@example.com")
+            .unwrap()
+            .username()
+            .is_none());
+        assert!(Url::parse("http://:password@example.com")
+            .unwrap()
+            .username()
+            .is_none());
     }
 
     #[test]
@@ -200,18 +193,14 @@ mod test {
 
     #[test]
     fn test_empty_password() {
-        assert!(
-            Url::parse("http://michael@example.com")
-                .unwrap()
-                .password()
-                .is_none()
-        );
-        assert!(
-            Url::parse("http://:@example.com")
-                .unwrap()
-                .password()
-                .is_none()
-        );
+        assert!(Url::parse("http://michael@example.com")
+            .unwrap()
+            .password()
+            .is_none());
+        assert!(Url::parse("http://:@example.com")
+            .unwrap()
+            .password()
+            .is_none());
     }
 
     #[test]

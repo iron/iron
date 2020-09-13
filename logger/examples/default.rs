@@ -1,7 +1,7 @@
 //! Example of a simple logger
+extern crate env_logger;
 extern crate iron;
 extern crate logger;
-extern crate env_logger;
 
 use iron::prelude::*;
 use logger::Logger;

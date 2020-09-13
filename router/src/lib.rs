@@ -7,10 +7,10 @@ extern crate iron;
 extern crate route_recognizer as recognizer;
 extern crate url;
 
-pub use router::{Router, NoRoute, TrailingSlash};
 pub use recognizer::Params;
+pub use router::{NoRoute, Router, TrailingSlash};
 pub use url_for::url_for;
 
-mod router;
 mod macros;
+mod router;
 mod url_for;

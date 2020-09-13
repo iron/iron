@@ -1,11 +1,11 @@
 extern crate iron;
 extern crate router;
 
-use iron::{Handler, StatusCode, IronResult, Response, Request, Iron};
+use iron::{Handler, Iron, IronResult, Request, Response, StatusCode};
 use router::Router;
 
 struct MessageHandler {
-    message: String
+    message: String,
 }
 
 impl Handler for MessageHandler {
@@ -16,7 +16,7 @@ impl Handler for MessageHandler {
 
 fn main() {
     let handler = MessageHandler {
-        message: "You've found the index page!".to_string()
+        message: "You've found the index page!".to_string(),
     };
 
     let mut router = Router::new();

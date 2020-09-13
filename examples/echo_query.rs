@@ -10,7 +10,10 @@ use iron::StatusCode;
 fn echo_request(request: &mut Request) -> IronResult<Response> {
     match request.url.query() {
         Some(ref query) => Ok(Response::with((StatusCode::OK, query.clone()))),
-        None => Ok(Response::with((StatusCode::INTERNAL_SERVER_ERROR, "No query string given"))),
+        None => Ok(Response::with((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "No query string given",
+        ))),
     }
 }
 

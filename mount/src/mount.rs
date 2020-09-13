@@ -1,15 +1,17 @@
-use std::error::Error;
-use std::path::{Path, Component};
-use iron::prelude::*;
 use iron::middleware::Handler;
-use iron::{StatusCode, Url, typemap};
+use iron::prelude::*;
+use iron::{typemap, StatusCode, Url};
 use sequence_trie::SequenceTrie;
+use std::error::Error;
 use std::fmt;
+use std::path::{Component, Path};
 
 /// Exposes the original, unmodified path to be stored in `Request::extensions`.
 #[derive(Copy, Clone)]
 pub struct OriginalUrl;
-impl typemap::Key for OriginalUrl { type Value = Url; }
+impl typemap::Key for OriginalUrl {
+    type Value = Url;
+}
 
 /// `Mount` is a simple mounting middleware.
 ///
@@ -23,12 +25,12 @@ impl typemap::Key for OriginalUrl { type Value = Url; }
 /// Mounted handlers may also access the *original* URL by requesting the `OriginalUrl` key
 /// from `Request::extensions`.
 pub struct Mount {
-    inner: SequenceTrie<String, Match>
+    inner: SequenceTrie<String, Match>,
 }
 
 struct Match {
     handler: Box<dyn Handler>,
-    length: usize
+    length: usize,
 }
 
 /// The error returned by `Mount` when a request doesn't match any mounted handlers.
@@ -47,7 +49,7 @@ impl Mount {
     /// Creates a new instance of `Mount`.
     pub fn new() -> Mount {
         Mount {
-            inner: SequenceTrie::new()
+            inner: SequenceTrie::new(),
         }
     }
 
@@ -59,19 +61,23 @@ impl Mount {
     /// Existing handlers on the same route will be overwritten.
     pub fn mount<H: Handler>(&mut self, route: &str, handler: H) -> &mut Mount {
         // Parse the route into a list of strings. The unwrap is safe because strs are UTF-8.
-        let key: Vec<&str> = Path::new(route).components().flat_map(|c|
-            match c {
+        let key: Vec<&str> = Path::new(route)
+            .components()
+            .flat_map(|c| match c {
                 Component::RootDir => None,
-                c => Some(c.as_os_str().to_str().unwrap())
-            }
-        ).collect();
+                c => Some(c.as_os_str().to_str().unwrap()),
+            })
+            .collect();
 
         // Insert a match struct into the trie.
         let match_length = key.len();
-        self.inner.insert(key, Match {
-            handler: Box::new(handler) as Box<dyn Handler>,
-            length: match_length,
-        });
+        self.inner.insert(
+            key,
+            Match {
+                handler: Box::new(handler) as Box<dyn Handler>,
+                length: match_length,
+            },
+        );
         self
     }
 }
@@ -89,7 +95,7 @@ impl Handler for Mount {
             // ending in "".
             let key = match path.last() {
                 Some(s) if s.is_empty() => &path[..path.len() - 1],
-                _ => &path
+                _ => &path,
             };
 
             let key: Vec<_> = key.into_iter().map(|s| String::from(*s)).collect();
@@ -97,7 +103,7 @@ impl Handler for Mount {
             // Search the Trie for the nearest most specific match.
             match self.inner.get_ancestor(&key) {
                 Some(matched) => matched,
-                None => return Err(IronError::new(NoMatch, StatusCode::NOT_FOUND))
+                None => return Err(IronError::new(NoMatch, StatusCode::NOT_FOUND)),
             }
         };
 
@@ -121,7 +127,7 @@ impl Handler for Mount {
         // Reverse the URL munging, for future middleware.
         req.url = match req.extensions.get::<OriginalUrl>() {
             Some(original) => original.clone(),
-            None => panic!("OriginalUrl unexpectedly removed from req.extensions.")
+            None => panic!("OriginalUrl unexpectedly removed from req.extensions."),
         };
 
         // If this mount middleware is the outermost mount middleware,
@@ -133,4 +139,3 @@ impl Handler for Mount {
         res
     }
 }
-

@@ -237,8 +237,10 @@ impl Chain {
         B: BeforeMiddleware,
     {
         let (before, after) = link;
-        self.befores.push(Box::new(before) as Box<dyn BeforeMiddleware>);
-        self.afters.push(Box::new(after) as Box<dyn AfterMiddleware>);
+        self.befores
+            .push(Box::new(before) as Box<dyn BeforeMiddleware>);
+        self.afters
+            .push(Box::new(after) as Box<dyn AfterMiddleware>);
         self
     }
 
@@ -248,7 +250,8 @@ impl Chain {
     where
         B: BeforeMiddleware,
     {
-        self.befores.push(Box::new(before) as Box<dyn BeforeMiddleware>);
+        self.befores
+            .push(Box::new(before) as Box<dyn BeforeMiddleware>);
         self
     }
 
@@ -258,7 +261,8 @@ impl Chain {
     where
         A: AfterMiddleware,
     {
-        self.afters.push(Box::new(after) as Box<dyn AfterMiddleware>);
+        self.afters
+            .push(Box::new(after) as Box<dyn AfterMiddleware>);
         self
     }
 
