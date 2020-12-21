@@ -14,8 +14,9 @@ extern crate iron;
 extern crate time;
 
 use iron::prelude::*;
-use iron::{BeforeMiddleware, AfterMiddleware, typemap};
-use time::precise_time_ns;
+use iron::{typemap, AfterMiddleware, BeforeMiddleware};
+use time::{OffsetDateTime};
+use std::{thread};
 
 struct ResponseTime;
 
@@ -23,20 +24,23 @@ impl typemap::Key for ResponseTime { type Value = u64; }
 
 impl BeforeMiddleware for ResponseTime {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        req.extensions.insert::<ResponseTime>(precise_time_ns());
+        let t = OffsetDateTime::now_utc() - OffsetDateTime::unix_epoch();
+        req.extensions.insert::<ResponseTime>(t.whole_milliseconds() as u64);
         Ok(())
     }
 }
-
 impl AfterMiddleware for ResponseTime {
     fn after(&self, req: &mut Request, res: Response) -> IronResult<Response> {
-        let delta = precise_time_ns() - *req.extensions.get::<ResponseTime>().unwrap();
-        println!("Request took: {} ms", (delta as f64) / 1000000.0);
+        let t = OffsetDateTime::now_utc() - OffsetDateTime::unix_epoch();
+        let delta = t.whole_milliseconds() as u64 - *req.extensions.get::<ResponseTime>().unwrap();
+        println!("Request took: {} ms", (delta as f64));
         Ok(res)
     }
 }
 
 fn hello_world(_: &mut Request) -> IronResult<Response> {
+    let ten_millis = std::time::Duration::from_millis(10);
+    thread::sleep(ten_millis);
     Ok(Response::with((iron::status::Ok, "Hello World")))
 }
 
