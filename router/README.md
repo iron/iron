@@ -50,9 +50,9 @@ router = "*"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://ironframework.io/doc/router)
+## [Documentation](https://docs.rs/router)
 
-Along with the [online documentation](http://ironframework.io/doc/router),
+Along with the [online documentation](https://docs.rs/router),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)

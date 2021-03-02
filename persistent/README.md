@@ -20,9 +20,9 @@ persistent = "x.y.z"  # Insert current version here
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://ironframework.io/doc/persistent)
+## [Documentation](https://docs.rs/persistent)
 
-Along with the [online documentation](http://ironframework.io/doc/persistent),
+Along with the [online documentation](https://docs.rs/persistent),
 you can build a local copy with `make doc`.
 
 ## [Examples](/examples)

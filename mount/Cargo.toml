@@ -5,7 +5,7 @@ authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.4.0"
 description = "Mounting middleware for Iron."
 repository = "https://github.com/iron/mount"
-documentation = "http://ironframework.io/doc/mount/index.html"
+documentation = "https://docs.rs/mount"
 license = "MIT"
 keywords = ["iron", "web", "handler", "routing"]
 

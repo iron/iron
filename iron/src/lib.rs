@@ -1,7 +1,7 @@
 #![doc(
     html_logo_url = "https://avatars0.githubusercontent.com/u/7853871?s=128",
     html_favicon_url = "https://avatars0.githubusercontent.com/u/7853871?s=256",
-    html_root_url = "http://ironframework.io/core/iron"
+    html_root_url = "https://docs.rs/iron/0.6"
 )]
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
