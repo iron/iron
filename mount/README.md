@@ -58,9 +58,9 @@ git = "https://github.com/iron/mount.git"
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
 
-## [Documentation](http://ironframework.io/doc/mount/)
+## [Documentation](https://docs.rs/mount)
 
-Along with the [online documentation](http://ironframework.io/doc/mount),
+Along with the [online documentation](https://docs.rs/mount),
 you can build a local copy with `cargo doc`.
 
 ## [Examples](/examples)

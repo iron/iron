@@ -159,9 +159,9 @@ If you're using `Cargo`, just add Iron to your `Cargo.toml`:
 version = "*"
 ```
 
-## [Documentation](http://ironframework.io/doc/iron)
+## [Documentation](https://docs.rs/iron)
 
-The documentation is hosted [online](http://ironframework.io/doc/iron) and
+The documentation is hosted [online](https://docs.rs/iron) and
 auto-updated with each successful release. You can also use `cargo doc` to
 build a local copy.
 

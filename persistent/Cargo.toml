@@ -5,7 +5,7 @@ authors = ["Jonathan Reem <jonathan.reem@gmail.com>"]
 version = "0.4.0"
 description = "A set of middleware for sharing server-global data in Iron."
 repository = "https://github.com/iron/persistent"
-documentation = "http://ironframework.io/doc/persistent/index.html"
+documentation = "https://docs.rs/persistent"
 license = "MIT"
 keywords = ["iron", "web", "persistence", "sharing", "global"]
 

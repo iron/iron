@@ -6,7 +6,7 @@ authors = [
     "Patrick Tran <patrick.tran06@gmail.com>",
 ]
 description = "Extensible, Concurrency Focused Web Development in Rust."
-documentation = "http://ironframework.io/doc/iron/"
+documentation = "https://docs.rs/iron"
 license = "MIT"
 name = "iron"
 readme = "../README.md"
