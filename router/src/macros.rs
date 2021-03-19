@@ -60,12 +60,14 @@ macro_rules! url_for {
 
 #[cfg(test)]
 mod tests {
-    use iron::{Response, Request, IronResult};
+    use iron::{IronResult, Request, Response};
 
     //simple test to check that all methods expand without error
     #[test]
     fn methods() {
-        fn handler(_: &mut Request) -> IronResult<Response> {Ok(Response::new())}
+        fn handler(_: &mut Request) -> IronResult<Response> {
+            Ok(Response::new())
+        }
         let _ = router!(a: get     "/foo" => handler,
                         b: post    "/bar/" => handler,
                         c: put     "/bar/baz" => handler,

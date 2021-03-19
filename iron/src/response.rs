@@ -125,7 +125,7 @@ impl Response {
 
         let out = match (self.body, req_method) {
             (Some(body), _) => write_with_body(http_res, body),
-            (None, Method::HEAD) => Ok( () ),
+            (None, Method::HEAD) => Ok(()),
             (None, _) => {
                 http_res.headers_mut().insert(
                     headers::CONTENT_LENGTH,

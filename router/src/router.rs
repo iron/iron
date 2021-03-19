@@ -3,14 +3,13 @@ use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
 
-use iron::{Request, Response, Handler, IronResult, IronError};
-use iron::{StatusCode, method, Method, headers};
-use iron::typemap::Key;
 use iron::modifiers::Redirect;
+use iron::typemap::Key;
+use iron::{headers, method, Method, StatusCode};
+use iron::{Handler, IronError, IronResult, Request, Response};
 
 use recognizer::Router as Recognizer;
 use recognizer::{Match, Params};
-
 
 pub struct RouterInner {
     // The routers, specialized by method.
@@ -18,13 +17,13 @@ pub struct RouterInner {
     // Routes that accept any method.
     pub wildcard: Recognizer<Box<dyn Handler>>,
     // Used in URL generation.
-    pub route_ids: HashMap<String, String>
+    pub route_ids: HashMap<String, String>,
 }
 
 /// `Router` provides an interface for creating complex routes as middleware
 /// for the Iron framework.
 pub struct Router {
-    inner: Arc<RouterInner>
+    inner: Arc<RouterInner>,
 }
 
 impl Router {
@@ -39,8 +38,8 @@ impl Router {
             inner: Arc::new(RouterInner {
                 routers: HashMap::new(),
                 wildcard: Recognizer::new(),
-                route_ids: HashMap::new()
-            })
+                route_ids: HashMap::new(),
+            }),
         }
     }
 
@@ -71,10 +70,17 @@ impl Router {
     /// a `Chain`, a `Handler`, which contains an authorization middleware and
     /// a controller function, so that you can confirm that the request is
     /// authorized for this route before handling it.
-    pub fn route<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, method: method::Method, glob: S, handler: H, route_id: I) -> &mut Router {
-        self.mut_inner().routers
+    pub fn route<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        method: method::Method,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
+        self.mut_inner()
+            .routers
             .entry(method)
-            .or_insert(Recognizer::new())
+            .or_insert_with(Recognizer::new)
             .add(glob.as_ref(), Box::new(handler));
         self.route_id(route_id.as_ref(), glob.as_ref());
         self
@@ -82,79 +88,128 @@ impl Router {
 
     fn route_id(&mut self, id: &str, glob: &str) {
         let inner = self.mut_inner();
-        let ref mut route_ids = inner.route_ids;
+        let route_ids = &mut inner.route_ids;
 
         match route_ids.get(id) {
             Some(other_glob) if glob != other_glob => panic!("Duplicate route_id: {}", id),
-            _ => ()
+            _ => (),
         };
 
         route_ids.insert(id.to_owned(), glob.to_owned());
     }
 
     /// Like route, but specialized to the `Get` method.
-    pub fn get<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn get<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::GET, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Post` method.
-    pub fn post<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn post<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::POST, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Put` method.
-    pub fn put<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn put<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::PUT, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Delete` method.
-    pub fn delete<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn delete<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::DELETE, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Head` method.
-    pub fn head<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn head<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::HEAD, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Patch` method.
-    pub fn patch<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn patch<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::PATCH, glob, handler, route_id)
     }
 
     /// Like route, but specialized to the `Options` method.
-    pub fn options<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
+    pub fn options<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
         self.route(Method::OPTIONS, glob, handler, route_id)
     }
 
     /// Route will match any method, including gibberish.
     /// In case of ambiguity, handlers specific to methods will be preferred.
-    pub fn any<S: AsRef<str>, H: Handler, I: AsRef<str>>(&mut self, glob: S, handler: H, route_id: I) -> &mut Router {
-        self.mut_inner().wildcard.add(glob.as_ref(), Box::new(handler));
+    pub fn any<S: AsRef<str>, H: Handler, I: AsRef<str>>(
+        &mut self,
+        glob: S,
+        handler: H,
+        route_id: I,
+    ) -> &mut Router {
+        self.mut_inner()
+            .wildcard
+            .add(glob.as_ref(), Box::new(handler));
         self.route_id(route_id.as_ref(), glob.as_ref());
         self
     }
 
-    fn recognize(&self, method: &method::Method, path: &str)
-                     -> Option<Match<&Box<dyn Handler>>> {
-        self.inner.routers.get(method).and_then(|router| router.recognize(path).ok())
-            .or(self.inner.wildcard.recognize(path).ok())
+    fn recognize(&self, method: &method::Method, path: &str) -> Option<Match<&Box<dyn Handler>>> {
+        self.inner
+            .routers
+            .get(method)
+            .and_then(|router| router.recognize(path).ok())
+            .or_else(|| self.inner.wildcard.recognize(path).ok())
     }
 
     fn handle_options(&self, path: &str) -> Response {
-        static METHODS: &'static [method::Method] =
-            &[Method::GET, Method::POST, Method::PUT,
-              Method::DELETE, Method::HEAD, Method::PATCH];
+        static METHODS: &[method::Method] = &[
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::HEAD,
+            Method::PATCH,
+        ];
 
         // Get all the available methods and return them.
         let mut options = vec![];
 
         for method in METHODS.iter() {
-            self.inner.routers.get(method).map(|router| {
-                if let Some(_) = router.recognize(path).ok() {
+            if let Some(router) = self.inner.routers.get(method) {
+                if router.recognize(path).is_ok() {
                     options.push(method.clone());
                 }
-            });
+            };
         }
         // If GET is there, HEAD is also there.
         if options.contains(&Method::GET) && !options.contains(&Method::HEAD) {
@@ -163,13 +218,14 @@ impl Router {
 
         let mut res = Response::with(StatusCode::OK);
         for option in options {
-            res.headers.append(headers::ALLOW, option.as_str().parse().unwrap());
+            res.headers
+                .append(headers::ALLOW, option.as_str().parse().unwrap());
         }
         res
     }
 
     // Tests for a match by adding or removing a trailing slash.
-    fn redirect_slash(&self, req : &Request) -> Option<IronError> {
+    fn redirect_slash(&self, req: &Request) -> Option<IronError> {
         let mut url = req.url.clone();
         let mut path = url.path().join("/");
 
@@ -188,10 +244,10 @@ impl Router {
             }
         }
 
-        self.recognize(&req.method, &path).and(
-            Some(IronError::new(TrailingSlash,
-                                (StatusCode::MOVED_PERMANENTLY, Redirect(url))))
-        )
+        self.recognize(&req.method, &path).and(Some(IronError::new(
+            TrailingSlash,
+            (StatusCode::MOVED_PERMANENTLY, Redirect(url)),
+        )))
     }
 
     fn handle_method(&self, req: &mut Request, path: &str) -> Option<IronResult<Response>> {
@@ -199,31 +255,41 @@ impl Router {
             req.extensions.insert::<Router>(matched.params);
             req.extensions.insert::<RouterInner>(self.inner.clone());
             Some(matched.handler.handle(req))
-        } else { self.redirect_slash(req).and_then(|redirect| Some(Err(redirect))) }
+        } else {
+            self.redirect_slash(req).map(Err)
+        }
     }
 }
 
-impl Key for Router { type Value = Params; }
+impl Default for Router {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
-impl Key for RouterInner { type Value = Arc<RouterInner>; }
+impl Key for Router {
+    type Value = Params;
+}
+
+impl Key for RouterInner {
+    type Value = Arc<RouterInner>;
+}
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
         let path = req.url.path().join("/");
 
-        self.handle_method(req, &path).unwrap_or_else(||
-            match req.method {
+        self.handle_method(req, &path)
+            .unwrap_or_else(|| match req.method {
                 Method::OPTIONS => Ok(self.handle_options(&path)),
                 // For HEAD, fall back to GET. Hyper ensures no response body is written.
                 Method::HEAD => {
                     req.method = Method::GET;
-                    self.handle_method(req, &path).unwrap_or(
-                        Err(IronError::new(NoRoute, StatusCode::NOT_FOUND))
-                    )
+                    self.handle_method(req, &path)
+                        .unwrap_or_else(|| Err(IronError::new(NoRoute, StatusCode::NOT_FOUND)))
                 }
-                _ => Err(IronError::new(NoRoute, StatusCode::NOT_FOUND))
-            }
-        )
+                _ => Err(IronError::new(NoRoute, StatusCode::NOT_FOUND)),
+            })
     }
 }
 
@@ -238,9 +304,7 @@ impl fmt::Display for NoRoute {
     }
 }
 
-impl Error for NoRoute {
-    fn description(&self) -> &str { "No Route" }
-}
+impl Error for NoRoute {}
 
 /// The error thrown by router if a request was redirected
 /// by adding or removing a trailing slash.
@@ -253,23 +317,28 @@ impl fmt::Display for TrailingSlash {
     }
 }
 
-impl Error for TrailingSlash {
-    fn description(&self) -> &str { "Trailing Slash" }
-}
+impl Error for TrailingSlash {}
 
 #[cfg(test)]
 mod test {
     use super::Router;
-    use iron::{headers, method, Method, StatusCode, Request, Response};
+    use iron::{headers, method, Method, Request, Response, StatusCode};
 
     #[test]
     fn test_handle_options_post() {
         let mut router = Router::new();
-        router.post("/", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
+        router.post(
+            "/",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
         let resp = router.handle_options("/");
-        let headers : Vec<method::Method> = resp.headers.get_all(headers::ALLOW).into_iter().map(|s| s.to_str().unwrap().parse().unwrap()).collect();
+        let headers: Vec<method::Method> = resp
+            .headers
+            .get_all(headers::ALLOW)
+            .into_iter()
+            .map(|s| s.to_str().unwrap().parse().unwrap())
+            .collect();
         let expected = vec![Method::POST];
         assert_eq!(expected, headers);
     }
@@ -277,11 +346,18 @@ mod test {
     #[test]
     fn test_handle_options_get_head() {
         let mut router = Router::new();
-        router.get("/", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
+        router.get(
+            "/",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
         let resp = router.handle_options("/");
-        let headers : Vec<method::Method> = resp.headers.get_all(headers::ALLOW).into_iter().map(|s| s.to_str().unwrap().parse().unwrap()).collect();
+        let headers: Vec<method::Method> = resp
+            .headers
+            .get_all(headers::ALLOW)
+            .into_iter()
+            .map(|s| s.to_str().unwrap().parse().unwrap())
+            .collect();
         let expected = vec![method::Method::GET, method::Method::HEAD];
         assert_eq!(expected, headers);
     }
@@ -289,18 +365,26 @@ mod test {
     #[test]
     fn test_handle_any_ok() {
         let mut router = Router::new();
-        router.post("/post", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
-        router.any("/post", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
-        router.put("/post", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
-        router.any("/get", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "any");
+        router.post(
+            "/post",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
+        router.any(
+            "/post",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
+        router.put(
+            "/post",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
+        router.any(
+            "/get",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "any",
+        );
 
         assert!(router.recognize(&Method::GET, "/post").is_some());
         assert!(router.recognize(&Method::GET, "/get").is_some());
@@ -309,12 +393,16 @@ mod test {
     #[test]
     fn test_request() {
         let mut router = Router::new();
-        router.post("/post", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
-        router.get("/post", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
+        router.post(
+            "/post",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
+        router.get(
+            "/post",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
 
         assert!(router.recognize(&Method::POST, "/post").is_some());
         assert!(router.recognize(&Method::GET, "/post").is_some());
@@ -325,9 +413,11 @@ mod test {
     #[test]
     fn test_not_found() {
         let mut router = Router::new();
-        router.put("/put", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "");
+        router.put(
+            "/put",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "",
+        );
         assert!(router.recognize(&Method::PATCH, "/patch").is_none());
     }
 
@@ -335,19 +425,31 @@ mod test {
     #[should_panic]
     fn test_same_route_id() {
         let mut router = Router::new();
-        router.put("/put", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "my_route_id");
-        router.get("/get", |_: &mut Request| {
-            Ok(Response::with((StatusCode::OK, "")))
-        }, "my_route_id");
+        router.put(
+            "/put",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "my_route_id",
+        );
+        router.get(
+            "/get",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "my_route_id",
+        );
     }
 
     #[test]
     fn test_wildcard_regression() {
         let mut router = Router::new();
-        router.options("*", |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))), "id1");
-        router.put("/upload/*filename", |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))), "id2");
+        router.options(
+            "*",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "id1",
+        );
+        router.put(
+            "/upload/*filename",
+            |_: &mut Request| Ok(Response::with((StatusCode::OK, ""))),
+            "id2",
+        );
         assert!(router.recognize(&Method::OPTIONS, "/foo").is_some());
         assert!(router.recognize(&Method::PUT, "/foo").is_none());
         assert!(router.recognize(&Method::PUT, "/upload/foo").is_some());

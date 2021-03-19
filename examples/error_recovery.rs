@@ -28,11 +28,7 @@ impl fmt::Display for StringError {
     }
 }
 
-impl Error for StringError {
-    fn description(&self) -> &str {
-        &*self.0
-    }
-}
+impl Error for StringError {}
 
 impl Handler for HelloWorldHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {

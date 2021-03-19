@@ -204,7 +204,9 @@ impl Modifier<Response> for RedirectRaw {
 }
 
 fn mime_for_path(path: &Path) -> Mime {
-    mime_guess::from_path(path).first().unwrap_or(mime::TEXT_PLAIN)
+    mime_guess::from_path(path)
+        .first()
+        .unwrap_or(mime::TEXT_PLAIN)
 }
 
 #[cfg(test)]

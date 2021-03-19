@@ -6,8 +6,8 @@ extern crate router;
 // To use, go to http://localhost:3000/test and see output "test"
 // Or, go to http://localhost:3000 to see a default "OK"
 
-use iron::{Iron, Request, Response, IronResult, StatusCode};
-use router::{Router};
+use iron::{Iron, IronResult, Request, Response, StatusCode};
+use router::Router;
 
 fn main() {
     let router = router!(root: get "/" => handler, query: get "/:query" => query_handler);
@@ -19,8 +19,12 @@ fn main() {
     }
 
     fn query_handler(req: &mut Request) -> IronResult<Response> {
-        let ref query = req.extensions.get::<Router>()
-            .unwrap().find("query").unwrap_or("/");
+        let ref query = req
+            .extensions
+            .get::<Router>()
+            .unwrap()
+            .find("query")
+            .unwrap_or("/");
         Ok(Response::with((StatusCode::OK, *query)))
     }
 }

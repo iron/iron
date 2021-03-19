@@ -31,5 +31,6 @@ fn main() {
             }
             _ => Response::with(StatusCode::BAD_REQUEST),
         })
-    }).http("localhost:3000");
+    })
+    .http("localhost:3000");
 }

@@ -12,8 +12,14 @@ use router::RouterInner;
 /// `params` will be inserted as route parameters if fitting, the rest will be appended as query
 /// parameters.
 pub fn url_for(request: &Request, route_id: &str, params: HashMap<String, String>) -> ::iron::Url {
-    let inner = request.extensions.get::<RouterInner>().expect("Couldn\'t find router set up properly.");
-    let glob = inner.route_ids.get(route_id).expect("No route with that ID");
+    let inner = request
+        .extensions
+        .get::<RouterInner>()
+        .expect("Couldn\'t find router set up properly.");
+    let glob = inner
+        .route_ids
+        .get(route_id)
+        .expect("No route with that ID");
 
     let mut url = request.url.clone();
     url_for_impl(url.as_mut(), glob, params);
@@ -25,11 +31,13 @@ fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) 
         let mut url_path_segments = url.path_segments_mut().unwrap();
         url_path_segments.clear();
         for path_segment in glob.split('/') {
-            if path_segment.len() > 1 && (path_segment.starts_with(':') || path_segment.starts_with('*')) {
+            if path_segment.len() > 1
+                && (path_segment.starts_with(':') || path_segment.starts_with('*'))
+            {
                 let key = &path_segment[1..];
                 match params.remove(key) {
                     Some(x) => url_path_segments.push(&x),
-                    None => panic!("No value for key {}", key)
+                    None => panic!("No value for key {}", key),
                 };
             } else {
                 url_path_segments.push(path_segment);
@@ -40,8 +48,7 @@ fn url_for_impl(url: &mut Url, glob: &str, mut params: HashMap<String, String>) 
     // Now add on the remaining parameters that had no path match.
     url.set_query(None);
     if !params.is_empty() {
-        url.query_pairs_mut()
-            .extend_pairs(params.into_iter());
+        url.query_pairs_mut().extend_pairs(params.into_iter());
     }
 
     url.set_fragment(None);

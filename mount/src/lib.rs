@@ -7,6 +7,6 @@
 extern crate iron;
 extern crate sequence_trie;
 
-pub use mount::{Mount, OriginalUrl, NoMatch};
+pub use mount::{Mount, NoMatch, OriginalUrl};
 
 mod mount;

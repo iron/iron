@@ -3,13 +3,14 @@
 //! Request logging middleware for Iron
 
 extern crate iron;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate time;
 
-use iron::{AfterMiddleware, BeforeMiddleware, IronResult, IronError, Request, Response};
 use iron::typemap::Key;
+use iron::{AfterMiddleware, BeforeMiddleware, IronError, IronResult, Request, Response};
 
-use format::FormatText::{Str, Method, URI, Status, ResponseTime, RemoteAddr, RequestTime};
+use format::FormatText::{Method, RemoteAddr, RequestTime, ResponseTime, Status, Str, URI};
 use format::{ContextDisplay, FormatText};
 
 use std::fmt::{Display, Formatter};
@@ -41,12 +42,19 @@ impl Logger {
     /// ```
     pub fn new(format: Option<Format>) -> (Logger, Logger) {
         let format = format.unwrap_or_default();
-        (Logger { format: format.clone() }, Logger { format: format })
+        (
+            Logger {
+                format: format.clone(),
+            },
+            Logger { format },
+        )
     }
 }
 
 struct StartTime;
-impl Key for StartTime { type Value = time::Tm; }
+impl Key for StartTime {
+    type Value = time::Tm;
+}
 
 impl Logger {
     fn initialise(&self, req: &mut Request) {
@@ -60,25 +68,20 @@ impl Logger {
         let response_time_ms = (response_time.num_nanoseconds().unwrap_or(0) as f64) / 1000000.0;
 
         {
-            let render = |fmt: &mut Formatter, text: &FormatText| {
-                match *text {
-                    Str(ref string) => fmt.write_str(string),
-                    Method => req.method.fmt(fmt),
-                    URI => req.url.fmt(fmt),
-                    Status => {
-                        match res.status {
-                            Some(status) => status.fmt(fmt),
-                            None => fmt.write_str("<missing status code>"),
-                        }
-                    }
-                    ResponseTime => fmt.write_fmt(format_args!("{} ms", response_time_ms)),
-                    RemoteAddr => req.remote_addr.fmt(fmt),
-                    RequestTime => {
-                        entry_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ%z")
-                            .unwrap()
-                            .fmt(fmt)
-                    }
-                }
+            let render = |fmt: &mut Formatter, text: &FormatText| match *text {
+                Str(ref string) => fmt.write_str(string),
+                Method => req.method.fmt(fmt),
+                URI => req.url.fmt(fmt),
+                Status => match res.status {
+                    Some(status) => status.fmt(fmt),
+                    None => fmt.write_str("<missing status code>"),
+                },
+                ResponseTime => fmt.write_fmt(format_args!("{} ms", response_time_ms)),
+                RemoteAddr => req.remote_addr.fmt(fmt),
+                RequestTime => entry_time
+                    .strftime("%Y-%m-%dT%H:%M:%S.%fZ%z")
+                    .unwrap()
+                    .fmt(fmt),
             };
 
             info!("{}", self.format.display_with(&render));

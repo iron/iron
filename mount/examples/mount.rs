@@ -1,7 +1,7 @@
 extern crate iron;
 extern crate mount;
 
-use iron::{Iron, Request, Response, IronResult, StatusCode};
+use iron::{Iron, IronResult, Request, Response, StatusCode};
 use mount::Mount;
 
 fn send_hello(req: &mut Request) -> IronResult<Response> {

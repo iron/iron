@@ -7,31 +7,27 @@
 extern crate iron;
 extern crate plugin;
 
-use iron::{Request, Response, BeforeMiddleware, AfterMiddleware, IronResult};
 use iron::typemap::Key;
-use std::sync::{Arc, RwLock, Mutex};
-use std::fmt;
-use std::error::Error;
+use iron::{AfterMiddleware, BeforeMiddleware, IronResult, Request, Response};
 use plugin::Plugin;
+use std::error::Error;
+use std::fmt;
+use std::sync::{Arc, Mutex, RwLock};
 
 /// The type that can be returned by `eval` to indicate error.
 #[derive(Clone, Debug)]
 pub enum PersistentError {
     /// The value was not found.
-    NotFound
+    NotFound,
 }
 
-impl Error for PersistentError {
-    fn description(&self) -> &str {
-        match *self {
-            PersistentError::NotFound => "Value not found in extensions."
-        }
-    }
-}
+impl Error for PersistentError {}
 
 impl fmt::Display for PersistentError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        self.description().fmt(f)
+        match *self {
+            PersistentError::NotFound => write!(f, "Value not found in extensions."),
+        }
     }
 }
 
@@ -47,7 +43,9 @@ pub trait PersistentInto<T> {
 }
 
 impl<T> PersistentInto<T> for T {
-    fn persistent_into(self) -> T { self }
+    fn persistent_into(self) -> T {
+        self
+    }
 }
 
 impl<T> PersistentInto<Arc<T>> for T {
@@ -84,7 +82,7 @@ impl<T> PersistentInto<Arc<RwLock<T>>> for T {
 /// `State` also implements `Plugin`, so the data stored within can be
 /// accessed through `request.get::<State<P>>()` as an `Arc<RwLock<P::Value>>`.
 pub struct State<P: Key> {
-    data: Arc<RwLock<P::Value>>
+    data: Arc<RwLock<P::Value>>,
 }
 
 /// Middleware for data that persists between Requests with read-only capabilities.
@@ -99,7 +97,7 @@ pub struct State<P: Key> {
 /// `Read` also implements `Plugin`, so the data stored within can be
 /// accessed through `request.get::<Read<P>>()` as an `Arc<P::Value>`.
 pub struct Read<P: Key> {
-    data: Arc<P::Value>
+    data: Arc<P::Value>,
 }
 
 /// Middleware for data that persists between Requests for data which mostly
@@ -116,108 +114,176 @@ pub struct Read<P: Key> {
 /// `Write` also implements `Plugin`, so the data stored within can be
 /// accessed through `request.get::<Write<P>>()` as an `Arc<Mutex<P::Value>>`.
 pub struct Write<P: Key> {
-    data: Arc<Mutex<P::Value>>
+    data: Arc<Mutex<P::Value>>,
 }
 
-impl<P: Key> Clone for Read<P> where P::Value: Send + Sync {
+impl<P: Key> Clone for Read<P>
+where
+    P::Value: Send + Sync,
+{
     fn clone(&self) -> Read<P> {
-        Read { data: self.data.clone() }
+        Read {
+            data: self.data.clone(),
+        }
     }
 }
 
-impl<P: Key> Clone for State<P> where P::Value: Send + Sync {
+impl<P: Key> Clone for State<P>
+where
+    P::Value: Send + Sync,
+{
     fn clone(&self) -> State<P> {
-        State { data: self.data.clone() }
+        State {
+            data: self.data.clone(),
+        }
     }
 }
 
-impl<P: Key> Clone for Write<P> where P::Value: Send {
+impl<P: Key> Clone for Write<P>
+where
+    P::Value: Send,
+{
     fn clone(&self) -> Write<P> {
-        Write { data: self.data.clone() }
+        Write {
+            data: self.data.clone(),
+        }
     }
 }
 
-impl<P: Key> Key for State<P> where P::Value: 'static {
+impl<P: Key> Key for State<P>
+where
+    P::Value: 'static,
+{
     type Value = Arc<RwLock<P::Value>>;
 }
 
-impl<P: Key> Key for Read<P> where P::Value: 'static {
+impl<P: Key> Key for Read<P>
+where
+    P::Value: 'static,
+{
     type Value = Arc<P::Value>;
 }
 
-impl<P: Key> Key for Write<P> where P::Value: 'static {
+impl<P: Key> Key for Write<P>
+where
+    P::Value: 'static,
+{
     type Value = Arc<Mutex<P::Value>>;
 }
 
-impl<P: Key> Plugin<Request> for State<P> where P::Value: Send + Sync {
+impl<P: Key> Plugin<Request> for State<P>
+where
+    P::Value: Send + Sync,
+{
     type Error = PersistentError;
     fn eval(req: &mut Request) -> Result<Arc<RwLock<P::Value>>, PersistentError> {
-        req.extensions.get::<State<P>>().cloned().ok_or(PersistentError::NotFound)
+        req.extensions
+            .get::<State<P>>()
+            .cloned()
+            .ok_or(PersistentError::NotFound)
     }
 }
 
-impl<P: Key> Plugin<Request> for Read<P> where P::Value: Send + Sync {
+impl<P: Key> Plugin<Request> for Read<P>
+where
+    P::Value: Send + Sync,
+{
     type Error = PersistentError;
     fn eval(req: &mut Request) -> Result<Arc<P::Value>, PersistentError> {
-        req.extensions.get::<Read<P>>().cloned().ok_or(PersistentError::NotFound)
+        req.extensions
+            .get::<Read<P>>()
+            .cloned()
+            .ok_or(PersistentError::NotFound)
     }
 }
 
-impl<P: Key> Plugin<Request> for Write<P> where P::Value: Send {
+impl<P: Key> Plugin<Request> for Write<P>
+where
+    P::Value: Send,
+{
     type Error = PersistentError;
     fn eval(req: &mut Request) -> Result<Arc<Mutex<P::Value>>, PersistentError> {
-        req.extensions.get::<Write<P>>().cloned().ok_or(PersistentError::NotFound)
+        req.extensions
+            .get::<Write<P>>()
+            .cloned()
+            .ok_or(PersistentError::NotFound)
     }
 }
 
-impl<P: Key> BeforeMiddleware for State<P> where P::Value: Send + Sync {
+impl<P: Key> BeforeMiddleware for State<P>
+where
+    P::Value: Send + Sync,
+{
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<State<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<P: Key> BeforeMiddleware for Read<P> where P::Value: Send + Sync {
+impl<P: Key> BeforeMiddleware for Read<P>
+where
+    P::Value: Send + Sync,
+{
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<Read<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<P: Key> BeforeMiddleware for Write<P> where P::Value: Send {
+impl<P: Key> BeforeMiddleware for Write<P>
+where
+    P::Value: Send,
+{
     fn before(&self, req: &mut Request) -> IronResult<()> {
         req.extensions.insert::<Write<P>>(self.data.clone());
         Ok(())
     }
 }
 
-impl<P: Key> AfterMiddleware for State<P> where P::Value: Send + Sync {
+impl<P: Key> AfterMiddleware for State<P>
+where
+    P::Value: Send + Sync,
+{
     fn after(&self, _: &mut Request, mut res: Response) -> IronResult<Response> {
         res.extensions.insert::<State<P>>(self.data.clone());
         Ok(res)
     }
 }
 
-impl<P: Key> AfterMiddleware for Read<P> where P::Value: Send + Sync {
+impl<P: Key> AfterMiddleware for Read<P>
+where
+    P::Value: Send + Sync,
+{
     fn after(&self, _: &mut Request, mut res: Response) -> IronResult<Response> {
         res.extensions.insert::<Read<P>>(self.data.clone());
         Ok(res)
     }
 }
 
-impl<P: Key> AfterMiddleware for Write<P> where P::Value: Send {
+impl<P: Key> AfterMiddleware for Write<P>
+where
+    P::Value: Send,
+{
     fn after(&self, _: &mut Request, mut res: Response) -> IronResult<Response> {
         res.extensions.insert::<Write<P>>(self.data.clone());
         Ok(res)
     }
 }
 
-impl<P: Key> State<P> where P::Value: Send + Sync {
+impl<P: Key> State<P>
+where
+    P::Value: Send + Sync,
+{
     /// Construct a new pair of `State` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both<T>(start: T) -> (State<P>, State<P>) where T: PersistentInto<Arc<RwLock<P::Value>>> {
-        let x = State { data: start.persistent_into() };
+    pub fn both<T>(start: T) -> (State<P>, State<P>)
+    where
+        T: PersistentInto<Arc<RwLock<P::Value>>>,
+    {
+        let x = State {
+            data: start.persistent_into(),
+        };
         (x.clone(), x)
     }
 
@@ -225,17 +291,30 @@ impl<P: Key> State<P> where P::Value: Send + Sync {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one<T>(start: T) -> State<P> where T: PersistentInto<Arc<RwLock<P::Value>>> {
-        State { data: start.persistent_into() }
+    pub fn one<T>(start: T) -> State<P>
+    where
+        T: PersistentInto<Arc<RwLock<P::Value>>>,
+    {
+        State {
+            data: start.persistent_into(),
+        }
     }
 }
 
-impl<P: Key> Read<P> where P::Value: Send + Sync {
+impl<P: Key> Read<P>
+where
+    P::Value: Send + Sync,
+{
     /// Construct a new pair of `Read` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both<T>(start: T) -> (Read<P>, Read<P>) where T: PersistentInto<Arc<P::Value>> {
-        let x = Read { data: start.persistent_into() };
+    pub fn both<T>(start: T) -> (Read<P>, Read<P>)
+    where
+        T: PersistentInto<Arc<P::Value>>,
+    {
+        let x = Read {
+            data: start.persistent_into(),
+        };
         (x.clone(), x)
     }
 
@@ -243,17 +322,30 @@ impl<P: Key> Read<P> where P::Value: Send + Sync {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one<T>(start: T) -> Read<P> where T: PersistentInto<Arc<P::Value>> {
-        Read { data: start.persistent_into() }
+    pub fn one<T>(start: T) -> Read<P>
+    where
+        T: PersistentInto<Arc<P::Value>>,
+    {
+        Read {
+            data: start.persistent_into(),
+        }
     }
 }
 
-impl<P: Key> Write<P> where P::Value: Send {
+impl<P: Key> Write<P>
+where
+    P::Value: Send,
+{
     /// Construct a new pair of `Write` that can be passed directly to `Chain::link`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn both<T>(start: T) -> (Write<P>, Write<P>) where T: PersistentInto<Arc<Mutex<P::Value>>> {
-        let x = Write { data: start.persistent_into() };
+    pub fn both<T>(start: T) -> (Write<P>, Write<P>)
+    where
+        T: PersistentInto<Arc<Mutex<P::Value>>>,
+    {
+        let x = Write {
+            data: start.persistent_into(),
+        };
         (x.clone(), x)
     }
 
@@ -261,7 +353,12 @@ impl<P: Key> Write<P> where P::Value: Send {
     /// `Chain::link_before` or `Chain::link_after`.
     ///
     /// The data is initialized with the passed-in value.
-    pub fn one<T>(start: T) -> Write<P> where T: PersistentInto<Arc<Mutex<P::Value>>> {
-        Write { data: start.persistent_into() }
+    pub fn one<T>(start: T) -> Write<P>
+    where
+        T: PersistentInto<Arc<Mutex<P::Value>>>,
+    {
+        Write {
+            data: start.persistent_into(),
+        }
     }
 }

@@ -182,7 +182,8 @@ impl<H: Handler> Service for IronHandler<H> {
                         .unwrap_or_else(|e| {
                             error!("Error handling:\n{:?}\nError was: {:?}", req, e.error);
                             e.response
-                        }).write_back(&mut http_res, req.method)
+                        })
+                        .write_back(&mut http_res, req.method)
                 }
                 Err(e) => {
                     error!("Error creating request:\n    {}", e);
