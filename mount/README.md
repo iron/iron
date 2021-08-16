@@ -1,4 +1,4 @@
-mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master)](https://travis-ci.org/iron/mount) [![Crates.io Status](https://meritbadge.herokuapp.com/mount)](https://crates.io/crates/mount)
+mount [![Build Status](https://secure.travis-ci.org/iron/mount.png?branch=master)](https://travis-ci.org/iron/mount) [![Crates.io Status](https://img.shields.io/crates/v/mount.svg)](https://crates.io/crates/mount)
 ====
 
 > Mounting middleware for the [Iron](https://github.com/iron/iron) web framework.

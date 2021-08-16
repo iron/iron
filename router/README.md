@@ -1,4 +1,4 @@
-Router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router) [![Crates.io Status](https://meritbadge.herokuapp.com/router)](https://crates.io/crates/router)
+Router [![Build Status](https://secure.travis-ci.org/iron/router.png?branch=master)](https://travis-ci.org/iron/router) [![Crates.io Status](https://img.shields.io/crates/v/router.svg)](https://crates.io/crates/router)
 ====
 
 > Routing handler for the [Iron](https://github.com/iron/iron) web framework.
