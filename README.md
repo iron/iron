@@ -1,7 +1,7 @@
 # Iron
 
 [![Build Status](https://secure.travis-ci.org/iron/iron.svg?branch=master)](https://travis-ci.org/iron/iron)
-[![Crates.io Status](https://img.shields.io/crates/v/iron.svg)](https://crates.io/crates/iron)
+[![crates.io Status](https://img.shields.io/crates/v/iron.svg)](https://crates.io/crates/iron)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/iron/iron/master/LICENSE)
 
 > Extensible, Concurrency Focused Web Development in Rust.
